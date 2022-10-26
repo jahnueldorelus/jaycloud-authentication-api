@@ -1,1 +1,1 @@
-# jaycloud-authentication-server
+# jaycloud-authentication-api
