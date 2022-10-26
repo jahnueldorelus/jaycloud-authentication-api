@@ -1,0 +1,19 @@
+{
+  "name": "jaycloud-authentication-api",
+  "version": "1.0.0",
+  "description": "Authentication server for JayCloud",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jahnueldorelus/jaycloud-authentication-api.git"
+  },
+  "author": "Jahnuel Dorelus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jahnueldorelus/jaycloud-authentication-api/issues"
+  },
+  "homepage": "https://github.com/jahnueldorelus/jaycloud-authentication-api#readme"
+}
