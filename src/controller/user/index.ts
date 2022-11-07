@@ -1,6 +1,6 @@
 import { Request as ExpressRequest } from "express";
-// import { createNewUser } from "./Components/NewUser";
-// import { authenticateUser } from "./Components/AuthenticateUser";
+import { createNewUser } from "./components/new-user";
+import { authenticateUser } from "./components/authenticate-user";
 // import { refreshAccessToken } from "./Components/NewRefreshToken";
 // import { getFormModels } from "./Components/NewUserFormModel";
 
@@ -12,12 +12,10 @@ type Controller = {
 };
 
 export const UserController: Controller = {
-  // createNewUser,
-  // authenticateUser,
+  createNewUser,
+  authenticateUser,
   // refreshAccessToken,
   // getFormModels,
-  createNewUser: async (req: ExpressRequest) => {},
-  authenticateUser: async (req: ExpressRequest) => {},
   refreshAccessToken: async (req: ExpressRequest) => {},
   getFormModels: async (req: ExpressRequest) => {},
 };

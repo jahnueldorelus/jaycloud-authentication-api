@@ -1,10 +1,10 @@
-import { reqErrorMessages } from "@services/requestErrorMessages";
+import { reqErrorMessages } from "@services/request-error-messages";
 import { Response as ExpressResponse } from "express";
 import { StatusCodes } from "http-status-codes";
 import {
   ExpressRequestError,
   RequestErrorMethods,
-} from "@app-types/requestError";
+} from "@app-types/request-error";
 
 /**
  * Handles all errors from a request. This is the last middleware
@@ -38,7 +38,7 @@ export const requestFailedWithError = (
  */
 export const RequestError = (
   req: ExpressRequestError,
-  error: Error
+  error?: Error
 ): RequestErrorMethods => {
   /**
    * Creates a request error
@@ -65,7 +65,7 @@ export const RequestError = (
     req.failed = createError(
       reqErrorMessages.badRequest,
       StatusCodes.BAD_REQUEST,
-      error.message
+      error?.message
     );
   };
 
@@ -77,7 +77,7 @@ export const RequestError = (
     req.failed = createError(
       reqErrorMessages.forbiddenUser,
       StatusCodes.UNAUTHORIZED,
-      error.message
+      error?.message
     );
   };
 
@@ -89,7 +89,7 @@ export const RequestError = (
     req.failed = createError(
       reqErrorMessages.forbiddenUser,
       StatusCodes.FORBIDDEN,
-      error.message
+      error?.message
     );
   };
 
@@ -101,7 +101,7 @@ export const RequestError = (
     req.failed = createError(
       reqErrorMessages.validationFail,
       StatusCodes.BAD_REQUEST,
-      error.message
+      error?.message
         ? `${reqErrorMessages.validationFail} Property ${error.message}`
         : undefined
     );
@@ -115,7 +115,7 @@ export const RequestError = (
     req.failed = createError(
       reqErrorMessages.serverError,
       StatusCodes.INTERNAL_SERVER_ERROR,
-      error.message
+      error?.message
     );
   };
 

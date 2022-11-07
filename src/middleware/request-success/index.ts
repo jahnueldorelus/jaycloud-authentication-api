@@ -5,7 +5,7 @@ import {
   ExtraHeaders,
   RequestSuccessData,
   RequestSuccessFile,
-} from "@app-types/requestSuccess";
+} from "@app-types/request-success";
 
 /**
  * Handles all successful requests.

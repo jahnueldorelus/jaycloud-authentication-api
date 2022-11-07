@@ -1,8 +1,8 @@
 import { Express, json, urlencoded } from "express";
 import helmet from "helmet";
 import bearerToken from "express-bearer-token";
-import { requestFailedWithError } from "@middleware/requestError";
-import { requestPassedWithSuccess } from "@middleware/requestSuccess";
+import { requestFailedWithError } from "@middleware/request-error";
+import { requestPassedWithSuccess } from "@middleware/request-success";
 import cors from "cors";
 
 /**

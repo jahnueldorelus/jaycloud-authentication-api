@@ -10,7 +10,8 @@ export const reqErrorMessages = {
   expToken: "Access token is expired.",
   noToken: "Access denied. No token provided.",
   forbiddenUser: "Access denied.",
-  authFailed: "Authorization failed.",
+  authFailed:
+    "Authorization failed. An invalid email or password was provided.",
   validationFail: "Validation failed.",
   badRequest: "Bad request.",
 };
