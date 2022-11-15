@@ -31,7 +31,7 @@ userRouter.post(
 userRouter.post(
   "/refreshToken",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await UserController.refreshAccessToken(req);
+    await UserController.createNewRefreshToken(req);
     next();
   }
 );

@@ -10,6 +10,7 @@ import { UserData } from "@app-types/user";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
+import { envNames } from "@startup/config";
 
 // Schema validation
 const newAccountSchema = Joi.object({
@@ -59,35 +60,46 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
 
       dbSession.startTransaction();
 
-      // Creates a new user
       const [user] = await dbAuth.usersModel.create([validatedValue], {
         session: dbSession,
       });
-
-      // Creates a new refresh and access token
-      const accessToken = user ? user.generateAccessToken() : null;
-      const refreshToken = user
-        ? await dbAuth.refreshTokensModel.createToken(user.id, dbSession)
-        : null;
-
-      await dbSession.commitTransaction();
-
-      if (user && accessToken && refreshToken) {
-        RequestSuccess(req, user.toPrivateJSON(), [
-          // The access token
-          {
-            headerName: <string>process.env["JWT_ACC_REQ_HEADER"],
-            headerValue: accessToken,
-          },
-          // The refresh token
-          {
-            headerName: <string>process.env["JWT_REF_REQ_HEADER"],
-            headerValue: refreshToken.token,
-          },
-        ]);
-      } else {
+      if (!user) {
         throw Error();
       }
+
+      const accessToken = user.generateAccessToken();
+
+      const refreshTokenFamily =
+        await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
+          user.id,
+          dbSession
+        );
+      if (!refreshTokenFamily) {
+        throw Error();
+      }
+
+      const refreshToken = await dbAuth.refreshTokensModel.createToken(
+        user.id,
+        refreshTokenFamily.id,
+        dbSession
+      );
+      if (!refreshToken) {
+        throw Error();
+      }
+      await dbSession.commitTransaction();
+
+      RequestSuccess(req, user.toPrivateJSON(), [
+        // The access token
+        {
+          headerName: <string>process.env[envNames.jwt.accessReqHeader],
+          headerValue: accessToken,
+        },
+        // The refresh token
+        {
+          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+          headerValue: refreshToken.token,
+        },
+      ]);
     } catch (error: any) {
       await dbSession.abortTransaction();
 

@@ -1,21 +1,37 @@
 import { PrivateUserData } from "@app-types/user";
-import { HydratedDocument, Model } from "mongoose";
+import { ClientSession, HydratedDocument, Model } from "mongoose";
 
-export interface IUser {
+export type IUser = {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
-}
+};
 
-export interface IUserMethods {
+export type IUserMethods = {
+  /**
+   * Generates an access token of the user.
+   */
   generateAccessToken(): string;
+  /**
+   * Generates a JSON that excludes a user's private information.
+   */
   toPrivateJSON(): PrivateUserData;
-}
+};
 
 export interface UsersModel extends Model<IUser, {}, IUserMethods> {
+  /**
+   * Attempts to authenticate a user using their credentials.
+   * If successful, an access token is returned, otherwise null.
+   * @param email The user's email
+   * @param password The user's password
+   * @param session — The DB session to use
+   */
   authenticateUser(
     email: string,
-    password: string
-  ): Promise<HydratedDocument<IUser, IUserMethods> | null>;
+    password: string,
+    session?: ClientSession
+  ): Promise<DBLoadedUser | null>;
 }
+
+export type DBLoadedUser = HydratedDocument<IUser, IUserMethods>;

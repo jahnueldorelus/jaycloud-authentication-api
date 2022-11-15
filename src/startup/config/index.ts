@@ -5,6 +5,29 @@ export type CheckConfigReturn = {
   error: string | null;
 };
 
+export const envNames = {
+  nodeEnv: "NODE_ENV",
+  db: {
+    name: "DATABASE_NAME",
+    host: "DATABASE_HOST",
+    user: "DATABASE_USERNAME",
+    password: "DATABASE_PASSWORD",
+  },
+  jwt: {
+    alg: "JWT_ALGORITHM",
+    key: "JWT_KEY",
+    accessExpiration: "JWT_ACC_EXP",
+    accessReqHeader: "JWT_ACC_REQ_HEADER",
+    refreshExpiration: "JWT_REF_EXP_SECONDS",
+    refreshReqHeader: "JWT_REF_REQ_HEADER",
+  },
+  cryptoKey: "CRYPTO_KEY",
+  origins: {
+    local: "ORIGIN_LOCAL_HOST_ADDR",
+    lan: "ORIGIN_LAN_ADDR",
+  },
+};
+
 /**
  * Checks if all config properties are available before starting the server
  */
@@ -14,23 +37,27 @@ export default (): CheckConfigReturn => {
   let errorNames: string[] = [];
 
   // Checks database configuration
-  if (!process.env["DATABASE_NAME"]) errorNames.push("DATABASE_NAME");
-  if (!process.env["DATABASE_HOST"]) errorNames.push("DATABASE_HOST");
-  if (!process.env["DATABASE_USERNAME"]) errorNames.push("DATABASE_USERNAME");
-  if (!process.env["DATABASE_PASSWORD"]) errorNames.push("DATABASE_PASSWORD");
+  if (!process.env[envNames.db.name]) errorNames.push(envNames.db.name);
+  if (!process.env[envNames.db.host]) errorNames.push(envNames.db.host);
+  if (!process.env[envNames.db.user]) errorNames.push(envNames.db.user);
+  if (!process.env[envNames.db.password]) errorNames.push(envNames.db.password);
   // Checks JSON Web Token configuration
-  if (!process.env["JWT_ALGORITHM"]) errorNames.push("JWT_ALGORITHM");
-  if (!process.env["JWT_KEY"]) errorNames.push("JWT_KEY");
-  if (!process.env["JWT_ACC_REQ_HEADER"]) errorNames.push("JWT_ACC_REQ_HEADER");
-  if (!process.env["JWT_REF_REQ_HEADER"]) errorNames.push("JWT_REF_REQ_HEADER");
-  if (!process.env["JWT_ACC_EXP"]) errorNames.push("JWT_ACC_EXP");
-  if (!process.env["JWT_REF_EXP"]) errorNames.push("JWT_REF_EXP");
+  if (!process.env[envNames.jwt.alg]) errorNames.push(envNames.jwt.alg);
+  if (!process.env[envNames.jwt.key]) errorNames.push(envNames.jwt.key);
+  if (!process.env[envNames.jwt.accessReqHeader])
+    errorNames.push(envNames.jwt.accessReqHeader);
+  if (!process.env[envNames.jwt.refreshReqHeader])
+    errorNames.push(envNames.jwt.refreshReqHeader);
+  if (!process.env[envNames.jwt.accessExpiration])
+    errorNames.push(envNames.jwt.accessExpiration);
+  if (!process.env[envNames.jwt.refreshExpiration])
+    errorNames.push(envNames.jwt.refreshExpiration);
   // Checks Crypto configuration
-  if (!process.env["CRYPTO_KEY"]) errorNames.push("CRYPTO_KEY");
+  if (!process.env[envNames.cryptoKey]) errorNames.push(envNames.cryptoKey);
   // Checks Access-Control for CORS configuration
-  if (!process.env["ORIGIN_LOCAL_HOST_ADDR"])
-    errorNames.push("ORIGIN_LOCAL_HOST_ADDR");
-  if (!process.env["ORIGIN_LAN_ADDR"]) errorNames.push("ORIGIN_LAN_ADDR");
+  if (!process.env[envNames.origins.local])
+    errorNames.push(envNames.origins.local);
+  if (!process.env[envNames.origins.lan]) errorNames.push(envNames.origins.lan);
 
   return {
     configComplete: errorNames.length > 0 ? false : true,

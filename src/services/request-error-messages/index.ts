@@ -7,8 +7,7 @@ export const reqErrorMessages = {
   nonExistentUser: "The user doesn't exists.",
   serverError: "An error occured with server.",
   invalidToken: "Invalid token.",
-  expToken: "Access token is expired.",
-  noToken: "Access denied. No token provided.",
+  noToken: "No token provided.",
   forbiddenUser: "Access denied.",
   authFailed:
     "Authorization failed. An invalid email or password was provided.",

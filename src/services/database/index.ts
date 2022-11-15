@@ -1,14 +1,16 @@
 import { connect, connection } from "mongoose";
 import { usersModel } from "./models/users";
 import { refreshTokensModel } from "./models/refresh-tokens";
+import { refreshTokenFamiliesModel } from "./models/refresh-token-families";
+import { envNames } from "@startup/config";
 
 const connectToDatabase = () => {
-  connect(process.env["DATABASE_HOST"] || "", {
-    dbName: process.env["DATABASE_NAME"],
-    authSource: process.env["DATABASE_NAME"],
+  connect(process.env[envNames.db.host] || "", {
+    dbName: process.env[envNames.db.name],
+    authSource: process.env[envNames.db.name],
     auth: {
-      username: process.env["DATABASE_USERNAME"],
-      password: process.env["DATABASE_PASSWORD"],
+      username: process.env[envNames.db.user],
+      password: process.env[envNames.db.password],
     },
     authMechanism: "DEFAULT",
   });
@@ -17,7 +19,7 @@ const connectToDatabase = () => {
     console.log("Connected to MongoDB successfully")
   );
 
-  return { usersModel, refreshTokensModel };
+  return { usersModel, refreshTokensModel, refreshTokenFamiliesModel };
 };
 
 export const dbAuth = connectToDatabase();

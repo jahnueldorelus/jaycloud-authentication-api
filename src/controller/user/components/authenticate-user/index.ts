@@ -9,6 +9,7 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import { reqErrorMessages } from "@services/request-error-messages";
+import { envNames } from "@startup/config";
 
 // Schema validation
 const userCredentialsSchema = Joi.object({
@@ -19,7 +20,6 @@ const userCredentialsSchema = Joi.object({
 /**
  * Deterimines if the user's account information is valid.
  * @param credentials The user's credentials to validate
- * @return Information on the result of validating the user's credentials
  */
 const validateAccount = (credentials: UserCredentials): ValidCredentials => {
   const { error, value } = userCredentialsSchema.validate(credentials);
@@ -57,8 +57,19 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
       dbSession.startTransaction();
 
       const accessToken = user.generateAccessToken();
+
+      const refreshTokenFamily =
+        await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
+          user.id,
+          dbSession
+        );
+      if (!refreshTokenFamily) {
+        throw Error();
+      }
+
       const refreshToken = await dbAuth.refreshTokensModel.createToken(
         user.id,
+        refreshTokenFamily.id,
         dbSession
       );
 
@@ -68,12 +79,12 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
         RequestSuccess(req, user.toPrivateJSON(), [
           // The access token
           {
-            headerName: <string>process.env["JWT_ACC_REQ_HEADER"],
+            headerName: <string>process.env[envNames.jwt.accessReqHeader],
             headerValue: accessToken,
           },
           // The refresh token
           {
-            headerName: <string>process.env["JWT_REF_REQ_HEADER"],
+            headerName: <string>process.env[envNames.jwt.refreshReqHeader],
             headerValue: refreshToken.token,
           },
         ]);

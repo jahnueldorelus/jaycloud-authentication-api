@@ -1,4 +1,4 @@
-import checkConfig from "@startup/config";
+import checkConfig, { envNames } from "@startup/config";
 /**
  * Checks to make sure all required configuration is available
  * before attempting to continue to run the application
@@ -30,7 +30,7 @@ addEndMiddleware(server);
 
 // The port for the server to listen on
 const port: number | string =
-  process.env["NODE_ENV"] === "development" ? 61177 : 61178;
+  process.env[envNames.nodeEnv] === "development" ? 61177 : 61178;
 
 // The application
 export default server.listen(port, () => {

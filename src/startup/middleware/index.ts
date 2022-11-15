@@ -4,6 +4,7 @@ import bearerToken from "express-bearer-token";
 import { requestFailedWithError } from "@middleware/request-error";
 import { requestPassedWithSuccess } from "@middleware/request-success";
 import cors from "cors";
+import { envNames } from "@startup/config";
 
 /**
  * Adds all the starting middleware to the Express server
@@ -16,9 +17,12 @@ export const addStartMiddleware = (server: Express): void => {
       origin: (origin, callback) => {
         // If the request's origin is an acceptable origin
         if (
-          origin === process.env["ORIGIN_LOCAL_ADDR"] ||
-          origin === process.env["ORIGIN_LAN_ADDR"] ||
-          origin === process.env["ORIGIN_SERVER_ADDR"]
+          origin === process.env[envNames.origins.local] ||
+          origin === process.env[envNames.origins.lan] ||
+          // Allows access from POSTMAN only in development mode
+          (process.env[envNames.nodeEnv] === "development"
+            ? origin === undefined
+            : false)
         ) {
           return callback(null, true);
         }

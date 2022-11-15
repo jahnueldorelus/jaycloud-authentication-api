@@ -2,7 +2,8 @@ import { Request as ExpressRequest } from "express";
 import { verify, Algorithm } from "jsonwebtoken";
 import Joi from "joi";
 import { newUserAttributes } from "@app-types/user/new-user";
-import { TokenData } from "@app-types/token";
+import { TokenData } from "@app-types/token/access-token";
+import { envNames } from "@startup/config";
 
 const userDataSchema = Joi.object({
   id: Joi.number().min(1).required(),
@@ -25,10 +26,10 @@ export const getUserData = (req: ExpressRequest): TokenData | null => {
 
   if (req.token) {
     // JWT private key
-    const jwtPrivateKey: string = <string>process.env["JWT_KEY"];
+    const jwtPrivateKey: string = <string>process.env[envNames.jwt.key];
 
     // JWT algorithm
-    const jwtAlgorithm: Algorithm = <Algorithm>process.env["JWT_ALGORITHM"];
+    const jwtAlgorithm: Algorithm = <Algorithm>process.env[envNames.jwt.alg];
 
     // Decodes the token to retrieve the request user's info
     const userInfo: TokenData = <TokenData>verify(req.token, jwtPrivateKey, {
