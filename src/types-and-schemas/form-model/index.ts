@@ -35,6 +35,7 @@ export interface FormModelInputOptionWithJoi extends FormModelInputOption {
 
 export interface FormModelInputOptionWithReqProperty
   extends FormModelInputOption {
+  joiSchema?: Schema;
   requestBodyProperty: string;
 }
 

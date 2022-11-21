@@ -45,16 +45,16 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
     const dbSession = await connection.startSession();
 
     try {
+      dbSession.startTransaction();
       const user = await dbAuth.usersModel.authenticateUser(
         validatedValue.email,
-        validatedValue.password
+        validatedValue.password,
+        dbSession
       );
 
       if (!user) {
         throw Error(reqErrorMessages.authFailed);
       }
-
-      dbSession.startTransaction();
 
       const accessToken = user.generateAccessToken();
 

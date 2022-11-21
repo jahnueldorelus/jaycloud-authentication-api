@@ -22,7 +22,7 @@ const newAccountSchema = Joi.object({
 
 /**
  * Deterimines if the user's new account information is valid.
- * @param {object} newAccount The user's information to validate
+ * @param newAccount The user's information to validate
  */
 const validateAccount = (newAccount: UserData): ValidNewUserAccount => {
   const { error, value } = newAccountSchema.validate(newAccount, {

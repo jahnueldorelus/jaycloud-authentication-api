@@ -5,12 +5,14 @@ import {
   NextFunction,
 } from "express";
 import { DataController } from "@controller/data";
+import { validateRequestAuthorization } from "@middleware/authorization";
 
 // Express router for data routes
 export const dataRouter = Router();
 
 dataRouter.all(
   "/",
+  validateRequestAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await DataController.transferRoute(req);
     next();

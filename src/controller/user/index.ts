@@ -2,7 +2,7 @@ import { Request as ExpressRequest } from "express";
 import { createNewUser } from "./components/new-user";
 import { authenticateUser } from "./components/authenticate-user";
 import { createNewRefreshToken } from "./components/new-refresh-token";
-// import { getFormModels } from "./Components/NewUserFormModel";
+import { getFormModels } from "./components/new-user-form-model";
 
 type Controller = {
   createNewUser: (arg0: ExpressRequest) => Promise<void>;
@@ -15,7 +15,5 @@ export const UserController: Controller = {
   createNewUser,
   authenticateUser,
   createNewRefreshToken,
-  // refreshAccessToken,
-  // getFormModels,
-  getFormModels: async (req: ExpressRequest) => {},
+  getFormModels,
 };
