@@ -47,11 +47,15 @@ export const DataController: Controller = {
 
       if (isValid) {
         try {
-          // Adds the authorized user's info to the body of the request
-          // req.body = { ...req.body, user: userData };
+          const dataRequestUrl = validatedValue.appApiUrl;
+
+          delete req.body[validatedValue.app];
+          delete req.body[validatedValue.appApiUrl];
+
+          req.body = { ...req.body, user: userData };
 
           const appAPIResponse = await axios({
-            url: validatedValue.appApiUrl,
+            url: dataRequestUrl,
             method: req.method,
             data: req.body,
           });
