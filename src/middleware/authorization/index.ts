@@ -80,11 +80,6 @@ export const validateRequestAuthorization = async (
     }
   }
 
-  // If the token is unavailable
-  else {
-    RequestError(userReq, Error(reqErrorMessages.noToken)).notAuthorized();
-  }
-
   // Goes to the next Express middleware
   next();
 };
@@ -97,4 +92,13 @@ export const getRequestUserData = (
   req: ExpressRequestAndUser
 ): TokenData | null => {
   return req.user || null;
+};
+
+/**
+ * Determines if a request can be processed after its been through
+ * the authentication middleware. Only requests with no token or a valid
+ * token can be processed. Requests with invalid tokens cannot be processed.
+ */
+export const requestCanBeProcessed = (req: ExpressRequestAndUser) => {
+  return req.token && !req.user ? false : true;
 };
