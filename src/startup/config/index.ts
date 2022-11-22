@@ -34,31 +34,51 @@ export const envNames = {
 export default (): CheckConfigReturn => {
   dotenv.config();
 
-  let errorNames: string[] = [];
+  const errorNames: string[] = [];
 
   // Checks database configuration
-  if (!process.env[envNames.db.name]) errorNames.push(envNames.db.name);
-  if (!process.env[envNames.db.host]) errorNames.push(envNames.db.host);
-  if (!process.env[envNames.db.user]) errorNames.push(envNames.db.user);
-  if (!process.env[envNames.db.password]) errorNames.push(envNames.db.password);
+  if (!process.env[envNames.db.name]) {
+    errorNames.push(envNames.db.name);
+  }
+  if (!process.env[envNames.db.host]) {
+    errorNames.push(envNames.db.host);
+  }
+  if (!process.env[envNames.db.user]) {
+    errorNames.push(envNames.db.user);
+  }
+  if (!process.env[envNames.db.password]) {
+    errorNames.push(envNames.db.password);
+  }
   // Checks JSON Web Token configuration
-  if (!process.env[envNames.jwt.alg]) errorNames.push(envNames.jwt.alg);
-  if (!process.env[envNames.jwt.key]) errorNames.push(envNames.jwt.key);
-  if (!process.env[envNames.jwt.accessReqHeader])
+  if (!process.env[envNames.jwt.alg]) {
+    errorNames.push(envNames.jwt.alg);
+  }
+  if (!process.env[envNames.jwt.key]) {
+    errorNames.push(envNames.jwt.key);
+  }
+  if (!process.env[envNames.jwt.accessReqHeader]) {
     errorNames.push(envNames.jwt.accessReqHeader);
-  if (!process.env[envNames.jwt.refreshReqHeader])
+  }
+  if (!process.env[envNames.jwt.refreshReqHeader]) {
     errorNames.push(envNames.jwt.refreshReqHeader);
-  if (!process.env[envNames.jwt.accessExpiration])
+  }
+  if (!process.env[envNames.jwt.accessExpiration]) {
     errorNames.push(envNames.jwt.accessExpiration);
-  if (!process.env[envNames.jwt.refreshExpiration])
+  }
+  if (!process.env[envNames.jwt.refreshExpiration]) {
     errorNames.push(envNames.jwt.refreshExpiration);
+  }
   // Checks Crypto configuration
-  if (!process.env[envNames.cryptoKey]) errorNames.push(envNames.cryptoKey);
+  if (!process.env[envNames.cryptoKey]) {
+    errorNames.push(envNames.cryptoKey);
+  }
   // Checks Access-Control for CORS configuration
-  if (!process.env[envNames.origins.local])
+  if (!process.env[envNames.origins.local]) {
     errorNames.push(envNames.origins.local);
-  if (!process.env[envNames.origins.lan]) errorNames.push(envNames.origins.lan);
-
+  }
+  if (!process.env[envNames.origins.lan]) {
+    errorNames.push(envNames.origins.lan);
+  }
   return {
     configComplete: errorNames.length > 0 ? false : true,
     error:
