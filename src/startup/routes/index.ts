@@ -11,8 +11,4 @@ export const addServerRoutes = (server: Express): void => {
   server.use("/api/data", dataRouter);
   // Handles user requests
   server.use("/api/users", userRouter);
-
-  server.use("/api/test", (req, res) => {
-    res.send(req.body);
-  });
 };

@@ -59,7 +59,7 @@ export const DataController: Controller = {
             newReqBody.user = userData;
           }
 
-          // Removes data from the new request body that was required only for this server
+          // Removes data from the new request's body that was required only for this server
           const dataRequestBody: Partial<DataRequest> = newReqBody;
           delete dataRequestBody.app;
           delete dataRequestBody.appApiUrl;
