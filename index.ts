@@ -29,8 +29,17 @@ addServerRoutes(server);
 addEndMiddleware(server);
 
 // The port for the server to listen on
-const port: number | string =
-  process.env[envNames.nodeEnv] === "development" ? 61177 : 61178;
+let port: number | string;
+switch (process.env[envNames.nodeEnv]) {
+  case "development":
+    port = 61177;
+    break;
+  case "test":
+    port = 61178;
+    break;
+  default:
+    port = 61179;
+}
 
 // The application
 export default server.listen(port, () => {
