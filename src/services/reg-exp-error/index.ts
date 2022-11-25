@@ -25,8 +25,8 @@ export class RegExpError {
     hasAccentedCharacters: boolean,
     hasSpecialCharacters: boolean | string[],
     hasNumbers: boolean,
-    minLength?: number,
-    maxLength?: number,
+    minLength?: number | null,
+    maxLength?: number | null,
     customLabel?: string
   ) {
     this.regularLetters = hasRegularLetters;
@@ -70,11 +70,15 @@ export class RegExpError {
     }
 
     if (this.minimum && this.maximum) {
-      if (this.minimum === this.maximum) {
-        label += " " + `${this.minimum} characters.`;
-      } else {
-        label += " " + `${this.minimum}-${this.maximum} characters.`;
-      }
+      label +=
+        " " +
+        (this.minimum === this.maximum
+          ? `${this.minimum} characters.`
+          : `${this.minimum}-${this.maximum} characters.`);
+    } else if (this.minimum) {
+      label += " " + `minimum of ${this.minimum} characters.`;
+    } else if (this.maximum) {
+      label += " " + `maximum of ${this.maximum} characters.`;
     }
 
     // Puts the label in titlecase form

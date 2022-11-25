@@ -7,7 +7,7 @@
     "start": "nodemon index.ts",
     "prod": "node -r ./tsconfig-paths-bootstrap.js build/index.js",
     "build": "npx tsc",
-    "test": "npx jest --watchAll"
+    "test": "npx jest /src/tests --maxWorkers=4 --watchAll --coverage"
   },
   "repository": {
     "type": "git",
