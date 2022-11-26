@@ -9,4 +9,5 @@ module.exports = {
   }),
   coveragePathIgnorePatterns: ["/node_modules/"],
   roots: ["<rootDir>/src"],
+  setupFiles: ["dotenv/config"],
 };

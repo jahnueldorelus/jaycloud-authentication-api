@@ -3,8 +3,41 @@ import helmet from "helmet";
 import bearerToken from "express-bearer-token";
 import { requestFailedWithError } from "@middleware/request-error";
 import { requestPassedWithSuccess } from "@middleware/request-success";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import { envNames } from "@startup/config";
+
+/**
+ * Retrieves the options for the cross origin resource sharing.
+ */
+export const corsOptions = (): CorsOptions => ({
+  origin: (origin, callback) => {
+    // If the request's origin is an acceptable origin
+    if (
+      origin === process.env[envNames.origins.local] ||
+      origin === process.env[envNames.origins.lan] ||
+      // Allows access from POSTMAN only in development mode
+      (process.env[envNames.nodeEnv] === "development"
+        ? origin === undefined
+        : false)
+    ) {
+      return callback(null, true);
+    }
+    // If the request's origin is not acceptable
+    else {
+      return callback(
+        new Error(
+          `This site ${origin} does not have an access. Only specific domains are allowed to access it.`
+        ),
+        false
+      );
+    }
+  },
+  optionsSuccessStatus: 200,
+  exposedHeaders: [
+    <string>process["env"]["JWT_ACC_REQ_HEADER"],
+    <string>process["env"]["JWT_REF_REQ_HEADER"],
+  ],
+});
 
 /**
  * Adds all the starting middleware to the Express server
@@ -12,37 +45,7 @@ import { envNames } from "@startup/config";
  */
 export const addStartMiddleware = (server: Express): void => {
   // Allows cross-origin requests
-  server.use(
-    cors({
-      origin: (origin, callback) => {
-        // If the request's origin is an acceptable origin
-        if (
-          origin === process.env[envNames.origins.local] ||
-          origin === process.env[envNames.origins.lan] ||
-          // Allows access from POSTMAN only in development mode
-          (process.env[envNames.nodeEnv] === "development"
-            ? origin === undefined
-            : false)
-        ) {
-          return callback(null, true);
-        }
-        // If the request's origin is not acceptable
-        else {
-          return callback(
-            new Error(
-              `This site ${origin} does not have an access. Only specific domains are allowed to access it.`
-            ),
-            false
-          );
-        }
-      },
-
-      exposedHeaders: [
-        <string>process["env"]["JWT_ACC_REQ_HEADER"],
-        <string>process["env"]["JWT_REF_REQ_HEADER"],
-      ],
-    })
-  );
+  server.use(cors(corsOptions()));
 
   // Parses JSON data from the request
   server.use(json());
