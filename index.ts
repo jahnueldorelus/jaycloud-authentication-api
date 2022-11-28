@@ -42,6 +42,6 @@ switch (process.env[envNames.nodeEnv]) {
 }
 
 // The application
-export default server.listen(port, () => {
+module.exports = server.listen(port, () => {
   console.log("Connected to port", port, "successfully.");
 });

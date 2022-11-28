@@ -1,5 +1,12 @@
+import { RequestSuccess } from "@middleware/request-success";
 import { envNames } from "@startup/config";
-import { Express, Request, Response, Router } from "express";
+import {
+  Express,
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+  Router,
+} from "express";
+import { Server } from "http";
 import request from "supertest";
 
 /**
@@ -11,7 +18,7 @@ import request from "supertest";
  * @param data The data to send along with the request. Defaults to undefined.
  */
 export const makeRequest = async (
-  expressApp: Express,
+  expressApp: Express | Server,
   reqURL: string,
   type: "get" | "put" | "post" | "delete",
   origin?: string | null,
@@ -42,8 +49,24 @@ export const addFakeRoute = (
   options: TestRouteOptions
 ) => {
   const testRouter = Router();
-  testRouter.all(options.url, (req: Request, res: Response) => {
+  testRouter.all(options.url, (req: ExpressRequest, res: ExpressResponse) => {
     res.status(options.resStatus).send(options.resData);
   });
   expressApp.use(testRouter);
+};
+
+/**
+ * Retrieves the express server
+ */
+export const getExpressServer = () => {
+  return require("../../../index");
+};
+
+/**
+ * Takes an Express request and sets it up to pass when using an Express server
+ * that has the successful request middleware handler.
+ * @param req An Express request
+ */
+export const makeRequestPass = async (req: ExpressRequest) => {
+  RequestSuccess(req, {});
 };
