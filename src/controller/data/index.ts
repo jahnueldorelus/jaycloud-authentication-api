@@ -2,7 +2,7 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 import { DataRequest, ValidDataRequest } from "@app-types/data";
 import {
   getRequestUserData,
-  requestCanBeProcessed,
+  requestIsAuthorized,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
@@ -39,7 +39,7 @@ const validateDataRequest = (requestInfo: DataRequest): ValidDataRequest => {
 
 export const DataController: Controller = {
   transferRoute: async (req: ExpressRequest) => {
-    if (requestCanBeProcessed(<ExpressRequestAndUser>req)) {
+    if (requestIsAuthorized(<ExpressRequestAndUser>req)) {
       // The user's data request info
       const dataRequestInfo: DataRequest = req.body;
 

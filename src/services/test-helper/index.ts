@@ -1,3 +1,4 @@
+import { TokenData } from "@app-types/token/access-token";
 import { RequestSuccess } from "@middleware/request-success";
 import { envNames } from "@startup/config";
 import {
@@ -69,4 +70,34 @@ export const getExpressServer = () => {
  */
 export const makeRequestPass = async (req: ExpressRequest) => {
   RequestSuccess(req, {});
+};
+
+/**
+ * Retrieves a fake user for a request.
+ */
+export const getFakeRequestUser = () => {
+  const reqUser: TokenData = {
+    firstName: "test",
+    lastName: "test",
+    email: "test@test.com",
+    id: 1,
+    exp: 1516239022,
+    iat: 1516239022,
+  };
+
+  return reqUser;
+};
+
+/**
+ * Retrieves a fake JWT token based on the information
+ * of the fake request user.
+ */
+export const getFakeRequestToken = () => {
+  return (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+    "eyJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0" +
+    "ZXN0IiwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwiaWQiOjEsImV4c" +
+    "CI6MTUxNjIzOTAyMiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+    "2fszgKirnyaR_EgpgT_5I1fyeGpMHcBo2a8awzVa2GQ"
+  );
 };

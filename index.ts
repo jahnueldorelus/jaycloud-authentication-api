@@ -35,7 +35,7 @@ switch (process.env[envNames.nodeEnv]) {
     port = 61177;
     break;
   case "test":
-    port = 61178;
+    port = 0; // Port 0 tells the OS to choose a random port
     break;
   default:
     port = 61179;
