@@ -11,6 +11,7 @@ import { Request as ExpressRequest } from "express";
 import { ValidationError, ValidationResult } from "joi";
 import axios from "axios";
 import { DataRequest } from "@app-types/data";
+import { JoiValidationParam } from "@app-types/tests/joi";
 
 // Mocks the Authorization
 jest.mock("@middleware/authorization", () => ({
@@ -32,23 +33,22 @@ jest.mock("@middleware/request-error", () => ({
 jest.mock("axios");
 
 // Mocks Joi validation
-interface JoiValidationParam extends Partial<DataRequest> {
-  returnError: boolean;
-  message?: string;
-}
+type JoiValidationDataRequestParam = Partial<DataRequest> & JoiValidationParam;
 jest.mock("joi", () => ({
   ...jest.requireActual("joi"),
   object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
+    validate: jest.fn(
+      (validateInfo: JoiValidationDataRequestParam): ValidationResult => {
+        if (validateInfo.returnError) {
+          return {
+            error: <ValidationError>{ message: validateInfo.message },
+            value: undefined,
+          };
+        } else {
+          return { error: undefined, value: validateInfo };
+        }
       }
-    }),
+    ),
   }),
 }));
 
@@ -105,10 +105,11 @@ describe("Route - Data", () => {
   });
 
   describe("Failed requests due to validation error", () => {
-    it("An error message is returned", async () => {
+    it("Should return a custom error message with the request's response", async () => {
       // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationParam = {
+      const requestBody: JoiValidationDataRequestParam = {
         returnError: true,
+        // Custom error message to be passed to request error handler
         message: "VALIDATION",
       };
       mockRequest.body = requestBody;
@@ -122,9 +123,9 @@ describe("Route - Data", () => {
       );
     });
 
-    it("No error message is returned", async () => {
+    it("Should return a default error message with the request's response", async () => {
       // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationParam = {
+      const requestBody: JoiValidationDataRequestParam = {
         returnError: true,
       };
       mockRequest.body = requestBody;
@@ -172,7 +173,7 @@ describe("Route - Data", () => {
 
     it("Should pass the correct HTTP url and method to Axios", async () => {
       mockGetRequestUserData.mockReturnValueOnce(null);
-      const reqBody: JoiValidationParam = {
+      const reqBody: JoiValidationDataRequestParam = {
         returnError: false,
         app: "test",
         appApiUrl: "/api/test",
