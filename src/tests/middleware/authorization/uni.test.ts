@@ -3,7 +3,7 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import {
   validateRequestAuthorization,
   getRequestUserData,
-  requestIsAuthorized,
+  requestPassedAuthorization,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
@@ -170,7 +170,7 @@ describe("Middleware - Authorization", () => {
       mockRequest.user = getFakeRequestUser();
       mockRequest.token = getFakeRequestToken();
 
-      const isReqAuthorized = requestIsAuthorized(mockRequest);
+      const isReqAuthorized = requestPassedAuthorization(mockRequest);
 
       expect(isReqAuthorized).toBeTruthy();
     });
@@ -178,7 +178,7 @@ describe("Middleware - Authorization", () => {
     it("Should conclude the request to be unauthorized", () => {
       mockRequest.token = getFakeRequestToken();
 
-      const isReqAuthorized = requestIsAuthorized(mockRequest);
+      const isReqAuthorized = requestPassedAuthorization(mockRequest);
 
       expect(isReqAuthorized).toBeFalsy();
     });
