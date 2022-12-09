@@ -37,7 +37,7 @@ export const configureNewUserFormModel = (
  * Retrieves the form model for a new user.
  * @param req The network request
  */
-export const getFormModels = async (req: ExpressRequest) => {
+export const getNewUserFormModel = async (req: ExpressRequest) => {
   const newUserModelForm: FormModel = {
     title: "Create a new account",
     inputs: configureNewUserFormModel(newUserAttributes),
