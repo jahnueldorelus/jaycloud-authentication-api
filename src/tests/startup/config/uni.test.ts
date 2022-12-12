@@ -35,7 +35,7 @@ describe("Startup - Configuration", () => {
     expect(error).toBeTruthy();
   });
 
-  it("Should fail - Missing encryption environment variables", () => {
+  it("Should fail - Missing access control environment variables", () => {
     envNames.origins.lan = "";
     envNames.origins.local = "";
 
@@ -45,8 +45,9 @@ describe("Startup - Configuration", () => {
     expect(error).toBeTruthy();
   });
 
-  it("Should fail - Missing access control environment variables", () => {
-    envNames.cryptoKey = "";
+  it("Should fail - Missing crypto environment variables", () => {
+    envNames.crypto.key = "";
+    envNames.crypto.tempTokenExpSeconds = "";
 
     const { configComplete, error } = checkConfig();
 

@@ -21,7 +21,10 @@ export const envNames = {
     refreshExpiration: "JWT_REF_EXP_SECONDS",
     refreshReqHeader: "JWT_REF_REQ_HEADER",
   },
-  cryptoKey: "CRYPTO_KEY",
+  crypto: {
+    key: "CRYPTO_KEY",
+    tempTokenExpSeconds: "CRYPTO_TEMP_TOKEN_EXP_SECONDS",
+  },
   origins: {
     local: "ORIGIN_LOCAL_HOST_ADDR",
     lan: "ORIGIN_LAN_ADDR",
@@ -69,8 +72,11 @@ export default (): CheckConfigReturn => {
     errorNames.push(envNames.jwt.refreshExpiration);
   }
   // Checks Crypto configuration
-  if (!process.env[envNames.cryptoKey]) {
-    errorNames.push(envNames.cryptoKey);
+  if (!process.env[envNames.crypto.key]) {
+    errorNames.push(envNames.crypto.key);
+  }
+  if (!process.env[envNames.crypto.tempTokenExpSeconds]) {
+    errorNames.push(envNames.crypto.tempTokenExpSeconds);
   }
   // Checks Access-Control for CORS configuration
   if (!process.env[envNames.origins.local]) {

@@ -1,4 +1,3 @@
-// import { getExpressServer } from "@services/test-helper";
 import { getExpressServer } from "@services/test-helper";
 import checkConfig, { CheckConfigReturn, envNames } from "@startup/config";
 import express from "express";

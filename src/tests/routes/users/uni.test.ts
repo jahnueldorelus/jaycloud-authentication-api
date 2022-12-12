@@ -30,7 +30,7 @@ describe("Routes - Users", () => {
       .spyOn(UserController, "createNewUser")
       .mockImplementation(makeRequestPass);
     mockGetFormModels = jest
-      .spyOn(UserController, "getFormModels")
+      .spyOn(UserController, "getNewUserFormModel")
       .mockImplementation(makeRequestPass);
   });
 

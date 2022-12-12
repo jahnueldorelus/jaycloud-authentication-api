@@ -38,6 +38,33 @@ userRouter.post(
 
 // Retrieves the form model to create a new user
 userRouter.get("/form-models", async (req, res, next) => {
-  await UserController.getFormModels(req);
+  await UserController.getNewUserFormModel(req);
   next();
 });
+
+// Resets the user's password
+userRouter.post(
+  "/password-reset",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.resetPassword(req);
+    next();
+  }
+);
+
+// // Verifies the user's temp token
+// userRouter.post(
+//   "/verify-reset-token",
+//   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+//     await UserController.verifyTempToken(req);
+//     next();
+//   }
+// );
+
+// // Resets the user's password
+// userRouter.post(
+//   "/update-password",
+//   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+//     await UserController.updatePassword(req);
+//     next();
+//   }
+// );
