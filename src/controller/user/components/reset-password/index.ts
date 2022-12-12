@@ -30,7 +30,7 @@ const validateUserEmail = (userEmail: UserEmail): ValidUserEmail => {
  * @param req The network request
  */
 export const resetPassword = async (req: ExpressRequest): Promise<void> => {
-  // The user's new account info from the request
+  // The user's info from the request
   const userInfo: UserEmail = req.body;
 
   // Determines if the user's information is valid
@@ -43,9 +43,13 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
     try {
       dbSession.startTransaction();
 
-      const user = await dbAuth.usersModel.findOne({
-        email: validatedValue.email,
-      });
+      const user = await dbAuth.usersModel.findOne(
+        {
+          email: validatedValue.email,
+        },
+        null,
+        { session: dbSession }
+      );
 
       if (user) {
         const tempToken = await dbAuth.tempTokenModel.createTempToken(
@@ -73,7 +77,7 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
       await dbSession.endSession();
     }
   }
-  // If the user's account information is invalid
+  // If the user's information is invalid
   else {
     RequestError(req, Error(errorMessage || undefined)).validation();
   }

@@ -10,6 +10,7 @@ import { connection } from "mongoose";
 import { dbAuth } from "@services/database";
 import { DBLoadedUser } from "@app-types/database/models/users";
 import { envNames } from "@startup/config";
+import moment from "moment";
 
 /**
  * ANY CHANGES MADE TO THE SCHEMA MUST ALSO BE MADE IN MODEL'S TYPES
@@ -55,12 +56,10 @@ refreshTokensSchema.static(
 
     try {
       // Creates a new date for the token's expiration
-      const expDate = new Date();
-
-      // Sets the date's expiration time
-      expDate.setSeconds(
-        expDate.getSeconds() +
-          parseInt(<string>process.env[envNames.jwt.refreshExpiration])
+      const expDate = moment(new Date());
+      expDate.add(
+        parseInt(<string>process.env[envNames.jwt.refreshExpDays]),
+        "days"
       );
 
       // Creates a new token ID
@@ -72,7 +71,7 @@ refreshTokensSchema.static(
       }
 
       const refreshTokens: DBLoadedRefreshToken[] = await this.create(
-        [{ token, expDate, userId, familyId }],
+        [{ token, expDate: expDate.toDate(), userId, familyId }],
         { session: dbSession }
       );
       await dbSession.commitTransaction();

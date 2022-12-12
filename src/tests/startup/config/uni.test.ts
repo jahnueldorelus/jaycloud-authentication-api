@@ -26,7 +26,7 @@ describe("Startup - Configuration", () => {
     envNames.jwt.accessReqHeader = "";
     envNames.jwt.alg = "";
     envNames.jwt.key = "";
-    envNames.jwt.refreshExpiration = "";
+    envNames.jwt.refreshExpDays = "";
     envNames.jwt.refreshReqHeader = "";
 
     const { configComplete, error } = checkConfig();
@@ -47,7 +47,7 @@ describe("Startup - Configuration", () => {
 
   it("Should fail - Missing crypto environment variables", () => {
     envNames.crypto.key = "";
-    envNames.crypto.tempTokenExpSeconds = "";
+    envNames.crypto.tempTokenExpMinutes = "";
 
     const { configComplete, error } = checkConfig();
 

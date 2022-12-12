@@ -5,27 +5,28 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import {
-  UserEmailAndToken,
-  ValidUserEmailAndToken,
-} from "@app-types/user/verify-temp-token";
+  UserEmailAndPassword,
+  ValidUserEmailAndPassword,
+} from "@app-types/user/update-password";
 import { dbAuth } from "@services/database";
 import { reqErrorMessages } from "@services/request-error-messages";
+import { genSalt, hash } from "bcrypt";
 import moment from "moment";
 
 // Schema validation
-const verifyTempTokenSchema = Joi.object({
+const verifyUserInfoSchema = Joi.object({
   email: newUserAttributes.email.joiSchema,
-  token: Joi.string().token().required(),
+  password: newUserAttributes.password.joiSchema,
 });
 
 /**
- * Deterimines if the user's email and token are valid.
+ * Deterimines if the user's email and password are valid.
  * @param userInfo The user's info to validate
  */
 const validateUserInfo = (
-  userInfo: UserEmailAndToken
-): ValidUserEmailAndToken => {
-  const { error, value } = verifyTempTokenSchema.validate(userInfo);
+  userInfo: UserEmailAndPassword
+): ValidUserEmailAndPassword => {
+  const { error, value } = verifyUserInfoSchema.validate(userInfo);
   return {
     isValid: error ? false : true,
     errorMessage: error ? error.message : null,
@@ -34,12 +35,12 @@ const validateUserInfo = (
 };
 
 /**
- * Verifies a temporary token for a password reset.
+ * Updates a user's password for a password reset.
  * @param req The network request
  */
-export const verifyTempToken = async (req: ExpressRequest): Promise<void> => {
+export const updatePassword = async (req: ExpressRequest): Promise<void> => {
   // The user's info from the request
-  const userInfo: UserEmailAndToken = req.body;
+  const userInfo: UserEmailAndPassword = req.body;
 
   // Determines if the user's information is valid
   const { isValid, errorMessage, validatedValue } = validateUserInfo(userInfo);
@@ -63,31 +64,27 @@ export const verifyTempToken = async (req: ExpressRequest): Promise<void> => {
         throw Error(reqErrorMessages.nonExistentUser);
       }
 
-      const tempToken = await dbAuth.tempTokenModel.findOne(
-        {
-          userId: user.id,
-          token: validatedValue.token,
-        },
-        null,
-        { session: dbSession }
-      );
+      const approvedPasswordReset =
+        await dbAuth.approvedPasswordResetModel.findOneAndDelete(
+          { userId: user.id },
+          { session: dbSession }
+        );
       const currentDateAndTime = moment(new Date());
 
-      // If there's no temporary token or it's expired
+      // If there's no approved password reset or it's expired
       if (
-        !tempToken ||
-        moment(tempToken.expDate).isBefore(currentDateAndTime)
+        !approvedPasswordReset ||
+        moment(approvedPasswordReset.expDate).isBefore(currentDateAndTime)
       ) {
-        throw Error(reqErrorMessages.invalidToken);
+        throw Error(reqErrorMessages.forbiddenUser);
       }
 
-      await tempToken.delete({ session: dbSession });
+      const hashSalt = await genSalt();
+      validatedValue.password = await hash(validatedValue.password, hashSalt);
 
-      await dbAuth.approvedPasswordResetModel.createApprovedPasswordReset(
-        user.id,
-        dbSession
-      );
+      user.password = validatedValue.password;
 
+      await user.save({ session: dbSession });
       await dbSession.commitTransaction();
 
       RequestSuccess(req, true);
@@ -96,14 +93,17 @@ export const verifyTempToken = async (req: ExpressRequest): Promise<void> => {
 
       if (
         error.message === reqErrorMessages.nonExistentUser ||
-        error.message === reqErrorMessages.invalidToken
+        error.message === reqErrorMessages.forbiddenUser
       ) {
-        RequestError(req, Error("An invalid token was provided")).badRequest();
+        RequestError(
+          req,
+          Error("Failed to update the user's password")
+        ).badRequest();
       } else {
         // Default error message
         RequestError(
           req,
-          Error("Failed to verify the token provided")
+          Error("Failed to update the user's password")
         ).server();
       }
     } finally {

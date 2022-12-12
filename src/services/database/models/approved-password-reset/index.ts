@@ -5,6 +5,7 @@ import {
   ApprovedPasswordResetModel,
 } from "@app-types/database/models/approved-password-reset";
 import { envNames } from "@startup/config";
+import moment from "moment";
 import { ClientSession, model, Schema } from "mongoose";
 import { connection } from "mongoose";
 
@@ -35,6 +36,57 @@ const approvedPasswordResetSchema = new Schema<
 );
 
 approvedPasswordResetSchema.static(
+  "deleteExpiredApprovedPassResets",
+  async function (session?: ClientSession) {
+    const dbSession = session ? session : await connection.startSession();
+
+    try {
+      // Creates a new transaction if no session was provided
+      if (!session || !session.inTransaction()) {
+        dbSession.startTransaction();
+      }
+
+      const approvedPasswordResets = await this.find({}, null, {
+        session: dbSession,
+      });
+
+      const expiredApprovedPassResets = approvedPasswordResets.filter(
+        (approvedPassReset) => {
+          const currentDateAndTime = moment(new Date());
+
+          return moment(approvedPassReset.expDate).isBefore(currentDateAndTime);
+        }
+      );
+
+      const expiredApprovedPassResetIds = expiredApprovedPassResets.map(
+        (approvedPasswordReset) => approvedPasswordReset.id
+      );
+
+      await this.deleteMany(
+        { _id: { $in: expiredApprovedPassResetIds } },
+        { session: dbSession }
+      );
+
+      await dbSession.commitTransaction();
+
+      return true;
+    } catch (error) {
+      // Aborts the transaction if it was created within this method
+      if (!session && dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
+
+      return false;
+    } finally {
+      // Ends the session if it was created within this method
+      if (!session) {
+        await dbSession.endSession();
+      }
+    }
+  }
+);
+
+approvedPasswordResetSchema.static(
   "createApprovedPasswordReset",
   async function (userId: string, session?: ClientSession) {
     const dbSession = session ? session : await connection.startSession();
@@ -49,14 +101,16 @@ approvedPasswordResetSchema.static(
       await this.deleteOne({ userId }, { session: dbSession });
 
       // Creates a new date for the token's expiration
-      const expDate = new Date();
-      expDate.setSeconds(
-        expDate.getSeconds() +
-          parseInt(<string>process.env[envNames.crypto.tempTokenExpSeconds])
+      const expDate = moment(new Date());
+      expDate.add(
+        parseInt(<string>process.env[envNames.crypto.tempTokenExpMinutes]),
+        "minutes"
       );
 
       const approvedPasswordResets: DBLoadedApprovedPasswordReset[] =
-        await this.create([{ userId, expDate }], { session: dbSession });
+        await this.create([{ userId, expDate: expDate.toDate() }], {
+          session: dbSession,
+        });
 
       await dbSession.commitTransaction();
 

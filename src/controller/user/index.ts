@@ -5,6 +5,7 @@ import { createNewRefreshToken } from "./components/new-refresh-token";
 import { getNewUserFormModel } from "./components/new-user-form-model";
 import { resetPassword } from "./components/reset-password";
 import { verifyTempToken } from "./components/verify-temp-token";
+import { updatePassword } from "./components/update-password";
 
 type Controller = {
   createNewUser: (arg0: ExpressRequest) => Promise<void>;
@@ -13,7 +14,7 @@ type Controller = {
   getNewUserFormModel: (arg0: ExpressRequest) => Promise<void>;
   resetPassword: (arg0: ExpressRequest) => Promise<void>;
   verifyTempToken: (arg0: ExpressRequest) => Promise<void>;
-  // updatePassword: (arg0: ExpressRequest) => Promise<void>;
+  updatePassword: (arg0: ExpressRequest) => Promise<void>;
 };
 
 export const UserController: Controller = {
@@ -23,5 +24,5 @@ export const UserController: Controller = {
   getNewUserFormModel,
   resetPassword,
   verifyTempToken,
-  // updatePassword,
+  updatePassword,
 };

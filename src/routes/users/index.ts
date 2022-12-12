@@ -60,11 +60,11 @@ userRouter.post(
   }
 );
 
-// // Resets the user's password
-// userRouter.post(
-//   "/update-password",
-//   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-//     await UserController.updatePassword(req);
-//     next();
-//   }
-// );
+// Resets the user's password
+userRouter.post(
+  "/update-password",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.updatePassword(req);
+    next();
+  }
+);
