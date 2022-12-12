@@ -23,8 +23,9 @@ const tempTokenSchema = new Schema<
       required: true,
       min: 24,
       max: 24,
+      index: true,
     },
-    tokenNumber: {
+    token: {
       type: String,
       required: true,
       min: 6,
@@ -86,6 +87,9 @@ tempTokenSchema.static(
         dbSession.startTransaction();
       }
 
+      // Deletes any prior temporary token
+      await this.deleteOne({ userId }, { session: dbSession });
+
       // Generates a temporary token
       const tokenNumber = randomBytes(3).toString("hex").toUpperCase();
 
@@ -97,7 +101,7 @@ tempTokenSchema.static(
       );
 
       const tempTokenList: DBLoadedTempToken[] = await this.create(
-        [{ userId, tokenNumber, expDate }],
+        [{ userId, token: tokenNumber, expDate }],
         { session: dbSession }
       );
 

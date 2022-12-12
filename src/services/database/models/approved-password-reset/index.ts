@@ -22,6 +22,7 @@ const approvedPasswordResetSchema = new Schema<
       required: true,
       min: 24,
       max: 24,
+      index: true,
     },
     expDate: {
       type: Date,
@@ -44,6 +45,9 @@ approvedPasswordResetSchema.static(
         dbSession.startTransaction();
       }
 
+      // Deletes any prior approved password reset
+      await this.deleteOne({ userId }, { session: dbSession });
+
       // Creates a new date for the token's expiration
       const expDate = new Date();
       expDate.setSeconds(
@@ -64,43 +68,6 @@ approvedPasswordResetSchema.static(
       }
 
       return null;
-    } finally {
-      // Ends the session if it was created within this method
-      if (!session) {
-        await dbSession.endSession();
-      }
-    }
-  }
-);
-
-approvedPasswordResetSchema.static(
-  "deleteExpiredApprovedPassResets",
-  async function (session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
-
-    try {
-      // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
-        dbSession.startTransaction();
-      }
-
-      await this.deleteMany(
-        {
-          expDate: { $lte: new Date().getSeconds() },
-        },
-        { session: dbSession }
-      );
-
-      await dbSession.commitTransaction();
-
-      return true;
-    } catch (error) {
-      // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
-      return false;
     } finally {
       // Ends the session if it was created within this method
       if (!session) {

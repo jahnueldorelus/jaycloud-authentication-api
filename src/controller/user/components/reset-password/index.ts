@@ -58,7 +58,6 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
           throw Error("Failed to create temporary token");
         }
 
-        console.log(tempToken?.tokenNumber);
         // SEND EMAIL TO USER WITH THEIR TEMPORARY TOKEN HERE
       }
 

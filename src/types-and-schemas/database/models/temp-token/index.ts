@@ -1,7 +1,7 @@
 import { ClientSession, HydratedDocument, Model } from "mongoose";
 
 export type ITempToken = {
-  tokenNumber: string;
+  token: string;
   userId: string;
   expDate: Date;
 };
