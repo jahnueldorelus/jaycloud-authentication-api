@@ -2,7 +2,6 @@ import { connect, connection } from "mongoose";
 import { usersModel } from "./models/users";
 import { refreshTokensModel } from "./models/refresh-tokens";
 import { refreshTokenFamiliesModel } from "./models/refresh-token-families";
-import { tempTokenModel } from "./models/temp-token";
 import { approvedPasswordResetModel } from "./models/approved-password-reset";
 import { envNames } from "@startup/config";
 
@@ -25,7 +24,6 @@ const connectToDatabase = () => {
     usersModel,
     refreshTokensModel,
     refreshTokenFamiliesModel,
-    tempTokenModel,
     approvedPasswordResetModel,
   };
 };

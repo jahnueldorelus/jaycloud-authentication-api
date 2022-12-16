@@ -1,9 +1,10 @@
 import { JoiValidationResults } from "@app-types/joi-validation";
 
-export type UserEmailAndPassword = {
+export type UpdatePasswordInfo = {
   email: string;
   password: string;
+  token: string;
 };
 
 export type ValidUserEmailAndPassword =
-  JoiValidationResults<UserEmailAndPassword>;
+  JoiValidationResults<UpdatePasswordInfo>;

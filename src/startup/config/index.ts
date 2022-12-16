@@ -29,6 +29,15 @@ export const envNames = {
     local: "ORIGIN_LOCAL_HOST_ADDR",
     lan: "ORIGIN_LAN_ADDR",
   },
+  mail: {
+    username: "EMAIL_USERNAME",
+    password: "EMAIL_PASSWORD",
+    userSupport: "EMAIL_USER_SUPPORT",
+  },
+  uiBaseUrl: {
+    dev: "UI_BASE_URL_DEV",
+    prod: "UI_BASE_URL_PROD",
+  },
 };
 
 /**
@@ -84,6 +93,16 @@ export default (): CheckConfigReturn => {
   }
   if (!process.env[envNames.origins.lan]) {
     errorNames.push(envNames.origins.lan);
+  }
+  // Checks email configuration
+  if (!process.env[envNames.mail.password]) {
+    errorNames.push(envNames.mail.password);
+  }
+  if (!process.env[envNames.mail.userSupport]) {
+    errorNames.push(envNames.mail.userSupport);
+  }
+  if (!process.env[envNames.mail.username]) {
+    errorNames.push(envNames.mail.username);
   }
   return {
     configComplete: errorNames.length > 0 ? false : true,

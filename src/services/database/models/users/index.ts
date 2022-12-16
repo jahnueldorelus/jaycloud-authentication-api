@@ -111,6 +111,13 @@ usersSchema.method<DBLoadedUser>("toPrivateJSON", function () {
   return privateJSON;
 });
 
+usersSchema.method<DBLoadedUser>("getFullName", function () {
+  const firstName = this.firstName[0]?.toUpperCase() + this.firstName.slice(1);
+  const lastName = this.lastName[0]?.toUpperCase() + this.lastName.slice(1);
+
+  return `${firstName} ${lastName}`;
+});
+
 export const usersModel = model<IUser, UsersModel>(
   "users",
   usersSchema,

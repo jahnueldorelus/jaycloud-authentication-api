@@ -5,6 +5,7 @@ import {
   ApprovedPasswordResetModel,
 } from "@app-types/database/models/approved-password-reset";
 import { envNames } from "@startup/config";
+import { randomBytes } from "crypto";
 import moment from "moment";
 import { ClientSession, model, Schema } from "mongoose";
 import { connection } from "mongoose";
@@ -25,6 +26,7 @@ const approvedPasswordResetSchema = new Schema<
       max: 24,
       index: true,
     },
+    token: { type: String, required: true, min: 24, max: 24 },
     expDate: {
       type: Date,
       required: true,
@@ -100,6 +102,9 @@ approvedPasswordResetSchema.static(
       // Deletes any prior approved password reset
       await this.deleteOne({ userId }, { session: dbSession });
 
+      // Generates a token
+      const token = randomBytes(12).toString("hex");
+
       // Creates a new date for the token's expiration
       const expDate = moment(new Date());
       expDate.add(
@@ -108,14 +113,14 @@ approvedPasswordResetSchema.static(
       );
 
       const approvedPasswordResets: DBLoadedApprovedPasswordReset[] =
-        await this.create([{ userId, expDate: expDate.toDate() }], {
+        await this.create([{ userId, token, expDate: expDate.toDate() }], {
           session: dbSession,
         });
 
       await dbSession.commitTransaction();
 
       return approvedPasswordResets[0] || null;
-    } catch (error) {
+    } catch (error: any) {
       // Aborts the transaction if it was created within this method
       if (!session && dbSession.inTransaction()) {
         await dbSession.abortTransaction();

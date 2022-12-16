@@ -2,6 +2,7 @@ import { ClientSession, HydratedDocument, Model } from "mongoose";
 
 export type IApprovedPasswordReset = {
   userId: string;
+  token: string;
   expDate: Date;
 };
 

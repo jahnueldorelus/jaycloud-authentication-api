@@ -5,7 +5,7 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import {
-  UserEmailAndPassword,
+  UpdatePasswordInfo,
   ValidUserEmailAndPassword,
 } from "@app-types/user/update-password";
 import { dbAuth } from "@services/database";
@@ -17,6 +17,7 @@ import moment from "moment";
 const verifyUserInfoSchema = Joi.object({
   email: newUserAttributes.email.joiSchema,
   password: newUserAttributes.password.joiSchema,
+  token: Joi.string().token().required(),
 });
 
 /**
@@ -24,7 +25,7 @@ const verifyUserInfoSchema = Joi.object({
  * @param userInfo The user's info to validate
  */
 const validateUserInfo = (
-  userInfo: UserEmailAndPassword
+  userInfo: UpdatePasswordInfo
 ): ValidUserEmailAndPassword => {
   const { error, value } = verifyUserInfoSchema.validate(userInfo);
   return {
@@ -40,7 +41,7 @@ const validateUserInfo = (
  */
 export const updatePassword = async (req: ExpressRequest): Promise<void> => {
   // The user's info from the request
-  const userInfo: UserEmailAndPassword = req.body;
+  const userInfo: UpdatePasswordInfo = req.body;
 
   // Determines if the user's information is valid
   const { isValid, errorMessage, validatedValue } = validateUserInfo(userInfo);
@@ -66,7 +67,7 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
 
       const approvedPasswordReset =
         await dbAuth.approvedPasswordResetModel.findOneAndDelete(
-          { userId: user.id },
+          { userId: user.id, token: validatedValue.token },
           { session: dbSession }
         );
       const currentDateAndTime = moment(new Date());

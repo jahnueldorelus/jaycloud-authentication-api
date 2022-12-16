@@ -17,6 +17,10 @@ export type IUserMethods = {
    * Generates a JSON that excludes a user's private information.
    */
   toPrivateJSON(): PrivateUserData;
+  /**
+   * Retrieves the user's full name.
+   */
+  getFullName(): string;
 };
 
 export interface UsersModel extends Model<IUser, {}, IUserMethods> {

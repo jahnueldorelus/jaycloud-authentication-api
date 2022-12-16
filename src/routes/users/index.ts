@@ -51,15 +51,6 @@ userRouter.post(
   }
 );
 
-// Verifies the user's temp token
-userRouter.post(
-  "/verify-temp-token",
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await UserController.verifyTempToken(req);
-    next();
-  }
-);
-
 // Resets the user's password
 userRouter.post(
   "/update-password",

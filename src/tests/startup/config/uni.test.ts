@@ -54,4 +54,25 @@ describe("Startup - Configuration", () => {
     expect(configComplete).toBe(false);
     expect(error).toBeTruthy();
   });
+
+  it("Should fail - Missing mail environment variables", () => {
+    envNames.mail.username = "";
+    envNames.mail.password = "";
+    envNames.mail.userSupport = "";
+
+    const { configComplete, error } = checkConfig();
+
+    expect(configComplete).toBe(false);
+    expect(error).toBeTruthy();
+  });
+
+  it("Should fail - Missing UI base url environment variables", () => {
+    envNames.uiBaseUrl.dev = "";
+    envNames.uiBaseUrl.prod = "";
+
+    const { configComplete, error } = checkConfig();
+
+    expect(configComplete).toBe(false);
+    expect(error).toBeTruthy();
+  });
 });

@@ -6,6 +6,9 @@ import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import { UserEmail, ValidUserEmail } from "@app-types/user/reset-password";
 import { dbAuth } from "@services/database";
+import { emailService } from "@services/email";
+import { envNames } from "@startup/config";
+import path from "path";
 
 // Schema validation
 const resetPasswordSchema = Joi.object({
@@ -52,17 +55,49 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
       );
 
       if (user) {
-        const tempToken = await dbAuth.tempTokenModel.createTempToken(
-          user.id,
-          dbSession
-        );
+        const approvedPasswordReset =
+          await dbAuth.approvedPasswordResetModel.createApprovedPasswordReset(
+            user.id,
+            dbSession
+          );
         await dbSession.commitTransaction();
 
-        if (!tempToken) {
-          throw Error("Failed to create temporary token");
+        if (!approvedPasswordReset) {
+          throw Error();
         }
 
-        // SEND EMAIL TO USER WITH THEIR TEMPORARY TOKEN HERE
+        const getUserLink = () => {
+          const uiBaseUrl =
+            <string>process.env[envNames.nodeEnv] === "development"
+              ? process.env[envNames.uiBaseUrl.dev]
+              : process.env[envNames.uiBaseUrl.prod];
+
+          return `${uiBaseUrl}?reset=${approvedPasswordReset.token}`;
+        };
+
+        const emailOptions = {
+          from: <string>process.env[envNames.mail.userSupport],
+          to: user.email,
+          subject: "Password Reset",
+          template: "password-reset",
+          context: {
+            pageTitle: "Password Reset",
+            userFullName: user.getFullName(),
+            userLink: getUserLink(),
+          },
+          attachments: [
+            {
+              filename: "jaycloud.png",
+              path: path.resolve("./src/assets/images/jaycloud.png"),
+              cid: "jaycloud-logo",
+            },
+          ],
+        };
+        emailService.sendMail(emailOptions, (error) => {
+          if (error) {
+            throw Error();
+          }
+        });
       }
 
       RequestSuccess(req, true);
