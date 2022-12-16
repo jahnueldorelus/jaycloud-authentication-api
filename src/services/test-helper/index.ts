@@ -16,7 +16,7 @@ import request from "supertest";
  * @param reqURL The path of the request
  * @param type The type of request to create. Defaults to a GET
  * @param origin The origin of the request. Defaults to localhost
- * @param data The data to send along with the request. Defaults to undefined.
+ * @param data The data to send along with the request.
  */
 export const makeRequest = async (
   expressApp: Express | Server,
@@ -29,7 +29,7 @@ export const makeRequest = async (
   return await request(expressApp)
     [type](reqURL)
     .set("Origin", origin || <string>process.env[envNames.origins.local])
-    .send(data ? data : undefined);
+    .send(data);
 };
 
 // Options for adding a fake route to an Express application

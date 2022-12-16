@@ -90,7 +90,9 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
 
       RequestSuccess(req, true);
     } catch (error: any) {
-      await dbSession.abortTransaction();
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
 
       if (
         error.message === reqErrorMessages.nonExistentUser ||

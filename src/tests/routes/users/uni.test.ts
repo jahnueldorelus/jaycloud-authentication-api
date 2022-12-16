@@ -16,6 +16,8 @@ describe("Routes - Users", () => {
   let mockCreateNewRefreshToken: jest.SpyInstance;
   let mockCreateNewUser: jest.SpyInstance;
   let mockGetFormModels: jest.SpyInstance;
+  let mockResetPassword: jest.SpyInstance;
+  let mockUpdatePassword: jest.SpyInstance;
 
   beforeEach(() => {
     mockServer = getExpressServer();
@@ -32,6 +34,12 @@ describe("Routes - Users", () => {
     mockGetFormModels = jest
       .spyOn(UserController, "getNewUserFormModel")
       .mockImplementation(makeRequestPass);
+    mockResetPassword = jest
+      .spyOn(UserController, "resetPassword")
+      .mockImplementation(makeRequestPass);
+    mockUpdatePassword = jest
+      .spyOn(UserController, "updatePassword")
+      .mockImplementation(makeRequestPass);
   });
 
   afterEach(async () => {
@@ -40,6 +48,8 @@ describe("Routes - Users", () => {
     mockCreateNewRefreshToken.mockRestore();
     mockCreateNewUser.mockRestore();
     mockGetFormModels.mockRestore();
+    mockResetPassword.mockRestore();
+    mockUpdatePassword.mockRestore();
   });
 
   it("Should make POST request to create a new user account", async () => {
@@ -64,5 +74,17 @@ describe("Routes - Users", () => {
     await makeRequest(mockServer, `${baseUrl}/form-models`, "get");
 
     expect(mockGetFormModels).toHaveBeenCalledTimes(1);
+  });
+
+  it("Should make POST request to reset a user's password", async () => {
+    await makeRequest(mockServer, `${baseUrl}/password-reset`, "post");
+
+    expect(mockResetPassword).toHaveBeenCalledTimes(1);
+  });
+
+  it("Should make POST request to update a user's password", async () => {
+    await makeRequest(mockServer, `${baseUrl}/update-password`, "post");
+
+    expect(mockUpdatePassword).toHaveBeenCalledTimes(1);
   });
 });

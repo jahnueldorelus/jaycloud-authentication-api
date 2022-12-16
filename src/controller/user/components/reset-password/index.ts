@@ -9,6 +9,7 @@ import { dbAuth } from "@services/database";
 import { emailService } from "@services/email";
 import { envNames } from "@startup/config";
 import path from "path";
+import { MailOptionsPasswordReset } from "@app-types/email";
 
 // Schema validation
 const resetPasswordSchema = Joi.object({
@@ -75,7 +76,7 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
           return `${uiBaseUrl}?reset=${approvedPasswordReset.token}`;
         };
 
-        const emailOptions = {
+        const emailOptions: MailOptionsPasswordReset = {
           from: <string>process.env[envNames.mail.userSupport],
           to: user.email,
           subject: "Password Reset",
@@ -102,7 +103,9 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
 
       RequestSuccess(req, true);
     } catch (error: any) {
-      await dbSession.abortTransaction();
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
 
       RequestError(
         req,
