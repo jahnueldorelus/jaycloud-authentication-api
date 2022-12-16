@@ -18,6 +18,7 @@ import {
   makeRequest,
   TestRouteOptions,
 } from "@services/test-helper";
+import { envNames } from "@startup/config";
 
 // Mocks the database
 jest.mock("@services/database", () => {});
@@ -61,12 +62,14 @@ describe("Startup - Middleware", () => {
   let mockServerUse: jest.SpyInstance;
   let mockJSON: jest.SpyInstance;
   let mockUrlEncoded: jest.SpyInstance;
+  let originalProcessEnv: object;
 
   beforeEach(() => {
     mockExpressApp = express();
     mockServerUse = jest.spyOn(mockExpressApp, "use");
     mockJSON = jest.spyOn(express, "json");
     mockUrlEncoded = jest.spyOn(express, "urlencoded");
+    originalProcessEnv = { ...process.env };
   });
 
   afterEach(() => {
@@ -74,6 +77,7 @@ describe("Startup - Middleware", () => {
     mockServerUse.mockRestore();
     mockJSON.mockRestore();
     mockUrlEncoded.mockRestore();
+    process.env = { ...originalProcessEnv };
   });
 
   it("Should add all required middleware", () => {
@@ -98,9 +102,9 @@ describe("Startup - Middleware", () => {
 
     it("Should allow requests from known origins", async () => {
       const routeOptions: TestRouteOptions = {
-        resData: "success",
+        responseData: "success",
         method: "get",
-        resStatus: 200,
+        responseStatus: 200,
         url: "/",
       };
       addFakeRoute(mockExpressApp, routeOptions);
@@ -112,7 +116,7 @@ describe("Startup - Middleware", () => {
       );
 
       expect(response.statusCode).toBe(200);
-      expect(response.text).toBe(routeOptions.resData);
+      expect(response.text).toBe(routeOptions.responseData);
     });
 
     it("Should deny requests from unknown origins", async () => {
@@ -124,6 +128,35 @@ describe("Startup - Middleware", () => {
       );
 
       expect(response.text.includes("does not have an access")).toBe(true);
+    });
+
+    it("Should deny POSTMAN request with server in production mode", async () => {
+      process.env[envNames.nodeEnv] = "production";
+
+      const response = await makeRequest(mockExpressApp, "/", "get", "");
+
+      expect(response.text.includes("does not have an access")).toBe(true);
+    });
+
+    it("Should accept POSTMAN request with server in development mode", async () => {
+      const routeOptions: TestRouteOptions = {
+        responseData: "success",
+        method: "get",
+        responseStatus: 200,
+        url: "/",
+      };
+      addFakeRoute(mockExpressApp, routeOptions);
+      process.env[envNames.nodeEnv] = "development";
+
+      const response = await makeRequest(
+        mockExpressApp,
+        routeOptions.url,
+        routeOptions.method,
+        ""
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.text).toBe(routeOptions.responseData);
     });
   });
 });

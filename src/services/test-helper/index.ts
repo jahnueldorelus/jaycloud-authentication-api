@@ -15,7 +15,8 @@ import request from "supertest";
  * @param expressApp The Express application to send the request to
  * @param reqURL The path of the request
  * @param type The type of request to create. Defaults to a GET
- * @param origin The origin of the request. Defaults to localhost
+ * @param origin The origin of the request. An empty string represents "undefined"
+ *               for the origin. Defaults to localhost
  * @param data The data to send along with the request.
  */
 export const makeRequest = async (
@@ -25,19 +26,34 @@ export const makeRequest = async (
   origin?: string | null,
   data?: string | object
 ) => {
-  // Creates the request and returns it
-  return await request(expressApp)
-    [type](reqURL)
-    .set("Origin", origin || <string>process.env[envNames.origins.local])
-    .send(data);
+  // If a custom origin is provided
+  if (origin) {
+    return await request(expressApp)
+      [type](reqURL)
+      .set("Origin", origin)
+      .send(data);
+  }
+
+  // If an empty string (to be represented as undefined) for the origin is provided
+  else if (typeof origin === "string" && origin.length === 0) {
+    return await request(expressApp)[type](reqURL).send(data);
+  }
+
+  // No origin was provided so the default origin is set
+  else {
+    return await request(expressApp)
+      [type](reqURL)
+      .set("Origin", <string>process.env[envNames.origins.local])
+      .send(data);
+  }
 };
 
 // Options for adding a fake route to an Express application
 export type TestRouteOptions = {
   url: string;
   method: "get" | "put" | "post" | "delete";
-  resData: any | null;
-  resStatus: number;
+  responseData: any | null;
+  responseStatus: number;
 };
 
 /**
@@ -51,7 +67,7 @@ export const addFakeRoute = (
 ) => {
   const testRouter = Router();
   testRouter.all(options.url, (req: ExpressRequest, res: ExpressResponse) => {
-    res.status(options.resStatus).send(options.resData);
+    res.status(options.responseStatus).send(options.responseData);
   });
   expressApp.use(testRouter);
 };

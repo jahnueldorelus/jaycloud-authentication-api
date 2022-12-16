@@ -64,8 +64,13 @@ export const createNewRefreshToken = async (
             await dbAuth.refreshTokenFamiliesModel.findById(
               oldRefreshToken.familyId
             );
-          const deletedRefreshTokenFamily =
-            await refreshTokenFamily?.deleteFamily(dbSession);
+          let deletedRefreshTokenFamily = false;
+
+          if (refreshTokenFamily) {
+            deletedRefreshTokenFamily = await refreshTokenFamily.deleteFamily(
+              dbSession
+            );
+          }
 
           if (!refreshTokenFamily || !deletedRefreshTokenFamily) {
             throw Error();
