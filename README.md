@@ -116,12 +116,12 @@ To run this project, you will need to add the following environment variables to
 
 - **Parameter type** - JSON Request Body
 
-      | Parameter   | Type     | Required | Min Length | Max Length | Description           |
-      | :---------- | :------- | :------- | :--------- | :--------- | :-------------------- |
-      | `firstName` | `string` | `true`   | 2          | 255        | The user's first name |
-      | `lastName`  | `string` | `true`   | 2          | 255        | The user's last name  |
-      | `email`     | `string` | `true`   | 5          | 100        | The user's email      |
-      | `password`  | `string` | `true`   | 5          | 100        | The user's password   |
+  | Parameter   | Type     | Required | Min Length | Max Length | Description           |
+  | :---------- | :------- | :------- | :--------- | :--------- | :-------------------- |
+  | `firstName` | `string` | `true`   | 2          | 255        | The user's first name |
+  | `lastName`  | `string` | `true`   | 2          | 255        | The user's last name  |
+  | `email`     | `string` | `true`   | 5          | 100        | The user's email      |
+  | `password`  | `string` | `true`   | 5          | 100        | The user's password   |
 
   <br />
 
@@ -133,10 +133,10 @@ To run this project, you will need to add the following environment variables to
 
 - **Parameter type** - JSON Request Body
 
-      | Parameter  | Type     | Required | Description         |
-      | :--------- | :------- | :------- | :------------------ |
-      | `email`    | `string` | `true`   | The user's email    |
-      | `password` | `string` | `true`   | The user's password |
+  | Parameter  | Type     | Required | Description         |
+  | :--------- | :------- | :------- | :------------------ |
+  | `email`    | `string` | `true`   | The user's email    |
+  | `password` | `string` | `true`   | The user's password |
 
   <br />
 
@@ -148,9 +148,9 @@ To run this project, you will need to add the following environment variables to
 
 - **Parameter type** - JSON Request Body
 
-      | Parameter | Type     | Required | Description                       |
-      | :-------- | :------- | :------- | :-------------------------------- |
-      | `token`   | `string` | `true`   | The user's previous refresh token |
+  | Parameter | Type     | Required | Description                       |
+  | :-------- | :------- | :------- | :-------------------------------- |
+  | `token`   | `string` | `true`   | The user's previous refresh token |
 
   <br />
 
@@ -162,10 +162,10 @@ To run this project, you will need to add the following environment variables to
 
 - **Parameter type** - JSON Request Body
 
-      | Parameter    | Type     | Required | Description                                                 |
-      | :----------- | :------- | :------- | :---------------------------------------------------------- |
-      | `app`        | `string` | `true`   | The name of the JayCloud service to send the request to     |
-      | `appApiPath` | `string` | `true`   | The API path of the JayCloud service to send the request to |
+  | Parameter    | Type     | Required | Description                                                 |
+  | :----------- | :------- | :------- | :---------------------------------------------------------- |
+  | `app`        | `string` | `true`   | The name of the JayCloud service to send the request to     |
+  | `appApiPath` | `string` | `true`   | The API path of the JayCloud service to send the request to |
 
   <br />
 
@@ -177,9 +177,9 @@ To run this project, you will need to add the following environment variables to
 
 - **Parameter type** - JSON Request Body
 
-      | Parameter | Type     | Required | Description      |
-      | :-------- | :------- | :------- | :--------------- |
-      | `email`   | `string` | `true`   | The user's email |
+  | Parameter | Type     | Required | Description      |
+  | :-------- | :------- | :------- | :--------------- |
+  | `email`   | `string` | `true`   | The user's email |
 
   <br />
 
