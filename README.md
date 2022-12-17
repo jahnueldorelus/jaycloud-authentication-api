@@ -1,9 +1,4 @@
-<div style="display:flex; align-items: center;">
-	<img src="./src/assets/images/jaycloud.png" alt="JayCloud Logo" height="40" style="margin-right: 1rem;">
-	<span style="font-size: 2rem">JayCloud Authentication API</span>
-</div>
-<br />
-
+# <img src="./src/assets/images/jaycloud.png" alt="JayCloud Logo" height="40" style="margin-right: 1rem;"> JayCloud Authentication API
 The Express server for handling authentication with JayCloud services. Runs in conjuction with
 the [JayCloud Authentication UI](https://github.com/jahnueldorelus/jaycloud-authentication-ui).
 
