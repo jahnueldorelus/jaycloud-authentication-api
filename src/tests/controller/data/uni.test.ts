@@ -176,11 +176,11 @@ describe("Route - Data", () => {
       const reqBody: JoiValidationDataRequestParam = {
         returnError: false,
         app: "test",
-        appApiUrl: "/api/test",
+        appApiPath: "/api/test",
       };
       const axiosReqBody: Partial<DataRequest> = { ...reqBody };
       delete axiosReqBody.app;
-      delete axiosReqBody.appApiUrl;
+      delete axiosReqBody.appApiPath;
       mockRequest.body = reqBody;
       mockRequest.method = "POST";
 
@@ -189,7 +189,7 @@ describe("Route - Data", () => {
       expect(mockAxios).toHaveBeenCalledTimes(1);
       expect(mockAxios).toHaveBeenCalledWith({
         data: axiosReqBody,
-        url: reqBody.appApiUrl,
+        url: reqBody.appApiPath,
         method: mockRequest.method,
       });
       expect(mockRequestSuccess).toHaveBeenCalledTimes(1);

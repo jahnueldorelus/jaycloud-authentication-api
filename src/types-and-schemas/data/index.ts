@@ -2,7 +2,7 @@ import { JoiValidationResults } from "@app-types/joi-validation";
 
 export type DataRequest = {
   app: string;
-  appApiUrl: string;
+  appApiPath: string;
 };
 
 export interface ValidDataRequest extends JoiValidationResults<DataRequest> {}

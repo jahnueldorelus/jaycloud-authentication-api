@@ -13,8 +13,8 @@ import { envNames } from "@startup/config";
 
 // Schema validation
 const userCredentialsSchema = Joi.object({
-  email: Joi.string().lowercase().email().min(2).max(100).required(),
-  password: Joi.string().min(5).max(100).required(),
+  email: Joi.string().lowercase().email().required(),
+  password: Joi.string().required(),
 });
 
 /**

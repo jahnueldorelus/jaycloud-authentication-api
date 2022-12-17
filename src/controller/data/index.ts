@@ -62,10 +62,10 @@ export const DataController: Controller = {
           // Removes data from the new request's body that was required only for this server
           const dataRequestBody: Partial<DataRequest> = newReqBody;
           delete dataRequestBody.app;
-          delete dataRequestBody.appApiUrl;
+          delete dataRequestBody.appApiPath;
 
           const appAPIResponse = await axios({
-            url: validatedValue.appApiUrl,
+            url: validatedValue.appApiPath,
             method: req.method,
             data: dataRequestBody,
           });
