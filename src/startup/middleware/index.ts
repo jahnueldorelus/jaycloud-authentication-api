@@ -13,8 +13,8 @@ export const corsOptions = (): CorsOptions => ({
   origin: (origin, callback) => {
     // If the request's origin is an acceptable origin
     if (
-      origin === process.env[envNames.origins.local] ||
-      origin === process.env[envNames.origins.lan] ||
+      (origin && origin.match(<string>process.env[envNames.origins.local])) ||
+      (origin && origin.match(<string>process.env[envNames.origins.lan])) ||
       // Allows access from POSTMAN only in development mode
       (process.env[envNames.nodeEnv] === "development" && origin === undefined)
     ) {
