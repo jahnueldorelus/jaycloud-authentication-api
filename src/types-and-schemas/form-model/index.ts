@@ -26,17 +26,10 @@ export type FormModelInputOption = {
   validation: FormModelValidationType;
   label: string;
   name?: string;
-  requestBodyProperty?: string;
 };
 
 export interface FormModelInputOptionWithJoi extends FormModelInputOption {
   joiSchema: Schema;
-}
-
-export interface FormModelInputOptionWithReqProperty
-  extends FormModelInputOption {
-  joiSchema?: Schema;
-  requestBodyProperty: string;
 }
 
 export type FormModel = {

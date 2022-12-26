@@ -1,9 +1,9 @@
 import { FormModelInputOptionWithJoi } from "@app-types/form-model";
 import { newUserAttributes } from "@app-types/user/new-user";
 import {
-  configureNewUserFormModel,
-  getNewUserFormModel,
-} from "@controller/user/components/new-user-form-model";
+  configureAuthenticateUserFormModel,
+  getAuthenticateUserFormModel,
+} from "@controller/user/components/authenticate-user-form-model";
 import { getMockReq } from "@jest-mock/express";
 import { RequestSuccess } from "@middleware/request-success";
 import { Request as ExpressRequest } from "express";
@@ -13,7 +13,7 @@ jest.mock("@middleware/request-success", () => ({
   RequestSuccess: jest.fn(),
 }));
 
-describe("Route users - New User Form Model", () => {
+describe("Route users - Authenticate User Form Model", () => {
   let mockRequestSuccess: jest.Mock;
   let mockRequest: ExpressRequest;
 
@@ -27,9 +27,9 @@ describe("Route users - New User Form Model", () => {
     mockRequest.destroy();
   });
 
-  it("Should create the final new user form model input options", () => {
+  it("Should create the final authenticate user form model input options", () => {
     const formModelInputOptions = <FormModelInputOptionWithJoi[]>(
-      configureNewUserFormModel(newUserAttributes)
+      configureAuthenticateUserFormModel(newUserAttributes)
     );
     const containsJoiSchema = formModelInputOptions.reduce((prev, curr) => {
       return prev || !!curr.joiSchema;
@@ -39,8 +39,8 @@ describe("Route users - New User Form Model", () => {
     expect(containsJoiSchema).toBeFalsy();
   });
 
-  it("Should retrieve the final new user form model input options", async () => {
-    await getNewUserFormModel(mockRequest);
+  it("Should retrieve the final authenticate user form model input options", async () => {
+    await getAuthenticateUserFormModel(mockRequest);
 
     expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });

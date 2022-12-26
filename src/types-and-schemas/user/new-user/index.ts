@@ -5,6 +5,7 @@ import { UserData } from "@app-types/user";
 import { JoiValidationResults } from "@app-types/joi-validation";
 
 type NewUserAttributes = {
+  [key: string]: FormModelInputOptionWithJoi;
   firstName: FormModelInputOptionWithJoi;
   lastName: FormModelInputOptionWithJoi;
   email: FormModelInputOptionWithJoi;
