@@ -49,4 +49,10 @@ describe("Routes - Users", () => {
 
     expect(mockTransferRoute).toHaveBeenCalledTimes(1);
   });
+
+  it("Should make PATCH request to send data to another server", async () => {
+    await makeRequest(mockServer, `${baseUrl}/`, "patch");
+
+    expect(mockTransferRoute).toHaveBeenCalledTimes(1);
+  });
 });

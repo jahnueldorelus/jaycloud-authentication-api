@@ -22,7 +22,7 @@ servicesRouter.get(
 servicesRouter.get(
   "/logo/:serviceId",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    const serviceId = req.params["serviceId"] || "";
+    const serviceId = <string>req.params["serviceId"];
     await ServiceController.getServiceLogo(req, serviceId);
     next();
   }
