@@ -25,10 +25,7 @@ const newAccountSchema = Joi.object({
  * @param newAccount The user's information to validate
  */
 const validateAccount = (newAccount: UserData): ValidNewUserAccount => {
-  const { error, value } = newAccountSchema.validate(newAccount, {
-    // Allows for unknown properties
-    allowUnknown: true,
-  });
+  const { error, value } = newAccountSchema.validate(newAccount);
   return {
     isValid: error ? false : true,
     errorMessage: error ? error.message : null,

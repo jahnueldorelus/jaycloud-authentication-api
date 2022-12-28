@@ -24,8 +24,8 @@ const refreshTokensSchema = new Schema<
     token: {
       type: String,
       required: true,
-      min: 36,
-      max: 36,
+      minLength: 36,
+      maxLength: 36,
     },
     expDate: {
       type: Date,
@@ -34,14 +34,14 @@ const refreshTokensSchema = new Schema<
     userId: {
       type: String,
       required: true,
-      min: 24,
-      max: 24,
+      minLength: 24,
+      maxLength: 24,
     },
     familyId: {
       type: String,
       required: true,
-      min: 24,
-      max: 24,
+      minLength: 24,
+      maxLength: 24,
     },
   },
   {

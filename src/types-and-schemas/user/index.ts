@@ -9,7 +9,5 @@ export type UserData = {
 };
 
 // Makes some properties of the user's data optional to allow deletion
-export type PrivateUserData = Partial<
-  Pick<UserData, "id" | "password" | "updatedAt">
-> &
+export type PrivateUserData = Partial<UserData> &
   Omit<UserData, "id" | "password" | "updatedAt">;

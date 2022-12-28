@@ -9,26 +9,40 @@ import { RequestSuccess } from "@middleware/request-success";
 import { Request as ExpressRequest } from "express";
 import Joi from "joi";
 import axios from "axios";
+import { connection } from "mongoose";
+import { dbAuth } from "@services/database";
 
 type Controller = {
   transferRoute: (arg0: ExpressRequest) => Promise<void>;
 };
 
-const dataRequestSchema = Joi.object({
-  app: Joi.string()
-    .valid("jaylock", "jayblog", "chants-desperance", "jayheart", "jayspark")
-    .required(),
-  appApiUrl: Joi.string().uri().required(),
-});
+/**
+ * Schema validation.
+ * @param servicesList The list of available services to send a request to
+ */
+const dataRequestSchema = (servicesList: string[]) =>
+  Joi.object({
+    app: Joi.string()
+      .valid(...servicesList)
+      .required(),
+    appApiPath: Joi.string().uri().required(),
+  });
 
 /**
  * Deterimines if the user's data request is valid.
- * @param requestInfo The user's dataa request to validate
+ * @param servicesList The list of available services to send a request to
+ * @param requestInfo The user's data request to validate
  */
-const validateDataRequest = (requestInfo: DataRequest): ValidDataRequest => {
-  const { error, value } = dataRequestSchema.validate(requestInfo, {
-    allowUnknown: true,
-  });
+const validateDataRequest = (
+  servicesList: string[],
+  requestInfo: DataRequest
+): ValidDataRequest => {
+  const { error, value } = dataRequestSchema(servicesList).validate(
+    requestInfo,
+    {
+      allowUnknown: true,
+    }
+  );
 
   return {
     isValid: error ? false : true,
@@ -43,50 +57,71 @@ export const DataController: Controller = {
       // The user's data request info
       const dataRequestInfo: DataRequest = req.body;
 
-      // Determines if the user's data request is valid
-      const { isValid, errorMessage, validatedValue } =
-        validateDataRequest(dataRequestInfo);
+      const dbSession = await connection.startSession();
+      try {
+        dbSession.startTransaction();
+        const servicesList = await dbAuth.servicesModel.find(
+          {},
+          { name: 1, _id: 0 },
+          { session: dbSession }
+        );
+        await dbSession.commitTransaction();
 
-      if (isValid) {
-        try {
-          const newReqBody = { ...req.body };
+        // Determines if the user's data request is valid
+        const { isValid, errorMessage, validatedValue } = validateDataRequest(
+          servicesList.map((service) => service.name),
+          dataRequestInfo
+        );
 
-          // Adds the user's info to the new request's body
-          const userData = getRequestUserData(<ExpressRequestAndUser>req);
-          if (userData) {
-            delete userData.exp;
-            delete userData.iat;
-            newReqBody.user = userData;
+        if (isValid) {
+          try {
+            const newReqBody = req.body;
+
+            // Adds the user's info to the new request's body
+            const userData = getRequestUserData(<ExpressRequestAndUser>req);
+            if (userData) {
+              delete userData.exp;
+              delete userData.iat;
+              newReqBody.user = userData;
+            }
+
+            // Removes data from the new request's body that was required only for this server
+            const dataRequestBody: Partial<DataRequest> = { ...newReqBody };
+            delete dataRequestBody.app;
+            delete dataRequestBody.appApiPath;
+
+            const appAPIResponse = await axios({
+              url: validatedValue.appApiPath,
+              method: req.method,
+              data: dataRequestBody,
+            });
+
+            RequestSuccess(req, appAPIResponse.data);
+          } catch (error: any) {
+            if (axios.isAxiosError(error)) {
+              RequestError(
+                req,
+                Error(
+                  "Error occurred with the destined server for the given request"
+                )
+              ).server();
+            } else {
+              // Default error
+              RequestError(
+                req,
+                Error("Failed to process the request")
+              ).server();
+            }
           }
-
-          // Removes data from the new request's body that was required only for this server
-          const dataRequestBody: Partial<DataRequest> = newReqBody;
-          delete dataRequestBody.app;
-          delete dataRequestBody.appApiPath;
-
-          const appAPIResponse = await axios({
-            url: validatedValue.appApiPath,
-            method: req.method,
-            data: dataRequestBody,
-          });
-
-          RequestSuccess(req, appAPIResponse.data);
-        } catch (error: any) {
-          if (axios.isAxiosError(error)) {
-            RequestError(
-              req,
-              Error(
-                // "Error occurred with the destined server for the given request"
-                error.message
-              )
-            ).server();
-          } else {
-            // Default error
-            RequestError(req, Error("Failed to process the request")).server();
-          }
+        } else {
+          RequestError(req, Error(errorMessage || undefined)).validation();
         }
-      } else {
-        RequestError(req, Error(errorMessage || undefined)).validation();
+      } catch (error) {
+        if (dbSession.inTransaction()) {
+          await dbSession.abortTransaction();
+        }
+      } finally {
+        await dbSession.endSession();
       }
     }
   },

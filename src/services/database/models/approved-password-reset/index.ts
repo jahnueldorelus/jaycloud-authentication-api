@@ -22,8 +22,8 @@ const approvedPasswordResetSchema = new Schema<
     userId: {
       type: String,
       required: true,
-      min: 24,
-      max: 24,
+      minLength: 24,
+      maxLength: 24,
       index: true,
     },
     token: { type: String, required: true, min: 24, max: 24 },

@@ -3,6 +3,7 @@ import { usersModel } from "./models/users";
 import { refreshTokensModel } from "./models/refresh-tokens";
 import { refreshTokenFamiliesModel } from "./models/refresh-token-families";
 import { approvedPasswordResetModel } from "./models/approved-password-reset";
+import { servicesModel } from "./models/services";
 import { envNames } from "@startup/config";
 
 const connectToDatabase = () => {
@@ -25,6 +26,7 @@ const connectToDatabase = () => {
     refreshTokensModel,
     refreshTokenFamiliesModel,
     approvedPasswordResetModel,
+    servicesModel,
   };
 };
 

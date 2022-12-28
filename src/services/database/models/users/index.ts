@@ -19,23 +19,26 @@ const usersSchema = new Schema<IUser, UsersModel, IUserMethods>(
     firstName: {
       type: String,
       required: true,
-      min: 1,
+      minLength: 2,
+      maxLength: 255,
     },
     lastName: {
       type: String,
       required: true,
-      min: 1,
+      minLength: 2,
+      maxLength: 255,
     },
     email: {
       type: String,
       required: true,
-      min: 1,
+      minLength: 5,
+      maxLength: 100,
       unique: true,
     },
     password: {
       type: String,
       required: true,
-      min: 1,
+      minLength: 5,
     },
   },
   {
@@ -112,8 +115,10 @@ usersSchema.method<DBLoadedUser>("toPrivateJSON", function () {
 });
 
 usersSchema.method<DBLoadedUser>("getFullName", function () {
-  const firstName = this.firstName[0]?.toUpperCase() + this.firstName.slice(1);
-  const lastName = this.lastName[0]?.toUpperCase() + this.lastName.slice(1);
+  const firstName: string =
+    this.firstName[0]?.toUpperCase() + this.firstName.slice(1);
+  const lastName: string =
+    this.lastName[0]?.toUpperCase() + this.lastName.slice(1);
 
   return `${firstName} ${lastName}`;
 });
