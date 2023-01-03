@@ -20,8 +20,8 @@ const refreshTokenFamiliesSchema = new Schema<
     userId: {
       type: String,
       required: true,
-      min: 24,
-      max: 24,
+      minLength: 24,
+      maxLength: 24,
     },
   },
   {
