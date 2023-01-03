@@ -42,6 +42,10 @@ const servicesSchema = new Schema<IService, ServicesModel, IServiceMethods>(
       required: true,
       minlength: 3,
     },
+    available: {
+      type: Boolean,
+      required: true,
+    },
   },
   {
     timestamps: true,

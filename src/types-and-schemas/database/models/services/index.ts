@@ -10,6 +10,7 @@ export type IService = {
   portNumber: number;
   logoFileName: string;
   description: string;
+  available: boolean;
 };
 
 export type IServiceMethods = {
