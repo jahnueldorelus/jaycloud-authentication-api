@@ -22,7 +22,7 @@ import request from "supertest";
 export const makeRequest = async (
   expressApp: Express | Server,
   reqURL: string,
-  type: "get" | "put" | "post" | "delete",
+  type: "get" | "put" | "post" | "delete" | "patch",
   origin?: string | null,
   data?: string | object
 ) => {
