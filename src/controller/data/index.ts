@@ -58,6 +58,7 @@ export const DataController: Controller = {
       const dataRequestInfo: DataRequest = req.body;
 
       const dbSession = await connection.startSession();
+
       try {
         dbSession.startTransaction();
         const servicesList = await dbAuth.servicesModel.find(
@@ -120,6 +121,8 @@ export const DataController: Controller = {
         if (dbSession.inTransaction()) {
           await dbSession.abortTransaction();
         }
+
+        RequestError(req, Error("Failed to process the request")).server();
       } finally {
         await dbSession.endSession();
       }

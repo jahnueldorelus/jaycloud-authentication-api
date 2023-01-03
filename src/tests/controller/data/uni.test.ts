@@ -12,6 +12,7 @@ import { ValidationError, ValidationResult } from "joi";
 import axios from "axios";
 import { DataRequest } from "@app-types/data";
 import { JoiValidationParam } from "@app-types/tests/joi";
+import { dbAuth } from "@services/database";
 
 // Mocks the Authorization
 jest.mock("@middleware/authorization", () => ({
@@ -52,6 +53,26 @@ jest.mock("joi", () => ({
   }),
 }));
 
+// Mocks database user model
+jest.mock("@services/database", () => ({
+  dbAuth: {
+    servicesModel: { find: jest.fn() },
+  },
+}));
+
+// Mocks database connection
+jest.mock("mongoose", () => ({
+  connection: {
+    startSession: () => ({
+      startTransaction: jest.fn(),
+      endSession: jest.fn(),
+      inTransaction: jest.fn(() => true),
+      abortTransaction: jest.fn(() => true),
+      commitTransaction: jest.fn(),
+    }),
+  },
+}));
+
 describe("Route - Data", () => {
   let mockRequest: ExpressRequest;
   let mockRequestIsAuthorized: jest.Mock;
@@ -62,6 +83,7 @@ describe("Route - Data", () => {
   let mockRequestErrorValidation: jest.Mock;
   let mockAxios: jest.Mock;
   let mockAxiosIsAxiosError: jest.SpyInstance;
+  let mockServicesFind: jest.SpyInstance;
 
   beforeEach(() => {
     mockRequest = getMockReq();
@@ -92,6 +114,10 @@ describe("Route - Data", () => {
       .mockImplementation(() => {
         return false;
       });
+
+    mockServicesFind = jest
+      .spyOn<any, any>(dbAuth.servicesModel, "find")
+      .mockImplementation(() => []);
   });
 
   afterEach(() => {
@@ -102,6 +128,7 @@ describe("Route - Data", () => {
     mockRequestError.mockClear();
     mockAxios.mockClear();
     mockAxiosIsAxiosError.mockRestore();
+    mockServicesFind.mockRestore();
   });
 
   describe("Failed requests due to validation error", () => {
@@ -141,6 +168,17 @@ describe("Route - Data", () => {
   });
 
   describe("Failed requests due to server error", () => {
+    it("An error is thrown retrieving the list of services available from the database", async () => {
+      // Makes retrieving the list of services from the database throw an error
+      mockServicesFind.mockImplementationOnce(() => {
+        throw Error();
+      });
+
+      await DataController.transferRoute(mockRequest);
+
+      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
+    });
+
     it("An error is thrown retrieving the user's data from the request", async () => {
       // Makes retrieving the user from the request throw an error
       mockGetRequestUserData.mockImplementationOnce(() => {
