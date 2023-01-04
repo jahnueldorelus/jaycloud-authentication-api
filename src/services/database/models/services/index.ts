@@ -1,10 +1,8 @@
 import { model, Schema } from "mongoose";
 
-import { PrivateServiceData } from "@app-types/database/models/services";
 import {
   IService,
   IServiceMethods,
-  DBLoadedService,
   ServicesModel,
 } from "@app-types/database/models/services";
 
@@ -51,14 +49,6 @@ const servicesSchema = new Schema<IService, ServicesModel, IServiceMethods>(
     timestamps: true,
   }
 );
-
-servicesSchema.method<DBLoadedService>("toPrivateJSON", function () {
-  const privateJSON: PrivateServiceData = this.toJSON();
-  delete privateJSON.api;
-  delete privateJSON.portNumber;
-
-  return privateJSON;
-});
 
 export const servicesModel = model<IService, ServicesModel>(
   "services",
