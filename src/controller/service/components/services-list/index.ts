@@ -9,9 +9,13 @@ export const getServices = async (req: ExpressRequest) => {
   try {
     dbSession.startTransaction();
 
-    const servicesList = await dbAuth.servicesModel.find({}, null, {
-      session: dbSession,
-    });
+    const servicesList = await dbAuth.servicesModel.find(
+      {},
+      { apiPort: 0, apiUrl: 0 },
+      {
+        session: dbSession,
+      }
+    );
 
     await dbSession.commitTransaction();
 

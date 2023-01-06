@@ -17,13 +17,26 @@ const servicesSchema = new Schema<IService, ServicesModel, IServiceMethods>(
       minlength: 3,
       maxlength: 255,
     },
-    api: {
+    apiUrl: {
       type: String,
       required: true,
       minlength: 3,
       maxlength: 255,
     },
-    portNumber: {
+    apiPort: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 65536,
+      unique: true,
+    },
+    uiUrl: {
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 255,
+    },
+    uiPort: {
       type: Number,
       required: true,
       min: 0,
