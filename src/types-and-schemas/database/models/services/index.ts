@@ -2,8 +2,10 @@ import { HydratedDocument, Model } from "mongoose";
 
 export type IService = {
   name: string;
-  api: string;
-  portNumber: number;
+  apiUrl: string;
+  apiPort: number;
+  uiUrl: string;
+  uiPort: number;
   logoFileName: string;
   description: string;
   available: boolean;

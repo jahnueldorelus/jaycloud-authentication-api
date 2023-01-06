@@ -13,6 +13,7 @@ import axios from "axios";
 import { DataRequest } from "@app-types/data";
 import { JoiValidationParam } from "@app-types/tests/joi";
 import { dbAuth } from "@services/database";
+import { IService } from "@app-types/database/models/services";
 
 // Mocks the Authorization
 jest.mock("@middleware/authorization", () => ({
@@ -34,7 +35,7 @@ jest.mock("@middleware/request-error", () => ({
 jest.mock("axios");
 
 // Mocks Joi validation
-type JoiValidationDataRequestParam = Partial<DataRequest> & JoiValidationParam;
+type JoiValidationDataRequestParam = DataRequest & JoiValidationParam;
 jest.mock("joi", () => ({
   ...jest.requireActual("joi"),
   object: () => ({
@@ -56,7 +57,7 @@ jest.mock("joi", () => ({
 // Mocks database user model
 jest.mock("@services/database", () => ({
   dbAuth: {
-    servicesModel: { find: jest.fn() },
+    servicesModel: { findOne: jest.fn() },
   },
 }));
 
@@ -81,9 +82,10 @@ describe("Route - Data", () => {
   let mockRequestError: jest.Mock;
   let mockRequestErrorServer: jest.Mock;
   let mockRequestErrorValidation: jest.Mock;
+  let mockRequestErrorBadRequest: jest.Mock;
   let mockAxios: jest.Mock;
   let mockAxiosIsAxiosError: jest.SpyInstance;
-  let mockServicesFind: jest.SpyInstance;
+  let mockServicesFindOne: jest.SpyInstance;
 
   beforeEach(() => {
     mockRequest = getMockReq();
@@ -99,9 +101,11 @@ describe("Route - Data", () => {
     mockRequestError = <jest.Mock>RequestError;
     mockRequestErrorServer = jest.fn();
     mockRequestErrorValidation = jest.fn();
+    mockRequestErrorBadRequest = jest.fn();
     mockRequestError.mockImplementation(() => ({
       server: mockRequestErrorServer,
       validation: mockRequestErrorValidation,
+      badRequest: mockRequestErrorBadRequest,
     }));
 
     mockAxios = <jest.Mock>(axios as unknown);
@@ -115,9 +119,9 @@ describe("Route - Data", () => {
         return false;
       });
 
-    mockServicesFind = jest
-      .spyOn<any, any>(dbAuth.servicesModel, "find")
-      .mockImplementation(() => []);
+    mockServicesFindOne = jest
+      .spyOn<any, any>(dbAuth.servicesModel, "findOne")
+      .mockImplementation(() => <IService>{ available: true });
   });
 
   afterEach(() => {
@@ -126,15 +130,18 @@ describe("Route - Data", () => {
     mockGetRequestUserData.mockClear();
     mockRequestSuccess.mockClear();
     mockRequestError.mockClear();
+    mockRequestErrorBadRequest.mockClear();
+    mockRequestErrorServer.mockClear();
+    mockRequestErrorValidation.mockClear();
     mockAxios.mockClear();
     mockAxiosIsAxiosError.mockRestore();
-    mockServicesFind.mockRestore();
+    mockServicesFindOne.mockRestore();
   });
 
   describe("Failed requests due to validation error", () => {
     it("Should return a custom error message with the request's response", async () => {
       // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationDataRequestParam = {
+      const requestBody: JoiValidationParam = {
         returnError: true,
         // Custom error message to be passed to request error handler
         message: "VALIDATION",
@@ -152,7 +159,7 @@ describe("Route - Data", () => {
 
     it("Should return a default error message with the request's response", async () => {
       // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationDataRequestParam = {
+      const requestBody: JoiValidationParam = {
         returnError: true,
       };
       mockRequest.body = requestBody;
@@ -167,10 +174,17 @@ describe("Route - Data", () => {
     });
   });
 
+  it("Should fail request due to a bad request", async () => {
+    mockServicesFindOne.mockReturnValueOnce(null);
+
+    await DataController.transferRoute(mockRequest);
+
+    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
+  });
+
   describe("Failed requests due to server error", () => {
-    it("An error is thrown retrieving the list of services available from the database", async () => {
-      // Makes retrieving the list of services from the database throw an error
-      mockServicesFind.mockImplementationOnce(() => {
+    it("Should fail due to error retrieving the list of services available from the database", async () => {
+      mockServicesFindOne.mockImplementationOnce(() => {
         throw Error();
       });
 
@@ -179,7 +193,7 @@ describe("Route - Data", () => {
       expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
     });
 
-    it("An error is thrown retrieving the user's data from the request", async () => {
+    it("Should fail due to error thrown while retrieving the user's data from the request", async () => {
       // Makes retrieving the user from the request throw an error
       mockGetRequestUserData.mockImplementationOnce(() => {
         throw Error();
@@ -190,7 +204,15 @@ describe("Route - Data", () => {
       expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
     });
 
-    it("An error is thrown while retrieving data from destined server", async () => {
+    it("Should fail due to request service being unavailable", async () => {
+      mockServicesFindOne.mockReturnValueOnce(<IService>{ available: false });
+
+      await DataController.transferRoute(mockRequest);
+
+      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should fail due to error thrown while retrieving data from destined server", async () => {
       mockAxios.mockImplementationOnce(() => {
         throw Error();
       });
@@ -213,12 +235,12 @@ describe("Route - Data", () => {
       mockGetRequestUserData.mockReturnValueOnce(null);
       const reqBody: JoiValidationDataRequestParam = {
         returnError: false,
-        app: "test",
-        appApiPath: "/api/test",
+        serviceId: "test",
+        apiPath: "/api/test",
       };
       const axiosReqBody: Partial<DataRequest> = { ...reqBody };
-      delete axiosReqBody.app;
-      delete axiosReqBody.appApiPath;
+      delete axiosReqBody.serviceId;
+      delete axiosReqBody.apiPath;
       mockRequest.body = reqBody;
       mockRequest.method = "POST";
 
@@ -227,7 +249,7 @@ describe("Route - Data", () => {
       expect(mockAxios).toHaveBeenCalledTimes(1);
       expect(mockAxios).toHaveBeenCalledWith({
         data: axiosReqBody,
-        url: reqBody.appApiPath,
+        url: expect.stringContaining(reqBody.apiPath),
         method: mockRequest.method,
       });
       expect(mockRequestSuccess).toHaveBeenCalledTimes(1);

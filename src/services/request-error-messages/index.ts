@@ -9,6 +9,7 @@ export const reqErrorMessages = {
   invalidToken: "Invalid token.",
   noToken: "No token provided.",
   forbiddenUser: "Access denied.",
+  unavailable: "The data requested is unavailable",
   authFailed:
     "Authorization failed. An invalid email or password was provided.",
   validationFail: "Validation failed.",
