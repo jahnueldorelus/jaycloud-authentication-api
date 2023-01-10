@@ -106,7 +106,7 @@ To run this project, you will need to add the following environment variables to
 2. Creates a new user
 
 ```http
-  GET /api/users/new
+  POST /api/users/new
 ```
 
 - **Parameter type** - JSON Request Body
