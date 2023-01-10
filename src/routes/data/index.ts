@@ -10,7 +10,7 @@ import { validateRequestAuthorization } from "@middleware/authorization";
 // Express router for data routes
 export const dataRouter = Router();
 
-dataRouter.all(
+dataRouter.post(
   "/",
   validateRequestAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {

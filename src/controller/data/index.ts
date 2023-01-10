@@ -24,6 +24,20 @@ const dataRequestSchema = () =>
   Joi.object({
     serviceId: Joi.string().token().min(24).max(24).required(),
     apiPath: Joi.string().required(),
+    apiMethod: Joi.string()
+      .valid(
+        "get",
+        "GET",
+        "post",
+        "POST",
+        "put",
+        "PUT",
+        "patch",
+        "PATCH",
+        "delete",
+        "DELETE"
+      )
+      .required(),
   });
 
 /**
@@ -89,7 +103,7 @@ export const DataController: Controller = {
 
           const appAPIResponse = await axios({
             url: `${service.apiUrl}:${service.apiPort}${validatedValue.apiPath}`,
-            method: req.method,
+            method: validatedValue.apiMethod,
             data: dataRequestBody,
           });
 
@@ -101,12 +115,7 @@ export const DataController: Controller = {
 
           // Axios error
           if (axios.isAxiosError(error)) {
-            RequestError(
-              req,
-              Error(
-                "Error occurred with the destined server for the given request"
-              )
-            ).server();
+            RequestError(req, Error(error.message)).server();
           }
           // User provided an invalid service id
           else if (error.message === reqErrorMessages.badRequest) {
@@ -127,7 +136,10 @@ export const DataController: Controller = {
           // Default error message
           else {
             // Default error
-            RequestError(req, Error("Failed to process the request")).server();
+            RequestError(
+              req,
+              error.message || Error("Failed to process the request")
+            ).server();
           }
         } finally {
           await dbSession.endSession();
