@@ -15,7 +15,8 @@ export const corsOptions = (): CorsOptions => ({
     if (
       (origin && origin.match(<string>process.env[envNames.origins.local])) ||
       (origin && origin.match(<string>process.env[envNames.origins.lan])) ||
-      (origin && origin.match(<string>process.env[envNames.origins.wan])) ||
+      (origin && origin.match(<string>process.env[envNames.origins.wanDev])) ||
+      (origin && origin.match(<string>process.env[envNames.origins.wanProd])) ||
       // Allows access from POSTMAN only in development mode
       (process.env[envNames.nodeEnv] === "development" && origin === undefined)
     ) {

@@ -28,7 +28,8 @@ export const envNames = {
   origins: {
     local: "ORIGIN_LOCAL_HOST_ADDR",
     lan: "ORIGIN_LAN_ADDR",
-    wan: "ORIGIN_WAN_ADDR",
+    wanDev: "ORIGIN_WAN_DEV_ADDR",
+    wanProd: "ORIGIN_WAN_DV_ADDR",
   },
   mail: {
     username: "EMAIL_USERNAME",
