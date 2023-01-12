@@ -102,7 +102,9 @@ export const DataController: Controller = {
           delete dataRequestBody.serviceId;
 
           const appAPIResponse = await axios({
-            url: `${service.apiUrl}:${service.apiPort}${validatedValue.apiPath}`,
+            url: `${service.apiUrl}${
+              service.apiPort ? ":" + service.apiPort : ""
+            }${validatedValue.apiPath}`,
             method: validatedValue.apiMethod,
             data: dataRequestBody,
           });
