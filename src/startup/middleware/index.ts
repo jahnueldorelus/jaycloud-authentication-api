@@ -26,7 +26,7 @@ export const corsOptions = (): CorsOptions => ({
     else {
       return callback(
         new Error(
-          `This site ${origin} does not have an access. Only specific domains are allowed to access it.`
+          `The site "${origin}" does not have access to this resource.`
         ),
         false
       );

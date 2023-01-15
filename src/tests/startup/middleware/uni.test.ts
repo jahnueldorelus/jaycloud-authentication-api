@@ -62,7 +62,7 @@ describe("Startup - Middleware", () => {
   let mockServerUse: jest.SpyInstance;
   let mockJSON: jest.SpyInstance;
   let mockUrlEncoded: jest.SpyInstance;
-  let originalProcessEnv: object;
+  let originalProcessEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
     mockExpressApp = express();
@@ -124,10 +124,10 @@ describe("Startup - Middleware", () => {
         mockExpressApp,
         "/",
         "get",
-        "unauthorizedOrigin"
+        "unauthorized-origin"
       );
 
-      expect(response.text.includes("does not have an access")).toBe(true);
+      expect(response.text.includes("does not have access")).toBe(true);
     });
 
     it("Should deny POSTMAN request with server in production mode", async () => {
@@ -135,7 +135,7 @@ describe("Startup - Middleware", () => {
 
       const response = await makeRequest(mockExpressApp, "/", "get", "");
 
-      expect(response.text.includes("does not have an access")).toBe(true);
+      expect(response.text.includes("does not have access")).toBe(true);
     });
 
     it("Should accept POSTMAN request with server in development mode", async () => {
