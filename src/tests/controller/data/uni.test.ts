@@ -237,12 +237,13 @@ describe("Route - Data", () => {
         returnError: false,
         serviceId: "test",
         apiPath: "/api/test",
+        apiMethod: "GET",
       };
       const axiosReqBody: Partial<DataRequest> = { ...reqBody };
       delete axiosReqBody.serviceId;
       delete axiosReqBody.apiPath;
       mockRequest.body = reqBody;
-      mockRequest.method = "POST";
+      mockRequest.method = reqBody.apiMethod;
 
       await DataController.transferRoute(mockRequest);
 
