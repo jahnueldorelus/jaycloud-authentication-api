@@ -63,8 +63,20 @@ formModelRouter.get("/create-user", async (req, res, next) => {
   next();
 });
 
-// Retrieves the form model to create a new user
+// Retrieves the form model to authenticate a new user
 formModelRouter.get("/authenticate-user", async (req, res, next) => {
   await UserController.getAuthenticateUserFormModel(req);
+  next();
+});
+
+// Retrieves the form model to reset a user's password
+formModelRouter.get("/password-reset", async (req, res, next) => {
+  await UserController.getPasswordResetFormModel(req);
+  next();
+});
+
+// Retrieves the form model to update a user's password
+formModelRouter.get("/update-password", async (req, res, next) => {
+  await UserController.getUpdatePasswordFormModel(req);
   next();
 });

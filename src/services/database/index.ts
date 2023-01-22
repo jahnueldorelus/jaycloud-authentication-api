@@ -15,6 +15,7 @@ const connectToDatabase = () => {
       password: process.env[envNames.db.password],
     },
     authMechanism: "DEFAULT",
+    directConnection: true,
   });
 
   connection.once("open", () =>
