@@ -1,29 +1,21 @@
 import { Request as ExpressRequest } from "express";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
-import {
-  FormModelInputOptionWithJoi,
-  FormModel,
-  FormModelInputOption,
-} from "@app-types/form-model";
+import { FormModel, FormModelInputOption } from "@app-types/form-model";
 
 /**
  * Updates the new user form model by removing it's Joi validation schema
- * from all inputs and adding both a request body property and an input name.
- * @param userFormModelInputs The form model to update
+ * and providing an input name.
  */
-export const configureNewUserFormModel = (
-  userFormModelInputs: Record<string, FormModelInputOptionWithJoi>
-): FormModelInputOption[] => {
-  const inputOptions = Object.keys(userFormModelInputs);
+export const configureNewUserFormModel = (): FormModelInputOption[] => {
+  const newUserAttributesCopy = { ...newUserAttributes };
+  const inputOptions = Object.keys(newUserAttributesCopy);
 
   const newInputOptions = inputOptions.map((inputName) => {
     const newOption = {
-      ...userFormModelInputs[inputName],
-      joiSchema: undefined,
+      ...newUserAttributesCopy[inputName],
       name: inputName,
     };
-
     delete newOption.joiSchema;
 
     return newOption;
@@ -39,7 +31,7 @@ export const configureNewUserFormModel = (
 export const getNewUserFormModel = async (req: ExpressRequest) => {
   const newUserModelForm: FormModel = {
     title: "Create a new account",
-    inputs: configureNewUserFormModel({ ...newUserAttributes }),
+    inputs: configureNewUserFormModel(),
   };
 
   RequestSuccess(req, newUserModelForm);
