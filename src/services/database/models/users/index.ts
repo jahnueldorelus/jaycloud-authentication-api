@@ -97,7 +97,7 @@ usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
   // Returns the user's web token
   return jwtSign(
     userData,
-    <string>process.env[envNames.jwt.key],
+    <string>process.env[envNames.jwt.privateKey],
     <SignOptions>{
       algorithm: <string>process.env[envNames.jwt.alg],
       expiresIn: <string>process.env[envNames.jwt.accessExpiration],
