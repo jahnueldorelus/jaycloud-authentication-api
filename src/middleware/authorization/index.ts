@@ -40,12 +40,12 @@ export const validateRequestAuthorization = async (
 
   // Adds the user's info from the request
   if (token) {
-    const jwtPrivateKey: string = <string>process.env[envNames.jwt.key];
+    const jwtPublicKey: string = <string>process.env[envNames.jwt.publicKey];
     const jwtAlgorithm: Algorithm = <Algorithm>process.env[envNames.jwt.alg];
 
     // Attempts to decode the token
     try {
-      const userInfo: TokenData = <TokenData>verify(token, jwtPrivateKey, {
+      const userInfo: TokenData = <TokenData>verify(token, jwtPublicKey, {
         algorithms: [jwtAlgorithm],
       });
 

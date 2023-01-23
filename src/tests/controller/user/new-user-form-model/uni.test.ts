@@ -1,5 +1,4 @@
 import { FormModelInputOptionWithJoi } from "@app-types/form-model";
-import { newUserAttributes } from "@app-types/user/new-user";
 import {
   configureNewUserFormModel,
   getNewUserFormModel,
@@ -29,7 +28,7 @@ describe("Route users - New User Form Model", () => {
 
   it("Should create the final new user form model input options", () => {
     const formModelInputOptions = <FormModelInputOptionWithJoi[]>(
-      configureNewUserFormModel(newUserAttributes)
+      configureNewUserFormModel()
     );
     const containsJoiSchema = formModelInputOptions.reduce((prev, curr) => {
       return prev || !!curr.joiSchema;
