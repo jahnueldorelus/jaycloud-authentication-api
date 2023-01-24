@@ -63,6 +63,12 @@ formModelRouter.get("/create-user", async (req, res, next) => {
   next();
 });
 
+// Retrieves the form model to update a new user
+formModelRouter.get("/update-user", async (req, res, next) => {
+  await UserController.getUpdateUserFormModel(req);
+  next();
+});
+
 // Retrieves the form model to authenticate a new user
 formModelRouter.get("/authenticate-user", async (req, res, next) => {
   await UserController.getAuthenticateUserFormModel(req);

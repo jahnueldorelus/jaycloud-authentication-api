@@ -1,8 +1,8 @@
 import { FormModelInputOptionWithJoi } from "@app-types/form-model";
 import {
-  configureNewUserFormModel,
-  getNewUserFormModel,
-} from "@controller/user/components/new-user-form-model";
+  configureNewAndUpdateUserFormModel,
+  getNewAndUpdateUserFormModel,
+} from "@controller/user/components/new-and-update-user-form-model";
 import { getMockReq } from "@jest-mock/express";
 import { RequestSuccess } from "@middleware/request-success";
 import { Request as ExpressRequest } from "express";
@@ -28,7 +28,7 @@ describe("Route users - New User Form Model", () => {
 
   it("Should create the final new user form model input options", () => {
     const formModelInputOptions = <FormModelInputOptionWithJoi[]>(
-      configureNewUserFormModel()
+      configureNewAndUpdateUserFormModel()
     );
     const containsJoiSchema = formModelInputOptions.reduce((prev, curr) => {
       return prev || !!curr.joiSchema;
@@ -39,7 +39,7 @@ describe("Route users - New User Form Model", () => {
   });
 
   it("Should retrieve the final new user form model input options", async () => {
-    await getNewUserFormModel(mockRequest);
+    await getNewAndUpdateUserFormModel(true)(mockRequest);
 
     expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });
