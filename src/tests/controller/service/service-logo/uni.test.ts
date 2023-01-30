@@ -4,6 +4,7 @@ import { RequestError } from "@middleware/request-error";
 import { Request as ExpressRequest } from "express";
 import { getServiceLogo } from "@controller/service/components/service-logo";
 import { dbAuth } from "@services/database";
+import { getFakeMongoDocumentId } from "@services/test-helper";
 
 // Mocks the Request Success middleware
 jest.mock("@middleware/request-success", () => ({
@@ -43,7 +44,7 @@ describe("Route - Services: Services List", () => {
   let mockRequestErrorValidation: jest.Mock;
   let mockRequestErrorBadRequest: jest.Mock;
   let mockServicesModelFindById: jest.SpyInstance;
-  let getFakeServiceId: jest.Mock;
+  let mockGetFakeServiceId: jest.Mock;
 
   beforeEach(() => {
     mockRequest = getMockReq();
@@ -64,7 +65,7 @@ describe("Route - Services: Services List", () => {
       .spyOn<any, any>(dbAuth.servicesModel, "findById")
       .mockImplementation(() => true);
 
-    getFakeServiceId = jest.fn(() => "0000aaaa0000aaaa0000aaaa");
+    mockGetFakeServiceId = jest.fn(() => getFakeMongoDocumentId());
   });
 
   afterEach(() => {
@@ -75,16 +76,16 @@ describe("Route - Services: Services List", () => {
     mockRequestErrorValidation.mockClear();
     mockRequestErrorBadRequest.mockClear();
     mockServicesModelFindById.mockRestore();
-    getFakeServiceId.mockClear();
+    mockGetFakeServiceId.mockClear();
   });
 
   describe("Failed requests due to validation error", () => {
     beforeEach(() => {
-      getFakeServiceId.mockReturnValueOnce("FAKE_SERVICE_ID");
+      mockGetFakeServiceId.mockReturnValueOnce("FAKE_SERVICE_ID");
     });
 
     it("Should return a custom error message with the request's response", async () => {
-      await getServiceLogo(mockRequest, getFakeServiceId());
+      await getServiceLogo(mockRequest, mockGetFakeServiceId());
 
       expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
       expect(mockRequestError).toHaveBeenCalledWith(
@@ -94,7 +95,7 @@ describe("Route - Services: Services List", () => {
     });
 
     it("Should return a default error message with the request's response", async () => {
-      await getServiceLogo(mockRequest, getFakeServiceId());
+      await getServiceLogo(mockRequest, mockGetFakeServiceId());
 
       expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
       expect(mockRequestError).toHaveBeenCalledWith(
@@ -108,7 +109,7 @@ describe("Route - Services: Services List", () => {
     // Makes retrieving a service from the database throw an error
     mockServicesModelFindById.mockReturnValueOnce(null);
 
-    await getServiceLogo(mockRequest, getFakeServiceId());
+    await getServiceLogo(mockRequest, mockGetFakeServiceId());
 
     expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
   });
@@ -119,13 +120,13 @@ describe("Route - Services: Services List", () => {
       throw Error();
     });
 
-    await getServiceLogo(mockRequest, getFakeServiceId());
+    await getServiceLogo(mockRequest, mockGetFakeServiceId());
 
     expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
   });
 
   it("Should pass the request successfully", async () => {
-    await getServiceLogo(mockRequest, getFakeServiceId());
+    await getServiceLogo(mockRequest, mockGetFakeServiceId());
 
     expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });

@@ -1,4 +1,9 @@
 import { JoiValidationResults } from "@app-types/joi-validation";
-import { PrivateUserData } from "..";
+import { UserData } from "@app-types/user";
 
-export type ValidUserUpdateInfo = JoiValidationResults<PrivateUserData>;
+export type UserUpdateData = Pick<
+  UserData,
+  "firstName" | "lastName" | "password"
+>;
+
+export type ValidUserUpdateInfo = JoiValidationResults<UserUpdateData>;

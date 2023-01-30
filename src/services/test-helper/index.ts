@@ -89,9 +89,9 @@ export const makeRequestPass = async (req: ExpressRequest) => {
 };
 
 /**
- * Retrieves a fake user for a request.
+ * Retrieves a fake valid user data.
  */
-export const getFakeRequestUser = () => {
+export const getFakeUserTokenData = () => {
   const reqUser: TokenData = {
     firstName: "test",
     lastName: "test",
@@ -104,8 +104,29 @@ export const getFakeRequestUser = () => {
 };
 
 /**
+ * Retrieves a fake valid password.
+ */
+export const getFakePassword = () => {
+  return "fake-password";
+};
+
+/**
+ * Retrieves a fake valid mongo document id.
+ */
+export const getFakeMongoDocumentId = () => {
+  return "0000aaaa0000aaaa0000aaaa";
+};
+
+/**
+ * Retrieves a fake valid guid.
+ */
+export const getFakeMongoGUID = () => {
+  return "00000000-aaaa-0000-aaaa-000000000000";
+};
+
+/**
  * Retrieves a fake JWT token based on the information
- * of the fake request user.
+ * of the fake valid user.
  */
 export const getFakeRequestToken = () => {
   return (

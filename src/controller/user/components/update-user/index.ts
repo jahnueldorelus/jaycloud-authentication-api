@@ -9,8 +9,10 @@ import {
   requestIsAuthorized,
 } from "@middleware/authorization";
 import { ExpressRequestAndUser } from "@app-types/authorization";
-import { ValidUserUpdateInfo } from "@app-types/user/update-user";
-import { PrivateUserData } from "@app-types/user";
+import {
+  UserUpdateData,
+  ValidUserUpdateInfo,
+} from "@app-types/user/update-user";
 
 // Schema validation
 const updatetAccountSchema = Joi.object({
@@ -23,13 +25,18 @@ const updatetAccountSchema = Joi.object({
  * Deterimines if the user's account information is valid.
  * @param newUserInfo The user's information to validate
  */
-const validateInfo = (newUserInfo: PrivateUserData): ValidUserUpdateInfo => {
+const validateInfo = (newUserInfo: UserUpdateData): ValidUserUpdateInfo => {
   const { error, value } = updatetAccountSchema.validate(newUserInfo);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 /**
@@ -41,7 +48,7 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
 
   if (requestIsAuthorized(req) && reqUser) {
     // The user's updated account info from the request
-    const newUserInfo: PrivateUserData = req.body;
+    const newUserInfo: UserUpdateData = req.body;
 
     // Determines if the user's updated information is valid
     const { isValid, errorMessage, validatedValue } = validateInfo(newUserInfo);
@@ -77,7 +84,7 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
     }
     // If there's a validation error
     else {
-      RequestError(req, Error(errorMessage || undefined)).validation();
+      RequestError(req, Error(errorMessage)).validation();
     }
   }
 };

@@ -1,29 +1,11 @@
 import { ExpressRequestAndUser } from "@app-types/authorization";
 import { RequestErrorMethods } from "@app-types/request-error";
-import { JoiValidationParam } from "@app-types/tests/joi";
+import { UserUpdateData } from "@app-types/user/update-user";
 import { updateUser } from "@controller/user/components/update-user";
 import { getMockReq } from "@jest-mock/express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
-import { getFakeRequestUser } from "@services/test-helper";
-import { ValidationError, ValidationResult } from "joi";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
+import { getFakePassword, getFakeUserTokenData } from "@services/test-helper";
 
 // Mocks database connection
 jest.mock("mongoose", () => ({
@@ -41,7 +23,7 @@ jest.mock("mongoose", () => ({
 // Mocks authorization middleware
 jest.mock("@middleware/authorization", () => ({
   getRequestUserData: jest.fn(() => ({
-    ...getFakeRequestUser(),
+    ...getFakeUserTokenData(),
     save: jest.fn(),
     update: jest.fn(),
     generateAccessToken: jest.fn(),
@@ -68,7 +50,14 @@ describe("Route - Users: Updating a user's password", () => {
   let mockRequestErrorValidation: jest.Mock;
 
   beforeEach(() => {
+    const fakeUser = getFakeUserTokenData();
+    const requestBody: UserUpdateData = {
+      firstName: fakeUser.firstName,
+      lastName: fakeUser.lastName,
+      password: getFakePassword(),
+    };
     mockRequest = getMockReq();
+    mockRequest.body = requestBody;
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -89,36 +78,16 @@ describe("Route - Users: Updating a user's password", () => {
     mockRequestErrorValidation.mockClear();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = reqBody;
+  it("Should fail request due to a validation error", async () => {
+    (<UserUpdateData>mockRequest.body).password = "";
 
-      await updateUser(mockRequest);
+    await updateUser(mockRequest);
 
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = { returnError: true };
-      mockRequest.body = reqBody;
-
-      await updateUser(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
   it("Should fail request due to server error", async () => {

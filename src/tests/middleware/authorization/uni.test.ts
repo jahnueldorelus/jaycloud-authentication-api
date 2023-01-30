@@ -8,7 +8,10 @@ import {
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
-import { getFakeRequestToken, getFakeRequestUser } from "@services/test-helper";
+import {
+  getFakeRequestToken,
+  getFakeUserTokenData,
+} from "@services/test-helper";
 import {
   NextFunction,
   Request as ExpressRequest,
@@ -155,7 +158,7 @@ describe("Middleware - Authorization", () => {
 
     it("Should return the user from the request", () => {
       // The type of request user and fake user are not the same but it's okay for testing purposes
-      const reqUser = getFakeRequestUser();
+      const reqUser = getFakeUserTokenData();
       mockRequest.user = <typeof mockRequest.user>reqUser;
 
       const userFromRequest = getRequestUserData(mockRequest);
@@ -183,7 +186,7 @@ describe("Middleware - Authorization", () => {
 
     it("Should conclude the request to be authorized", () => {
       // The type of request user and fake user are not the same but it's okay for testing purposes
-      mockRequest.user = <typeof mockRequest.user>getFakeRequestUser();
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
       mockRequest.token = getFakeRequestToken();
 
       const isReqAuthorized = requestAuthenticationChecked(mockRequest);
@@ -213,7 +216,7 @@ describe("Middleware - Authorization", () => {
 
     it("Should conclude the request to be unauthorized due to no tokenn", () => {
       // The type of request user and fake user are not the same but it's okay for testing purposes
-      mockRequest.user = <typeof mockRequest.user>getFakeRequestUser();
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
 
       const isReqAuthorized = requestIsAuthorized(mockRequest);
 
@@ -229,7 +232,7 @@ describe("Middleware - Authorization", () => {
     });
 
     it("Should conclude the request to be authorized", () => {
-      mockRequest.user = <typeof mockRequest.user>getFakeRequestUser();
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
       mockRequest.token = getFakeRequestToken();
 
       const isReqAuthorized = requestIsAuthorized(mockRequest);

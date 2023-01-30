@@ -24,11 +24,16 @@ const validateOldRefreshToken = (
   refreshToken: RefreshToken
 ): ValidRefreshToken => {
   const { error, value } = refreshTokenSchema.validate(refreshToken);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 /**
@@ -129,6 +134,6 @@ export const createNewRefreshToken = async (
       await dbSession.endSession();
     }
   } else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

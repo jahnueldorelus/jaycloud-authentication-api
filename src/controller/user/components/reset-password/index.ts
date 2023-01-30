@@ -24,11 +24,16 @@ const resetPasswordSchema = Joi.object({
  */
 const validateUserEmail = (userEmail: UserEmail): ValidUserEmail => {
   const { error, value } = resetPasswordSchema.validate(userEmail);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 /**
@@ -138,6 +143,6 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
   }
   // If the user's information is invalid
   else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };
