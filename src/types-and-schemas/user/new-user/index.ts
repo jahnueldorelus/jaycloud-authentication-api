@@ -1,18 +1,21 @@
 import { FormModelInputOptionWithJoi } from "@app-types/form-model";
 import Joi from "joi";
 import { RegExpError } from "@services/reg-exp-error";
-import { UserData } from "@app-types/user";
 import { JoiValidationResults } from "@app-types/joi-validation";
 
-type NewUserAttributes = {
-  [key: string]: FormModelInputOptionWithJoi;
-  firstName: FormModelInputOptionWithJoi;
-  lastName: FormModelInputOptionWithJoi;
-  email: FormModelInputOptionWithJoi;
-  password: FormModelInputOptionWithJoi;
-};
+interface User<T> {
+  firstName: T;
+  lastName: T;
+  email: T;
+  password: T;
+}
 
-export type ValidNewUserAccount = JoiValidationResults<UserData>;
+export type NewUser = User<string>;
+export type ValidNewUserAccount = JoiValidationResults<NewUser>;
+
+interface NewUserAttributes extends User<FormModelInputOptionWithJoi> {
+  [key: string]: FormModelInputOptionWithJoi;
+}
 
 export const newUserAttributes: NewUserAttributes = {
   firstName: {

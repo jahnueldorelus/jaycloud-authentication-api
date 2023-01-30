@@ -1,5 +1,3 @@
-import { JoiValidationParam } from "@app-types/tests/joi";
-import { ValidationError, ValidationResult } from "joi";
 import { Request as ExpressRequest } from "express";
 import { RequestErrorMethods } from "@app-types/request-error";
 import { getMockReq } from "@jest-mock/express";
@@ -7,23 +5,8 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
 import { createNewUser } from "@controller/user/components/new-user";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
+import { NewUser } from "@app-types/user/new-user";
+import { getFakeUserTokenData } from "@services/test-helper";
 
 // Mocks bcrypt hashing
 jest.mock("bcrypt", () => ({
@@ -82,7 +65,16 @@ describe("Route - Users: Creating a User", () => {
   let mockCreateRefreshToken: jest.SpyInstance;
 
   beforeEach(() => {
+    const fakeUser = getFakeUserTokenData();
+    const requestBody = {
+      email: fakeUser.email,
+      firstName: fakeUser.firstName,
+      lastName: fakeUser.lastName,
+      password: "FAKE_PASSWORD",
+    };
+
     mockRequest = getMockReq();
+    mockRequest.body = requestBody;
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -123,36 +115,16 @@ describe("Route - Users: Creating a User", () => {
     mockCreateRefreshToken.mockRestore();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = reqBody;
+  it("Should fail request due to a validation error", async () => {
+    (<NewUser>mockRequest.body).password = "";
 
-      await createNewUser(mockRequest);
+    await createNewUser(mockRequest);
 
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = { returnError: true };
-      mockRequest.body = reqBody;
-
-      await createNewUser(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
   it("Should fail request due to server error creating a new user", async () => {

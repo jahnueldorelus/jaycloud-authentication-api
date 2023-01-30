@@ -2,7 +2,7 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 import { DataRequest, ValidDataRequest } from "@app-types/data";
 import {
   getRequestUserData,
-  requestPassedAuthorization,
+  requestAuthenticationChecked,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
@@ -20,45 +20,48 @@ type Controller = {
 /**
  * Schema validation.
  */
-const dataRequestSchema = () =>
-  Joi.object({
-    serviceId: Joi.string().token().min(24).max(24).required(),
-    apiPath: Joi.string().required(),
-    apiMethod: Joi.string()
-      .valid(
-        "get",
-        "GET",
-        "post",
-        "POST",
-        "put",
-        "PUT",
-        "patch",
-        "PATCH",
-        "delete",
-        "DELETE"
-      )
-      .required(),
-  });
+const dataRequestSchema = Joi.object({
+  serviceId: Joi.string().token().min(24).max(24).required(),
+  apiPath: Joi.string().required(),
+  apiMethod: Joi.string()
+    .valid(
+      "get",
+      "GET",
+      "post",
+      "POST",
+      "put",
+      "PUT",
+      "patch",
+      "PATCH",
+      "delete",
+      "DELETE"
+    )
+    .required(),
+});
 
 /**
  * Deterimines if the user's data request is valid.
  * @param requestInfo The user's data request to validate
  */
 const validateDataRequest = (requestInfo: DataRequest): ValidDataRequest => {
-  const { error, value } = dataRequestSchema().validate(requestInfo, {
+  const { error, value } = dataRequestSchema.validate(requestInfo, {
     allowUnknown: true,
   });
 
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 export const DataController: Controller = {
   transferRoute: async (req: ExpressRequest) => {
-    if (requestPassedAuthorization(<ExpressRequestAndUser>req)) {
+    if (requestAuthenticationChecked(<ExpressRequestAndUser>req)) {
       // The user's data request info
       const dataRequestInfo: DataRequest = req.body;
 
@@ -91,9 +94,7 @@ export const DataController: Controller = {
           // Adds the user's info to the new request's body
           const userData = getRequestUserData(<ExpressRequestAndUser>req);
           if (userData) {
-            delete userData.exp;
-            delete userData.iat;
-            newReqBody.user = userData;
+            newReqBody.user = userData.toPrivateJSON();
           }
 
           // Removes data from the new request's body that was required only for this server
@@ -101,10 +102,12 @@ export const DataController: Controller = {
           delete dataRequestBody.apiPath;
           delete dataRequestBody.serviceId;
 
+          const requestUrl = `${service.apiUrl}${
+            service.apiPort ? ":" + service.apiPort : ""
+          }${validatedValue.apiPath}`;
+
           const appAPIResponse = await axios({
-            url: `${service.apiUrl}${
-              service.apiPort ? ":" + service.apiPort : ""
-            }${validatedValue.apiPath}`,
+            url: requestUrl,
             method: validatedValue.apiMethod,
             data: dataRequestBody,
           });
@@ -147,7 +150,7 @@ export const DataController: Controller = {
           await dbSession.endSession();
         }
       } else {
-        RequestError(req, Error(errorMessage || undefined)).validation();
+        RequestError(req, Error(errorMessage)).validation();
       }
     }
   },

@@ -1,5 +1,3 @@
-import { JoiValidationParam } from "@app-types/tests/joi";
-import { ValidationError, ValidationResult } from "joi";
 import { emailService } from "@services/email";
 import { Request as ExpressRequest } from "express";
 import { RequestErrorMethods } from "@app-types/request-error";
@@ -11,23 +9,8 @@ import { resetPassword } from "@controller/user/components/reset-password";
 import { MailOptionsPasswordReset } from "@app-types/email";
 import { envNames } from "@startup/config";
 import process from "process";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
+import { UserEmail } from "@app-types/user/reset-password";
+import { getFakeUserTokenData } from "@services/test-helper";
 
 // Mocks database models
 jest.mock("@services/database", () => ({
@@ -84,7 +67,9 @@ describe("Route - Users: Resetting a user's password", () => {
   let mockCreateApprovedPasswordReset: jest.SpyInstance;
 
   beforeEach(() => {
+    const requestBody: UserEmail = { email: getFakeUserTokenData().email };
     mockRequest = getMockReq();
+    mockRequest.body = requestBody;
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -125,36 +110,15 @@ describe("Route - Users: Resetting a user's password", () => {
     mockCreateApprovedPasswordReset.mockRestore();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = reqBody;
+  it("Should fail request due to a validation error", async () => {
+    (<UserEmail>mockRequest.body).email = "FAKE_USER_EMAIL";
+    await resetPassword(mockRequest);
 
-      await resetPassword(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = { returnError: true };
-      mockRequest.body = reqBody;
-
-      await resetPassword(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
   it("Should fail request due to server error creating a new approved password reset", async () => {
@@ -207,6 +171,14 @@ describe("Route - Users: Resetting a user's password", () => {
     await resetPassword(mockRequest);
 
     expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
+  });
+
+  it("Should pass request successfully even though user is not found", async () => {
+    mockFindOneUser.mockReturnValueOnce(null);
+
+    await resetPassword(mockRequest);
+
+    expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });
 
   it("Should pass request successfully", async () => {

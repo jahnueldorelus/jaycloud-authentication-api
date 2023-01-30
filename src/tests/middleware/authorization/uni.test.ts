@@ -3,11 +3,15 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import {
   validateRequestAuthorization,
   getRequestUserData,
-  requestPassedAuthorization,
+  requestIsAuthorized,
+  requestAuthenticationChecked,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
-import { getFakeRequestToken, getFakeRequestUser } from "@services/test-helper";
+import {
+  getFakeRequestToken,
+  getFakeUserTokenData,
+} from "@services/test-helper";
 import {
   NextFunction,
   Request as ExpressRequest,
@@ -41,8 +45,21 @@ jest.mock("jsonwebtoken", () => ({
 jest.mock("@services/database", () => ({
   dbAuth: {
     usersModel: {
-      findById: jest.fn(),
+      findOne: jest.fn(),
     },
+  },
+}));
+
+// Mocks database connection
+jest.mock("mongoose", () => ({
+  connection: {
+    startSession: () => ({
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      inTransaction: jest.fn(() => true),
+      abortTransaction: jest.fn(),
+      endSession: jest.fn(),
+    }),
   },
 }));
 
@@ -67,7 +84,7 @@ describe("Middleware - Authorization", () => {
     mockJwtVerify = <jest.Mock>verify;
     mockJwtVerify.mockImplementation(() => false);
 
-    mockDbAuthFindUser = <jest.Mock>dbAuth.usersModel.findById;
+    mockDbAuthFindUser = <jest.Mock>dbAuth.usersModel.findOne;
     mockDbAuthFindUser.mockResolvedValue(true);
   });
 
@@ -140,8 +157,9 @@ describe("Middleware - Authorization", () => {
     });
 
     it("Should return the user from the request", () => {
-      const reqUser = getFakeRequestUser();
-      mockRequest.user = reqUser;
+      // The type of request user and fake user are not the same but it's okay for testing purposes
+      const reqUser = getFakeUserTokenData();
+      mockRequest.user = <typeof mockRequest.user>reqUser;
 
       const userFromRequest = getRequestUserData(mockRequest);
 
@@ -155,7 +173,7 @@ describe("Middleware - Authorization", () => {
     });
   });
 
-  describe("Determining if a request can be processed", () => {
+  describe("Determines if a request can be processed", () => {
     let mockRequest: ExpressRequestAndUser;
 
     beforeEach(() => {
@@ -167,10 +185,11 @@ describe("Middleware - Authorization", () => {
     });
 
     it("Should conclude the request to be authorized", () => {
-      mockRequest.user = getFakeRequestUser();
+      // The type of request user and fake user are not the same but it's okay for testing purposes
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
       mockRequest.token = getFakeRequestToken();
 
-      const isReqAuthorized = requestPassedAuthorization(mockRequest);
+      const isReqAuthorized = requestAuthenticationChecked(mockRequest);
 
       expect(isReqAuthorized).toBeTruthy();
     });
@@ -178,9 +197,47 @@ describe("Middleware - Authorization", () => {
     it("Should conclude the request to be unauthorized", () => {
       mockRequest.token = getFakeRequestToken();
 
-      const isReqAuthorized = requestPassedAuthorization(mockRequest);
+      const isReqAuthorized = requestAuthenticationChecked(mockRequest);
 
       expect(isReqAuthorized).toBeFalsy();
+    });
+  });
+
+  describe("Determes if a request is authorized", () => {
+    let mockRequest: ExpressRequestAndUser;
+
+    beforeEach(() => {
+      mockRequest = getMockReq();
+    });
+
+    afterEach(() => {
+      mockRequest.destroy();
+    });
+
+    it("Should conclude the request to be unauthorized due to no tokenn", () => {
+      // The type of request user and fake user are not the same but it's okay for testing purposes
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
+
+      const isReqAuthorized = requestIsAuthorized(mockRequest);
+
+      expect(isReqAuthorized).toBeFalsy();
+    });
+
+    it("Should conclude the request to be unauthorized due to no user", () => {
+      mockRequest.token = getFakeRequestToken();
+
+      const isReqAuthorized = requestIsAuthorized(mockRequest);
+
+      expect(isReqAuthorized).toBeFalsy();
+    });
+
+    it("Should conclude the request to be authorized", () => {
+      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
+      mockRequest.token = getFakeRequestToken();
+
+      const isReqAuthorized = requestIsAuthorized(mockRequest);
+
+      expect(isReqAuthorized).toBeTruthy();
     });
   });
 });

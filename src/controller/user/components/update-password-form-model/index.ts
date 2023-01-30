@@ -1,16 +1,21 @@
 import { Request as ExpressRequest } from "express";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
-import { FormModel, FormModelInputOption } from "@app-types/form-model";
+import {
+  FormModel,
+  FormModelInputOption,
+  FormModelInputOptionWithJoi,
+} from "@app-types/form-model";
 
 /**
  * Sets up the input options for the update password form model.
  */
-export const configurePasswordResetFormModel = (): FormModelInputOption[] => {
+export const configureUpdatePasswordFormModel = (): FormModelInputOption[] => {
   const inputOptions: FormModelInputOption[] = [
-    {
+    <Omit<FormModelInputOptionWithJoi, "joiSchema">>{
       ...newUserAttributes.password,
       name: "password",
+      joiSchema: undefined,
     },
   ];
 
@@ -24,7 +29,7 @@ export const configurePasswordResetFormModel = (): FormModelInputOption[] => {
 export const getUpdatePasswordFormModel = async (req: ExpressRequest) => {
   const newUserModelForm: FormModel = {
     title: "Update Password",
-    inputs: configurePasswordResetFormModel(),
+    inputs: configureUpdatePasswordFormModel(),
   };
 
   RequestSuccess(req, newUserModelForm);

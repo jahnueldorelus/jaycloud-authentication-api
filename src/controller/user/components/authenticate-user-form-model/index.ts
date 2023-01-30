@@ -6,6 +6,7 @@ import {
   FormModelInputOption,
   FormModel,
 } from "@app-types/form-model";
+import { RegExpError } from "@services/reg-exp-error";
 
 /**
  * Updates the authenticating user form model by removing it's Joi validation schema
@@ -24,9 +25,17 @@ export const configureAuthenticateUserFormModel = (
         allowNull: true,
         required: true,
         min: 0,
-        max: Infinity,
+        max: 150,
         regex: ["^.*$"],
-        regexErrorLabel: "",
+        regexErrorLabel: new RegExpError(
+          true,
+          true,
+          true,
+          true,
+          0,
+          150,
+          "Only a maximum of 150 characters is allowed."
+        ).label,
       },
       joiSchema: undefined,
       name: inputName,

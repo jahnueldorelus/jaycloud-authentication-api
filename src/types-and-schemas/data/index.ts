@@ -6,4 +6,4 @@ export type DataRequest = {
   apiMethod: "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
 };
 
-export interface ValidDataRequest extends JoiValidationResults<DataRequest> {}
+export type ValidDataRequest = JoiValidationResults<DataRequest>;

@@ -1,39 +1,25 @@
 import { IApprovedPasswordReset } from "@app-types/database/models/approved-password-reset";
 import { RequestErrorMethods } from "@app-types/request-error";
-import { JoiValidationParam } from "@app-types/tests/joi";
 import { updatePassword } from "@controller/user/components/update-password";
 import { getMockReq } from "@jest-mock/express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
 import { dbAuth } from "@services/database";
-import { getFakeRequestUser } from "@services/test-helper";
+import {
+  getFakeMongoDocumentId,
+  getFakePassword,
+  getFakeUserTokenData,
+} from "@services/test-helper";
 import { Request as ExpressRequest } from "express";
-import { ValidationError, ValidationResult } from "joi";
 import moment from "moment";
 import bcrypt from "bcrypt";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
+import { UpdatePasswordInfo } from "@app-types/user/update-password";
 
 // Mocks database models
 jest.mock("@services/database", () => ({
   dbAuth: {
     usersModel: {
-      findOne: jest.fn(),
+      findById: jest.fn(),
     },
     approvedPasswordResetModel: {
       findOneAndDelete: jest.fn(),
@@ -82,7 +68,12 @@ describe("Route - Users: Updating a user's password", () => {
   let mockBcryptHash: jest.SpyInstance;
 
   beforeEach(() => {
+    const requestBody: UpdatePasswordInfo = {
+      password: getFakePassword(),
+      token: getFakeMongoDocumentId(),
+    };
     mockRequest = getMockReq();
+    mockRequest.body = requestBody;
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -102,15 +93,18 @@ describe("Route - Users: Updating a user's password", () => {
       isBefore: mockMomentIsBefore,
     }));
 
-    mockFindOneUser = jest
-      .spyOn<any, any>(dbAuth.usersModel, "findOne")
-      .mockImplementation(() => ({ ...getFakeRequestUser(), save: () => {} }));
+    mockFindOneUser = <jest.Mock>dbAuth.usersModel.findById;
+    mockFindOneUser.mockImplementation(() => ({
+      ...getFakeUserTokenData(),
+      save: () => {},
+    }));
 
-    mockFindOneAndDeleteApprovedPassReset = jest
-      .spyOn<any, any>(dbAuth.approvedPasswordResetModel, "findOneAndDelete")
-      .mockImplementation(
-        () => <IApprovedPasswordReset>{ expDate: new Date() }
-      );
+    mockFindOneAndDeleteApprovedPassReset = <jest.Mock>(
+      dbAuth.approvedPasswordResetModel.findOneAndDelete
+    );
+    mockFindOneAndDeleteApprovedPassReset.mockImplementation(
+      () => <IApprovedPasswordReset>{ expDate: new Date() }
+    );
 
     mockBcryptHash = jest.spyOn(bcrypt, "hash").mockImplementation(() => true);
   });
@@ -123,41 +117,19 @@ describe("Route - Users: Updating a user's password", () => {
     mockRequestErrorValidation.mockClear();
     mockMomentIsBefore.mockClear();
     mockMoment.mockClear();
-    mockFindOneUser.mockRestore();
-    mockFindOneAndDeleteApprovedPassReset.mockRestore();
     mockBcryptHash.mockRestore();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = reqBody;
+  it("Should fail the request due to a validation error", async () => {
+    (<UpdatePasswordInfo>mockRequest.body).password = "";
 
-      await updatePassword(mockRequest);
+    await updatePassword(mockRequest);
 
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = { returnError: true };
-      mockRequest.body = reqBody;
-
-      await updatePassword(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
   it("Should fail request due to no user found", async () => {
@@ -165,15 +137,7 @@ describe("Route - Users: Updating a user's password", () => {
 
     await updatePassword(mockRequest);
 
-    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should fail request due to no user found", async () => {
-    mockFindOneUser.mockReturnValueOnce(false);
-
-    await updatePassword(mockRequest);
-
-    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
   });
 
   it("Should fail request due to no approved password reset found for given user", async () => {

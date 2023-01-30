@@ -4,11 +4,20 @@ import { RequestSuccess } from "@middleware/request-success";
 import { FormModel, FormModelInputOption } from "@app-types/form-model";
 
 /**
- * Updates the new user form model by removing it's Joi validation schema
+ * Updates the user form model by removing it's Joi validation schema
  * and providing an input name.
  */
-export const configureNewUserFormModel = (): FormModelInputOption[] => {
-  const newUserAttributesCopy = { ...newUserAttributes };
+export const configureUpdateUserFormModel = (): FormModelInputOption[] => {
+  const newUserAttributesCopy = <Partial<typeof newUserAttributes>>{
+    ...newUserAttributes,
+  };
+
+  for (let key of Object.keys(newUserAttributesCopy)) {
+    if (key === "email") {
+      delete newUserAttributesCopy[key];
+    }
+  }
+
   const inputOptions = Object.keys(newUserAttributesCopy);
 
   const newInputOptions = inputOptions.map((inputName) => {
@@ -25,14 +34,14 @@ export const configureNewUserFormModel = (): FormModelInputOption[] => {
 };
 
 /**
- * Retrieves the form model to create a user.
+ * Retrieves the form model to update a user.
  * @param req The network request
  */
-export const getNewUserFormModel = async (req: ExpressRequest) => {
-  const newUserFormModel: FormModel = {
-    title: "Create a new account",
-    inputs: configureNewUserFormModel(),
+export const getUpdateUserFormModel = async (req: ExpressRequest) => {
+  const updateUserFormModel: FormModel = {
+    title: "Update account",
+    inputs: configureUpdateUserFormModel(),
   };
 
-  RequestSuccess(req, newUserFormModel);
+  RequestSuccess(req, updateUserFormModel);
 };

@@ -15,8 +15,12 @@ describe("Routes - Users", () => {
   let mockAuthenticateUser: jest.SpyInstance;
   let mockCreateNewRefreshToken: jest.SpyInstance;
   let mockCreateNewUser: jest.SpyInstance;
+  let mockUpdateUser: jest.SpyInstance;
   let mockGetNewUserFormModel: jest.SpyInstance;
+  let mockGetUpdateUserFormModel: jest.SpyInstance;
   let mockGetAuthenticateUserFormModel: jest.SpyInstance;
+  let mockGetPasswordResetFormModel: jest.SpyInstance;
+  let mockGetUpdatePasswordFormModel: jest.SpyInstance;
   let mockResetPassword: jest.SpyInstance;
   let mockUpdatePassword: jest.SpyInstance;
 
@@ -32,11 +36,23 @@ describe("Routes - Users", () => {
     mockCreateNewUser = jest
       .spyOn(UserController, "createNewUser")
       .mockImplementation(makeRequestPass);
+    mockUpdateUser = jest
+      .spyOn(UserController, "updateUser")
+      .mockImplementation(makeRequestPass);
     mockGetNewUserFormModel = jest
       .spyOn(UserController, "getNewUserFormModel")
       .mockImplementation(makeRequestPass);
+    mockGetUpdateUserFormModel = jest
+      .spyOn(UserController, "getUpdateUserFormModel")
+      .mockImplementation(makeRequestPass);
     mockGetAuthenticateUserFormModel = jest
       .spyOn(UserController, "getAuthenticateUserFormModel")
+      .mockImplementation(makeRequestPass);
+    mockGetPasswordResetFormModel = jest
+      .spyOn(UserController, "getPasswordResetFormModel")
+      .mockImplementation(makeRequestPass);
+    mockGetUpdatePasswordFormModel = jest
+      .spyOn(UserController, "getUpdatePasswordFormModel")
       .mockImplementation(makeRequestPass);
     mockResetPassword = jest
       .spyOn(UserController, "resetPassword")
@@ -51,7 +67,9 @@ describe("Routes - Users", () => {
     mockAuthenticateUser.mockRestore();
     mockCreateNewRefreshToken.mockRestore();
     mockCreateNewUser.mockRestore();
+    mockUpdateUser.mockRestore();
     mockGetNewUserFormModel.mockRestore();
+    mockGetUpdateUserFormModel.mockRestore();
     mockGetAuthenticateUserFormModel.mockRestore();
     mockResetPassword.mockRestore();
     mockUpdatePassword.mockRestore();
@@ -63,6 +81,12 @@ describe("Routes - Users", () => {
     expect(mockCreateNewUser).toHaveBeenCalledTimes(1);
   });
 
+  it("Should make POST request to update a user's account", async () => {
+    await makeRequest(mockServer, `${baseUrl}/update`, "post");
+
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+  });
+
   it("Should make POST request to authenticate a user", async () => {
     await makeRequest(mockServer, `${baseUrl}/`, "post");
 
@@ -70,25 +94,61 @@ describe("Routes - Users", () => {
   });
 
   it("Should make POST request to create a new refresh token for a user", async () => {
-    await makeRequest(mockServer, `${baseUrl}/refreshToken`, "post");
+    await makeRequest(mockServer, `${baseUrl}/refresh-token`, "post");
 
     expect(mockCreateNewRefreshToken).toHaveBeenCalledTimes(1);
   });
 
-  it("Should make GET request to retrieve the form model to create a new user", async () => {
-    await makeRequest(mockServer, `${baseUrl}/form-models/create-user`, "get");
+  describe("Should make GET request for a form model", () => {
+    it("Should make GET request to retrieve the form model to create a new user", async () => {
+      await makeRequest(
+        mockServer,
+        `${baseUrl}/form-models/create-user`,
+        "get"
+      );
 
-    expect(mockGetNewUserFormModel).toHaveBeenCalledTimes(1);
-  });
+      expect(mockGetNewUserFormModel).toHaveBeenCalledTimes(1);
+    });
 
-  it("Should make GET request to retrieve the form model to authenticate a user", async () => {
-    await makeRequest(
-      mockServer,
-      `${baseUrl}/form-models/authenticate-user`,
-      "get"
-    );
+    it("Should make GET request to retrieve the form model to update a user", async () => {
+      await makeRequest(
+        mockServer,
+        `${baseUrl}/form-models/update-user`,
+        "get"
+      );
 
-    expect(mockGetAuthenticateUserFormModel).toHaveBeenCalledTimes(1);
+      expect(mockGetUpdateUserFormModel).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should make GET request to retrieve the form model to authenticate a user", async () => {
+      await makeRequest(
+        mockServer,
+        `${baseUrl}/form-models/authenticate-user`,
+        "get"
+      );
+
+      expect(mockGetAuthenticateUserFormModel).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should retrieve the form model to reset a user's password", async () => {
+      await makeRequest(
+        mockServer,
+        `${baseUrl}/form-models/password-reset`,
+        "get"
+      );
+
+      expect(mockGetPasswordResetFormModel).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should retrieve the form model to update a user's password", async () => {
+      await makeRequest(
+        mockServer,
+        `${baseUrl}/form-models/update-password`,
+        "get"
+      );
+
+      expect(mockGetUpdatePasswordFormModel).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("Should make POST request to reset a user's password", async () => {

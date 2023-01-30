@@ -5,6 +5,8 @@ import {
   NextFunction,
 } from "express";
 import { UserController } from "@controller/user";
+import { validateRequestAuthorization } from "@middleware/authorization";
+import { ExpressRequestAndUser } from "@app-types/authorization";
 
 // Express router for user routes
 export const userRouter = Router();
@@ -15,6 +17,16 @@ userRouter.post(
   "/new",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await UserController.createNewUser(req);
+    next();
+  }
+);
+
+// Updates a user account
+userRouter.post(
+  "/update",
+  validateRequestAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.updateUser(<ExpressRequestAndUser>req);
     next();
   }
 );
@@ -60,6 +72,12 @@ userRouter.use("/form-models", formModelRouter);
 // Retrieves the form model to create a new user
 formModelRouter.get("/create-user", async (req, res, next) => {
   await UserController.getNewUserFormModel(req);
+  next();
+});
+
+// Retrieves the form model to update a new user
+formModelRouter.get("/update-user", async (req, res, next) => {
+  await UserController.getUpdateUserFormModel(req);
   next();
 });
 
