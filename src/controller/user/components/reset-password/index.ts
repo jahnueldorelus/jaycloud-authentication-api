@@ -119,6 +119,10 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
         await dbSession.abortTransaction();
       }
 
+      /**
+       * The request is deemed successful to not give the user feedback
+       * that the user doesn't exist due to security purposes.
+       */
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestSuccess(req, true);
       } else {

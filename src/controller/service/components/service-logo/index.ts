@@ -17,11 +17,16 @@ const serviceIdSchema = Joi.string().token().min(24).max(24).required();
  */
 const validateServiceId = (serviceId: ServiceId): ValidServiceId => {
   const { error, value } = serviceIdSchema.validate(serviceId);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value || "",
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 export const getServiceLogo = async (
@@ -78,6 +83,6 @@ export const getServiceLogo = async (
       await dbSession.endSession();
     }
   } else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

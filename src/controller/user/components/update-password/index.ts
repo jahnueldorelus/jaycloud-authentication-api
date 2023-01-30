@@ -111,7 +111,7 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
         RequestError(
           req,
           Error("Failed to update the user's password")
-        ).badRequest();
+        ).server();
       }
     } finally {
       await dbSession.endSession();

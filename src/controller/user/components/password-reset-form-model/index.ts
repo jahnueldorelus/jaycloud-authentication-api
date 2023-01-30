@@ -1,16 +1,21 @@
 import { Request as ExpressRequest } from "express";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
-import { FormModel, FormModelInputOption } from "@app-types/form-model";
+import {
+  FormModel,
+  FormModelInputOption,
+  FormModelInputOptionWithJoi,
+} from "@app-types/form-model";
 
 /**
  * Sets up the input options for the password reset form model.
  */
 export const configurePasswordResetFormModel = (): FormModelInputOption[] => {
   const inputOptions: FormModelInputOption[] = [
-    {
+    <Omit<FormModelInputOptionWithJoi, "joiSchema">>{
       ...newUserAttributes.email,
       name: "email",
+      joiSchema: undefined,
     },
   ];
 

@@ -1,16 +1,12 @@
-import { IApprovedPasswordReset } from "@app-types/database/models/approved-password-reset";
+import { ExpressRequestAndUser } from "@app-types/authorization";
 import { RequestErrorMethods } from "@app-types/request-error";
 import { JoiValidationParam } from "@app-types/tests/joi";
-import { updatePassword } from "@controller/user/components/update-password";
+import { updateUser } from "@controller/user/components/update-user";
 import { getMockReq } from "@jest-mock/express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
-import { dbAuth } from "@services/database";
 import { getFakeRequestUser } from "@services/test-helper";
-import { Request as ExpressRequest } from "express";
 import { ValidationError, ValidationResult } from "joi";
-import moment from "moment";
-import bcrypt from "bcrypt";
 
 // Mocks Joi validation
 jest.mock("joi", () => ({
@@ -29,29 +25,29 @@ jest.mock("joi", () => ({
   }),
 }));
 
-// Mocks database models
-jest.mock("@services/database", () => ({
-  dbAuth: {
-    usersModel: {
-      findById: jest.fn(),
-    },
-    approvedPasswordResetModel: {
-      findOneAndDelete: jest.fn(),
-    },
-  },
-}));
-
 // Mocks database connection
 jest.mock("mongoose", () => ({
   connection: {
-    startSession: () => ({
+    startSession: jest.fn(() => ({
       startTransaction: jest.fn(),
       commitTransaction: jest.fn(),
       inTransaction: jest.fn(() => true),
       abortTransaction: jest.fn(),
       endSession: jest.fn(),
-    }),
+    })),
   },
+}));
+
+// Mocks authorization middleware
+jest.mock("@middleware/authorization", () => ({
+  getRequestUserData: jest.fn(() => ({
+    ...getFakeRequestUser(),
+    save: jest.fn(),
+    update: jest.fn(),
+    generateAccessToken: jest.fn(),
+    toPrivateJSON: jest.fn(),
+  })),
+  requestIsAuthorized: jest.fn(() => true),
 }));
 
 // Mocks Request Error handler
@@ -64,58 +60,25 @@ jest.mock("@middleware/request-success", () => ({
   RequestSuccess: jest.fn(),
 }));
 
-// Mocks moment date handler
-jest.mock("moment", () => jest.fn());
-
 describe("Route - Users: Updating a user's password", () => {
-  let mockRequest: ExpressRequest;
+  let mockRequest: ExpressRequestAndUser;
   let mockRequestSuccess: jest.Mock;
   let mockRequestError: jest.Mock<Partial<RequestErrorMethods>>;
-  let mockRequestErrorBadRequest: jest.Mock;
   let mockRequestErrorServer: jest.Mock;
   let mockRequestErrorValidation: jest.Mock;
-  let mockMomentIsBefore: jest.Mock;
-  let mockMoment: jest.Mock;
-
-  let mockFindOneUser: jest.SpyInstance;
-  let mockFindOneAndDeleteApprovedPassReset: jest.SpyInstance;
-  let mockBcryptHash: jest.SpyInstance;
 
   beforeEach(() => {
     mockRequest = getMockReq();
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
-    mockRequestErrorBadRequest = jest.fn();
     mockRequestErrorServer = jest.fn();
     mockRequestErrorValidation = jest.fn();
     mockRequestError = <jest.Mock>RequestError;
     mockRequestError.mockImplementation(() => ({
-      badRequest: mockRequestErrorBadRequest,
       server: mockRequestErrorServer,
       validation: mockRequestErrorValidation,
     }));
-
-    mockMomentIsBefore = jest.fn(() => false);
-    mockMoment = <jest.Mock>(<any>moment);
-    mockMoment.mockImplementation(() => ({
-      isBefore: mockMomentIsBefore,
-    }));
-
-    mockFindOneUser = <jest.Mock>dbAuth.usersModel.findById;
-    mockFindOneUser.mockImplementation(() => ({
-      ...getFakeRequestUser(),
-      save: () => {},
-    }));
-
-    mockFindOneAndDeleteApprovedPassReset = <jest.Mock>(
-      dbAuth.approvedPasswordResetModel.findOneAndDelete
-    );
-    mockFindOneAndDeleteApprovedPassReset.mockImplementation(
-      () => <IApprovedPasswordReset>{ expDate: new Date() }
-    );
-
-    mockBcryptHash = jest.spyOn(bcrypt, "hash").mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -124,9 +87,6 @@ describe("Route - Users: Updating a user's password", () => {
     mockRequestError.mockClear();
     mockRequestErrorServer.mockClear();
     mockRequestErrorValidation.mockClear();
-    mockMomentIsBefore.mockClear();
-    mockMoment.mockClear();
-    mockBcryptHash.mockRestore();
   });
 
   describe("Failed requests due to validation error", () => {
@@ -138,7 +98,7 @@ describe("Route - Users: Updating a user's password", () => {
       };
       mockRequest.body = reqBody;
 
-      await updatePassword(mockRequest);
+      await updateUser(mockRequest);
 
       expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
       expect(mockRequestError).toHaveBeenCalledWith(
@@ -151,7 +111,7 @@ describe("Route - Users: Updating a user's password", () => {
       const reqBody: JoiValidationParam = { returnError: true };
       mockRequest.body = reqBody;
 
-      await updatePassword(mockRequest);
+      await updateUser(mockRequest);
 
       expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
       expect(mockRequestError).toHaveBeenCalledWith(
@@ -161,42 +121,18 @@ describe("Route - Users: Updating a user's password", () => {
     });
   });
 
-  it("Should fail request due to no user found", async () => {
-    mockFindOneUser.mockReturnValueOnce(false);
-
-    await updatePassword(mockRequest);
-
-    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should fail request due to no approved password reset found for given user", async () => {
-    mockFindOneAndDeleteApprovedPassReset.mockReturnValueOnce(false);
-
-    await updatePassword(mockRequest);
-
-    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should fail request due to an expired approved password reset", async () => {
-    mockMomentIsBefore.mockReturnValueOnce(true);
-
-    await updatePassword(mockRequest);
-
-    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should fail request due to a server error", async () => {
-    mockBcryptHash.mockImplementationOnce(() => {
+  it("Should fail request due to server error", async () => {
+    mockRequestSuccess.mockImplementationOnce(() => {
       throw Error();
     });
 
-    await updatePassword(mockRequest);
+    await updateUser(mockRequest);
 
     expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
   });
 
   it("Should pass request successfully", async () => {
-    await updatePassword(mockRequest);
+    await updateUser(mockRequest);
 
     expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });

@@ -1,5 +1,11 @@
-export type JoiValidationResults<T> = {
-  isValid: boolean;
-  errorMessage: string | null;
-  validatedValue: T;
-};
+export type JoiValidationResults<T> =
+  | {
+      isValid: true;
+      errorMessage: null;
+      validatedValue: T;
+    }
+  | {
+      isValid: false;
+      errorMessage: string;
+      validatedValue: undefined;
+    };

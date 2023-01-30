@@ -209,6 +209,14 @@ describe("Route - Users: Resetting a user's password", () => {
     expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
   });
 
+  it("Should pass request successfully even though user is not found", async () => {
+    mockFindOneUser.mockReturnValueOnce(null);
+
+    await resetPassword(mockRequest);
+
+    expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
+  });
+
   it("Should pass request successfully", async () => {
     await resetPassword(mockRequest);
 

@@ -88,7 +88,6 @@ usersSchema.static(
 usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
   // The user's data to attach to their web token
   const userData: TokenData = {
-    id: this.id,
     firstName: this.firstName,
     lastName: this.lastName,
     email: this.email,

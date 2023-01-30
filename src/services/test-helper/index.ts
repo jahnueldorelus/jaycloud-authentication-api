@@ -96,7 +96,6 @@ export const getFakeRequestUser = () => {
     firstName: "test",
     lastName: "test",
     email: "test@test.com",
-    id: 1,
     exp: 1516239022,
     iat: 1516239022,
   };

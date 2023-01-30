@@ -1,7 +1,7 @@
 import { DataController } from "@controller/data";
 import { getMockReq } from "@jest-mock/express";
 import {
-  requestPassedAuthorization,
+  requestAuthenticationChecked,
   getRequestUserData,
 } from "@middleware/authorization";
 import { RequestSuccess } from "@middleware/request-success";
@@ -14,10 +14,11 @@ import { DataRequest } from "@app-types/data";
 import { JoiValidationParam } from "@app-types/tests/joi";
 import { dbAuth } from "@services/database";
 import { IService } from "@app-types/database/models/services";
+import { DBLoadedUser } from "@app-types/database/models/users";
 
 // Mocks the Authorization
 jest.mock("@middleware/authorization", () => ({
-  requestPassedAuthorization: jest.fn(),
+  requestAuthenticationChecked: jest.fn(),
   getRequestUserData: jest.fn(),
 }));
 
@@ -76,7 +77,7 @@ jest.mock("mongoose", () => ({
 
 describe("Route - Data", () => {
   let mockRequest: ExpressRequest;
-  let mockRequestIsAuthorized: jest.Mock;
+  let mockRequestAuthenticationChecked: jest.Mock;
   let mockGetRequestUserData: jest.Mock;
   let mockRequestSuccess: jest.Mock;
   let mockRequestError: jest.Mock;
@@ -90,11 +91,14 @@ describe("Route - Data", () => {
   beforeEach(() => {
     mockRequest = getMockReq();
 
-    mockRequestIsAuthorized = <jest.Mock>requestPassedAuthorization;
-    mockRequestIsAuthorized.mockImplementation(() => true);
+    mockRequestAuthenticationChecked = <jest.Mock>requestAuthenticationChecked;
+    mockRequestAuthenticationChecked.mockImplementation(() => true);
 
     mockGetRequestUserData = <jest.Mock>getRequestUserData;
-    mockGetRequestUserData.mockImplementation(() => getFakeRequestUser());
+    mockGetRequestUserData.mockImplementation(() => {
+      const dbLoadedUser: DBLoadedUser = <any>{ toPrivateJSON: jest.fn() };
+      return { ...getFakeRequestUser(), ...dbLoadedUser };
+    });
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -126,7 +130,7 @@ describe("Route - Data", () => {
 
   afterEach(() => {
     mockRequest.destroy();
-    mockRequestIsAuthorized.mockClear();
+    mockRequestAuthenticationChecked.mockClear();
     mockGetRequestUserData.mockClear();
     mockRequestSuccess.mockClear();
     mockRequestError.mockClear();
@@ -224,36 +228,27 @@ describe("Route - Data", () => {
     });
   });
 
-  describe("Successful requests", () => {
-    it("Should pass the request successfully", async () => {
-      await DataController.transferRoute(mockRequest);
+  it("Should pass the request succuessfully", async () => {
+    const reqBody: JoiValidationDataRequestParam = {
+      returnError: false,
+      serviceId: "test",
+      apiPath: "/api/test",
+      apiMethod: "GET",
+    };
+    const axiosReqBody: Partial<DataRequest> = { ...reqBody };
+    delete axiosReqBody.serviceId;
+    delete axiosReqBody.apiPath;
+    mockRequest.body = reqBody;
+    mockRequest.method = reqBody.apiMethod;
 
-      expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
+    await DataController.transferRoute(mockRequest);
+
+    expect(mockAxios).toHaveBeenCalledTimes(1);
+    expect(mockAxios).toHaveBeenCalledWith({
+      data: axiosReqBody,
+      url: expect.stringContaining(reqBody.apiPath),
+      method: mockRequest.method,
     });
-
-    it("Should pass the correct HTTP url and method to Axios", async () => {
-      mockGetRequestUserData.mockReturnValueOnce(null);
-      const reqBody: JoiValidationDataRequestParam = {
-        returnError: false,
-        serviceId: "test",
-        apiPath: "/api/test",
-        apiMethod: "GET",
-      };
-      const axiosReqBody: Partial<DataRequest> = { ...reqBody };
-      delete axiosReqBody.serviceId;
-      delete axiosReqBody.apiPath;
-      mockRequest.body = reqBody;
-      mockRequest.method = reqBody.apiMethod;
-
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockAxios).toHaveBeenCalledTimes(1);
-      expect(mockAxios).toHaveBeenCalledWith({
-        data: axiosReqBody,
-        url: expect.stringContaining(reqBody.apiPath),
-        method: mockRequest.method,
-      });
-      expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
-    });
+    expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
   });
 });

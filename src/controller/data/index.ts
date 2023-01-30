@@ -2,7 +2,7 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 import { DataRequest, ValidDataRequest } from "@app-types/data";
 import {
   getRequestUserData,
-  requestPassedAuthorization,
+  requestAuthenticationChecked,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
@@ -58,7 +58,7 @@ const validateDataRequest = (requestInfo: DataRequest): ValidDataRequest => {
 
 export const DataController: Controller = {
   transferRoute: async (req: ExpressRequest) => {
-    if (requestPassedAuthorization(<ExpressRequestAndUser>req)) {
+    if (requestAuthenticationChecked(<ExpressRequestAndUser>req)) {
       // The user's data request info
       const dataRequestInfo: DataRequest = req.body;
 
@@ -91,9 +91,7 @@ export const DataController: Controller = {
           // Adds the user's info to the new request's body
           const userData = getRequestUserData(<ExpressRequestAndUser>req);
           if (userData) {
-            delete userData.exp;
-            delete userData.iat;
-            newReqBody.user = userData;
+            newReqBody.user = userData.toPrivateJSON();
           }
 
           // Removes data from the new request's body that was required only for this server
