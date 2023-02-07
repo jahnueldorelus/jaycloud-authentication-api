@@ -13,12 +13,15 @@ import {
   UserUpdateData,
   ValidUserUpdateInfo,
 } from "@app-types/user/update-user";
+import { dbAuth } from "@services/database";
+import { reqErrorMessages } from "@services/request-error-messages";
+import { genSalt, hash } from "bcrypt";
 
 // Schema validation
 const updatetAccountSchema = Joi.object({
-  firstName: newUserAttributes.firstName.joiSchema,
-  lastName: newUserAttributes.lastName.joiSchema,
-  password: newUserAttributes.password.joiSchema,
+  firstName: newUserAttributes.firstName.joiSchema.optional(),
+  lastName: newUserAttributes.lastName.joiSchema.optional(),
+  password: newUserAttributes.password.joiSchema.optional(),
 });
 
 /**
@@ -57,14 +60,29 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
       const dbSession = await connection.startSession();
 
       try {
+        //
+        if (validatedValue.password) {
+          // Generates a salt for hashing
+          const salt = await genSalt();
+          // Hashes the user's password
+          validatedValue.password = await hash(validatedValue.password, salt);
+        }
+
         dbSession.startTransaction();
-        reqUser.update({ $set: validatedValue });
-        await reqUser.save();
+        const newUserInfo = await dbAuth.usersModel.findByIdAndUpdate(
+          reqUser.id,
+          validatedValue,
+          { session: dbSession, new: true }
+        );
         await dbSession.commitTransaction();
 
-        const accessToken = reqUser.generateAccessToken();
+        if (!newUserInfo) {
+          throw Error(reqErrorMessages.nonExistentUser);
+        }
 
-        RequestSuccess(req, reqUser.toPrivateJSON(), [
+        const accessToken = newUserInfo.generateAccessToken();
+
+        RequestSuccess(req, newUserInfo.toPrivateJSON(), [
           // The access token
           {
             headerName: <string>process.env[envNames.jwt.accessReqHeader],
@@ -76,8 +94,16 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
           await dbSession.abortTransaction();
         }
 
-        // Default error
-        RequestError(req, Error("Failed to update the account.")).server();
+        // If the user to update doesn't exist
+        if (error.message === reqErrorMessages.nonExistentUser) {
+          RequestError(
+            req,
+            Error("Failed to update the account. The user doesn't exist")
+          ).badRequest();
+        } else {
+          // Default error
+          RequestError(req, Error("Failed to update the account.")).server();
+        }
       } finally {
         await dbSession.endSession();
       }

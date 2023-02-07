@@ -5,18 +5,28 @@ import { updateUser } from "@controller/user/components/update-user";
 import { getMockReq } from "@jest-mock/express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
+import { dbAuth } from "@services/database";
 import { getFakePassword, getFakeUserTokenData } from "@services/test-helper";
 
 // Mocks database connection
 jest.mock("mongoose", () => ({
   connection: {
-    startSession: jest.fn(() => ({
+    startSession: () => ({
       startTransaction: jest.fn(),
       commitTransaction: jest.fn(),
       inTransaction: jest.fn(() => true),
       abortTransaction: jest.fn(),
       endSession: jest.fn(),
-    })),
+    }),
+  },
+}));
+
+// Mocks database model
+jest.mock("@services/database", () => ({
+  dbAuth: {
+    usersModel: {
+      findByIdAndUpdate: jest.fn(),
+    },
   },
 }));
 
@@ -46,8 +56,10 @@ describe("Route - Users: Updating a user's password", () => {
   let mockRequest: ExpressRequestAndUser;
   let mockRequestSuccess: jest.Mock;
   let mockRequestError: jest.Mock<Partial<RequestErrorMethods>>;
+  let mockRequestErrorBadRequest: jest.Mock;
   let mockRequestErrorServer: jest.Mock;
   let mockRequestErrorValidation: jest.Mock;
+  let mockUsersFindByIdAndUpdate: jest.SpyInstance;
 
   beforeEach(() => {
     const fakeUser = getFakeUserTokenData();
@@ -61,21 +73,33 @@ describe("Route - Users: Updating a user's password", () => {
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
+    mockRequestErrorBadRequest = jest.fn();
     mockRequestErrorServer = jest.fn();
     mockRequestErrorValidation = jest.fn();
     mockRequestError = <jest.Mock>RequestError;
     mockRequestError.mockImplementation(() => ({
       server: mockRequestErrorServer,
       validation: mockRequestErrorValidation,
+      badRequest: mockRequestErrorBadRequest,
     }));
+
+    mockUsersFindByIdAndUpdate = jest
+      .spyOn<any, any>(dbAuth.usersModel, "findByIdAndUpdate")
+      .mockReturnValue({
+        ...fakeUser,
+        generateAccessToken: () => {},
+        toPrivateJSON: () => {},
+      });
   });
 
   afterEach(() => {
     mockRequest.destroy();
     mockRequestSuccess.mockClear();
     mockRequestError.mockClear();
+    mockRequestErrorBadRequest.mockClear();
     mockRequestErrorServer.mockClear();
     mockRequestErrorValidation.mockClear();
+    mockUsersFindByIdAndUpdate.mockRestore();
   });
 
   it("Should fail request due to a validation error", async () => {
@@ -84,6 +108,18 @@ describe("Route - Users: Updating a user's password", () => {
     await updateUser(mockRequest);
 
     expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
+  });
+
+  it("Should fail request due to a bard request error - no user was found", async () => {
+    mockUsersFindByIdAndUpdate.mockReturnValueOnce(null);
+
+    await updateUser(mockRequest);
+
+    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
     expect(mockRequestError).toHaveBeenCalledWith(
       mockRequest,
       expect.any(Error)

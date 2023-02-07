@@ -1,7 +1,11 @@
 import { Request as ExpressRequest } from "express";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
-import { FormModel, FormModelInputOption } from "@app-types/form-model";
+import {
+  FormModel,
+  FormModelInputOption,
+  FormModelInputOptionWithJoi,
+} from "@app-types/form-model";
 
 /**
  * Updates the user form model by removing it's Joi validation schema
@@ -12,22 +16,26 @@ export const configureUpdateUserFormModel = (): FormModelInputOption[] => {
     ...newUserAttributes,
   };
 
-  for (let key of Object.keys(newUserAttributesCopy)) {
-    if (key === "email") {
-      delete newUserAttributesCopy[key];
-    }
-  }
-
-  const inputOptions = Object.keys(newUserAttributesCopy);
+  const inputOptions = Object.keys(newUserAttributesCopy).filter(
+    (inputName) => inputName !== "email"
+  );
 
   const newInputOptions = inputOptions.map((inputName) => {
-    const newOption = {
-      ...newUserAttributesCopy[inputName],
-      name: inputName,
-    };
-    delete newOption.joiSchema;
+    const input = <Partial<FormModelInputOptionWithJoi>>(
+      newUserAttributesCopy[inputName]
+    );
 
-    return newOption;
+    if (input) {
+      input.joiSchema = undefined;
+      input.name = inputName;
+
+      // Makes all inputs optional
+      if (input.validation) {
+        input.validation.required = false;
+      }
+    }
+
+    return input;
   });
 
   return <FormModelInputOption[]>newInputOptions;
@@ -39,7 +47,7 @@ export const configureUpdateUserFormModel = (): FormModelInputOption[] => {
  */
 export const getUpdateUserFormModel = async (req: ExpressRequest) => {
   const updateUserFormModel: FormModel = {
-    title: "Update account",
+    title: "Update Profile",
     inputs: configureUpdateUserFormModel(),
   };
 
