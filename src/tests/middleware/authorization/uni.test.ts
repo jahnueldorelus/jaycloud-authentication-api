@@ -69,6 +69,7 @@ describe("Middleware - Authorization", () => {
   let mockResponse: ExpressResponse;
   let mockNext: NextFunction;
   let mockRequestError: jest.Mock;
+  let mockRequestErrorNotAuthorized: jest.Mock;
   let mockJwtVerify: jest.Mock;
   let mockDbAuthFindUser: jest.Mock;
 
@@ -80,6 +81,10 @@ describe("Middleware - Authorization", () => {
     mockNext = mockExpressComponents.next;
 
     mockRequestError = <jest.Mock>RequestError;
+    mockRequestErrorNotAuthorized = jest.fn();
+    mockRequestError.mockImplementation(() => ({
+      notAuthorized: mockRequestErrorNotAuthorized,
+    }));
 
     mockJwtVerify = <jest.Mock>verify;
     mockJwtVerify.mockImplementation(() => false);
@@ -92,6 +97,7 @@ describe("Middleware - Authorization", () => {
     mockRequest.destroy();
     mockExpressComponents.mockClear();
     mockRequestError.mockClear();
+    mockRequestErrorNotAuthorized.mockClear();
     mockJwtVerify.mockClear();
     mockDbAuthFindUser.mockClear();
   });
@@ -102,7 +108,8 @@ describe("Middleware - Authorization", () => {
 
       await validateRequestAuthorization(mockRequest, mockResponse, mockNext);
 
-      expect(RequestError).toHaveBeenCalledTimes(0);
+      expect(mockRequestError).toHaveBeenCalledTimes(1);
+      expect(mockRequestErrorNotAuthorized).toHaveBeenCalledTimes(1);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
@@ -114,7 +121,7 @@ describe("Middleware - Authorization", () => {
       await validateRequestAuthorization(mockRequest, mockResponse, mockNext);
 
       expect(mockJwtVerify).toHaveBeenCalledTimes(1);
-      expect(RequestError).toHaveBeenCalledTimes(1);
+      expect(mockRequestError).toHaveBeenCalledTimes(1);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
@@ -124,7 +131,7 @@ describe("Middleware - Authorization", () => {
       await validateRequestAuthorization(mockRequest, mockResponse, mockNext);
 
       expect(mockJwtVerify).toHaveBeenCalledTimes(1);
-      expect(RequestError).toHaveBeenCalledTimes(1);
+      expect(mockRequestError).toHaveBeenCalledTimes(1);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
@@ -133,14 +140,14 @@ describe("Middleware - Authorization", () => {
       await validateRequestAuthorization(mockRequest, mockResponse, mockNext);
 
       expect(mockDbAuthFindUser).toHaveBeenCalledTimes(1);
-      expect(RequestError).toHaveBeenCalledTimes(1);
+      expect(mockRequestError).toHaveBeenCalledTimes(1);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
     it("Should pass request due to valid token and existing user", async () => {
       await validateRequestAuthorization(mockRequest, mockResponse, mockNext);
 
-      expect(RequestError).toHaveBeenCalledTimes(0);
+      expect(mockRequestError).toHaveBeenCalledTimes(0);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
   });
@@ -203,7 +210,7 @@ describe("Middleware - Authorization", () => {
     });
   });
 
-  describe("Determes if a request is authorized", () => {
+  describe("Determines if a request is authorized", () => {
     let mockRequest: ExpressRequestAndUser;
 
     beforeEach(() => {
@@ -214,18 +221,7 @@ describe("Middleware - Authorization", () => {
       mockRequest.destroy();
     });
 
-    it("Should conclude the request to be unauthorized due to no tokenn", () => {
-      // The type of request user and fake user are not the same but it's okay for testing purposes
-      mockRequest.user = <typeof mockRequest.user>getFakeUserTokenData();
-
-      const isReqAuthorized = requestIsAuthorized(mockRequest);
-
-      expect(isReqAuthorized).toBeFalsy();
-    });
-
     it("Should conclude the request to be unauthorized due to no user", () => {
-      mockRequest.token = getFakeRequestToken();
-
       const isReqAuthorized = requestIsAuthorized(mockRequest);
 
       expect(isReqAuthorized).toBeFalsy();

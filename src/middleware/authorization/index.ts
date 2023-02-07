@@ -89,6 +89,8 @@ export const validateRequestAuthorization = async (
     } finally {
       await dbSession.endSession();
     }
+  } else {
+    RequestError(userReq, Error(reqErrorMessages.invalidToken)).notAuthorized();
   }
 
   // Goes to the next Express middleware
@@ -115,7 +117,7 @@ export const requestIsAuthorized = (req: ExpressRequestAndUser) => {
 /**
  * Determines if a request can be processed after its been through
  * the authentication middleware. Only requests with no token or a valid
- * token can be processed. Requests with invalid tokens cannot be processed.
+ * token can be processed. Requests with invalid tokens will not be processed.
  */
 export const requestAuthenticationChecked = (req: ExpressRequestAndUser) => {
   return req.token && !req.user ? false : true;

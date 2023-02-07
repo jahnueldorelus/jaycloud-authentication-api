@@ -55,7 +55,7 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
     const dbSession = await connection.startSession();
 
     try {
-      // Generates a salt for encryption
+      // Generates a salt for hashing
       const salt = await genSalt();
       // Hashes the user's password
       validatedValue.password = await hash(validatedValue.password, salt);
@@ -103,7 +103,9 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
         },
       ]);
     } catch (error: any) {
-      await dbSession.abortTransaction();
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
 
       // If the error is a duplicate email
       if (error && error.code === 11000 && error.keyPattern.email === 1) {
