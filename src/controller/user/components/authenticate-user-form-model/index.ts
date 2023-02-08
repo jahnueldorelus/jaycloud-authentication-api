@@ -7,6 +7,7 @@ import {
   FormModel,
 } from "@app-types/form-model";
 import { RegExpError } from "@services/reg-exp-error";
+import { cloneDeep } from "lodash";
 
 /**
  * Updates the authenticating user form model by removing it's Joi validation schema
@@ -54,7 +55,7 @@ export const configureAuthenticateUserFormModel = (
  * @param req The network request
  */
 export const getAuthenticateUserFormModel = async (req: ExpressRequest) => {
-  const newUserAttributesCopy = { ...newUserAttributes };
+  const newUserAttributesCopy = cloneDeep(newUserAttributes);
 
   for (let key of Object.keys(newUserAttributesCopy)) {
     if (key !== "password" && key !== "email") {

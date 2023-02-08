@@ -2,13 +2,14 @@ import { Request as ExpressRequest } from "express";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
 import { FormModel, FormModelInputOption } from "@app-types/form-model";
+import { cloneDeep } from "lodash";
 
 /**
  * Updates the new user form model by removing it's Joi validation schema
  * and providing an input name.
  */
 export const configureNewUserFormModel = (): FormModelInputOption[] => {
-  const newUserAttributesCopy = { ...newUserAttributes };
+  const newUserAttributesCopy = cloneDeep(newUserAttributes);
   const inputOptions = Object.keys(newUserAttributesCopy);
 
   const newInputOptions = inputOptions.map((inputName) => {

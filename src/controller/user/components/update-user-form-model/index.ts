@@ -6,24 +6,25 @@ import {
   FormModelInputOption,
   FormModelInputOptionWithJoi,
 } from "@app-types/form-model";
+import { cloneDeep } from "lodash";
 
 /**
  * Updates the user form model by removing it's Joi validation schema
  * and providing an input name.
  */
 export const configureUpdateUserFormModel = (): FormModelInputOption[] => {
-  const newUserAttributesCopy = <Partial<typeof newUserAttributes>>{
-    ...newUserAttributes,
-  };
+  const newUserAttributesCopy = <Partial<typeof newUserAttributes>>(
+    cloneDeep(newUserAttributes)
+  );
 
   const inputOptions = Object.keys(newUserAttributesCopy).filter(
     (inputName) => inputName !== "email"
   );
 
   const newInputOptions = inputOptions.map((inputName) => {
-    const input = <Partial<FormModelInputOptionWithJoi>>(
-      newUserAttributesCopy[inputName]
-    );
+    const input = <Partial<FormModelInputOptionWithJoi>>{
+      ...newUserAttributesCopy[inputName],
+    };
 
     if (input) {
       input.joiSchema = undefined;

@@ -6,6 +6,7 @@ import {
   FormModelInputOption,
   FormModelInputOptionWithJoi,
 } from "@app-types/form-model";
+import { cloneDeep } from "lodash";
 
 /**
  * Sets up the input options for the password reset form model.
@@ -13,7 +14,7 @@ import {
 export const configurePasswordResetFormModel = (): FormModelInputOption[] => {
   const inputOptions: FormModelInputOption[] = [
     <Omit<FormModelInputOptionWithJoi, "joiSchema">>{
-      ...newUserAttributes.email,
+      ...cloneDeep(newUserAttributes.email),
       name: "email",
       joiSchema: undefined,
     },
