@@ -31,7 +31,7 @@ export const configureNewUserFormModel = (): FormModelInputOption[] => {
  */
 export const getNewUserFormModel = async (req: ExpressRequest) => {
   const newUserFormModel: FormModel = {
-    title: "Create a New Account",
+    title: "Create A New Account",
     inputs: configureNewUserFormModel(),
   };
 
