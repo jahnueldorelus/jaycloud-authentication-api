@@ -215,7 +215,6 @@ describe("Route - Data", () => {
 
       mockServicesFindOne.mockReturnValueOnce(<IService>{
         available: true,
-        apiPort: 15000,
       });
       await DataController.transferRoute(mockRequest);
 

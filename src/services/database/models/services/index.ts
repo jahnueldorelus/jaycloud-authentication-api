@@ -17,30 +17,32 @@ const servicesSchema = new Schema<IService, ServicesModel, IServiceMethods>(
       minlength: 3,
       maxlength: 255,
     },
-    apiUrl: {
+    prodApiUrl: {
       type: String,
       required: true,
       minlength: 3,
       maxlength: 255,
-    },
-    apiPort: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 65536,
       unique: true,
     },
-    uiUrl: {
+    devApiUrl: {
       type: String,
       required: true,
       minlength: 3,
       maxlength: 255,
+      unique: true,
     },
-    uiPort: {
-      type: Number,
+    prodUiUrl: {
+      type: String,
       required: true,
-      min: 0,
-      max: 65536,
+      minlength: 3,
+      maxlength: 255,
+      unique: true,
+    },
+    devUiUrl: {
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 255,
       unique: true,
     },
     logoFileName: {
