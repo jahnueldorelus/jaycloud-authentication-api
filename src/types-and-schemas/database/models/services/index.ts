@@ -2,10 +2,10 @@ import { HydratedDocument, Model } from "mongoose";
 
 export type IService = {
   name: string;
-  apiUrl: string;
-  apiPort: number;
-  uiUrl: string;
-  uiPort: number;
+  prodApiUrl: string;
+  devApiUrl: string;
+  prodUiUrl: string;
+  devUiUrl: string;
   logoFileName: string;
   description: string;
   available: boolean;
@@ -16,3 +16,7 @@ export type IServiceMethods = {};
 export interface ServicesModel extends Model<IService, {}, IServiceMethods> {}
 
 export type DBLoadedService = HydratedDocument<IService, IServiceMethods>;
+
+export interface UIRequestService extends Partial<DBLoadedService> {
+  uiUrl: string;
+}

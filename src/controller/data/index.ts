@@ -12,6 +12,7 @@ import axios from "axios";
 import { connection } from "mongoose";
 import { dbAuth } from "@services/database";
 import { reqErrorMessages } from "@services/request-error-messages";
+import { envNames } from "@startup/config";
 
 type Controller = {
   transferRoute: (arg0: ExpressRequest) => Promise<void>;
@@ -76,7 +77,7 @@ export const DataController: Controller = {
           dbSession.startTransaction();
           const service = await dbAuth.servicesModel.findOne(
             { _id: validatedValue.serviceId },
-            { apiPort: 1, apiUrl: 1, available: 1 },
+            { prodApiUrl: 1, devApiUrl: 1, available: 1 },
             { session: dbSession }
           );
           await dbSession.commitTransaction();
@@ -102,8 +103,10 @@ export const DataController: Controller = {
           delete dataRequestBody.apiPath;
           delete dataRequestBody.serviceId;
 
-          const requestUrl = `${service.apiUrl}${
-            service.apiPort ? ":" + service.apiPort : ""
+          const currentEnv = process.env[envNames.nodeEnv];
+
+          const requestUrl = `${
+            currentEnv === "production" ? service.prodApiUrl : service.devApiUrl
           }${validatedValue.apiPath}`;
 
           const appAPIResponse = await axios({
