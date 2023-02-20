@@ -15,9 +15,8 @@ import moment from "moment";
 
 // Schema validation
 const verifyUserInfoSchema = Joi.object({
-  email: newUserAttributes.email.joiSchema,
   password: newUserAttributes.password.joiSchema,
-  token: Joi.string().token().required(),
+  token: Joi.string().token(),
 });
 
 /**
@@ -28,11 +27,16 @@ const validateUserInfo = (
   userInfo: UpdatePasswordInfo
 ): ValidUserEmailAndPassword => {
   const { error, value } = verifyUserInfoSchema.validate(userInfo);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 /**
@@ -53,23 +57,12 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
     try {
       dbSession.startTransaction();
 
-      const user = await dbAuth.usersModel.findOne(
-        {
-          email: validatedValue.email,
-        },
-        null,
-        { session: dbSession }
-      );
-
-      if (!user) {
-        throw Error(reqErrorMessages.nonExistentUser);
-      }
-
       const approvedPasswordReset =
         await dbAuth.approvedPasswordResetModel.findOneAndDelete(
-          { userId: user.id, token: validatedValue.token },
+          { token: validatedValue.token },
           { session: dbSession }
         );
+
       const currentDateAndTime = moment(new Date());
 
       // If there's no approved password reset or it's expired
@@ -78,6 +71,16 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
         moment(approvedPasswordReset.expDate).isBefore(currentDateAndTime)
       ) {
         throw Error(reqErrorMessages.forbiddenUser);
+      }
+
+      const user = await dbAuth.usersModel.findById(
+        approvedPasswordReset.userId,
+        null,
+        { session: dbSession }
+      );
+
+      if (!user) {
+        throw Error(reqErrorMessages.nonExistentUser);
       }
 
       const hashSalt = await genSalt();
@@ -94,13 +97,19 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
         await dbSession.abortTransaction();
       }
 
-      if (
-        error.message === reqErrorMessages.nonExistentUser ||
-        error.message === reqErrorMessages.forbiddenUser
-      ) {
+      if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
           req,
-          Error("Failed to update the user's password")
+          Error(
+            "Your request to update the password is invalid. Please make another request to update your password."
+          )
+        ).validation();
+      } else if (error.message === reqErrorMessages.forbiddenUser) {
+        RequestError(
+          req,
+          Error(
+            "The time frame to update the password has expired. Please make another request to update your password."
+          )
         ).badRequest();
       } else {
         // Default error message
@@ -115,6 +124,6 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
   }
   // If the user's information is invalid
   else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

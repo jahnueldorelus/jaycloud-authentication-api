@@ -1,5 +1,4 @@
 import { RequestErrorMethods } from "@app-types/request-error";
-import { JoiValidationParam } from "@app-types/tests/joi";
 import { authenticateUser } from "@controller/user/components/authenticate-user";
 import { getMockReq } from "@jest-mock/express";
 import { RequestError } from "@middleware/request-error";
@@ -7,24 +6,6 @@ import { RequestSuccess } from "@middleware/request-success";
 import { dbAuth } from "@services/database";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { Request as ExpressRequest } from "express";
-import { ValidationError, ValidationResult } from "joi";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
 
 // Mocks Request Error handler
 jest.mock("@middleware/request-error", () => ({

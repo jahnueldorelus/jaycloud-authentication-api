@@ -9,9 +9,7 @@ import Joi from "joi";
 import { ServiceId, ValidServiceId } from "@app-types/service";
 
 // Schema validation
-const serviceIdSchema = Joi.object({
-  serviceId: Joi.string().token().min(24).max(24).required(),
-});
+const serviceIdSchema = Joi.string().token().min(24).max(24).required();
 
 /**
  * Deterimines if the service id is valid.
@@ -19,11 +17,16 @@ const serviceIdSchema = Joi.object({
  */
 const validateServiceId = (serviceId: ServiceId): ValidServiceId => {
   const { error, value } = serviceIdSchema.validate(serviceId);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value || "",
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 export const getServiceLogo = async (
@@ -31,9 +34,11 @@ export const getServiceLogo = async (
   serviceId: string
 ) => {
   // Determines if the user's old refresh token is valid
-  const { isValid, errorMessage, validatedValue } = validateServiceId({
-    serviceId,
-  });
+  const {
+    isValid,
+    errorMessage,
+    validatedValue: validServiceId,
+  } = validateServiceId(serviceId);
 
   if (isValid) {
     const dbSession = await connection.startSession();
@@ -41,7 +46,7 @@ export const getServiceLogo = async (
     try {
       dbSession.startTransaction();
       const serviceLogo = await dbAuth.servicesModel.findById(
-        validatedValue.serviceId,
+        validServiceId,
         { logoFileName: 1 },
         { session: dbSession }
       );
@@ -78,6 +83,6 @@ export const getServiceLogo = async (
       await dbSession.endSession();
     }
   } else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

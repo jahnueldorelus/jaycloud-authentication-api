@@ -1,4 +1,5 @@
 # <img src="./src/assets/images/jaycloud.png" alt="JayCloud Logo" height="40" style="margin-right: 1rem;"> JayCloud Authentication API
+
 The Express server for handling authentication with JayCloud services. Runs in conjuction with
 the [JayCloud Authentication UI](https://github.com/jahnueldorelus/jaycloud-authentication-ui).
 
@@ -59,7 +60,8 @@ To run this project, you will need to add the following environment variables to
 #### Json Web Token Variables
 
 - `JWT_ALGORITHM` - The algorithm to sign tokens
-- `JWT_KEY` - The private key to sign and verify tokens
+- `JWT_PRIVATE_KEY` - The private key to sign tokens
+- `JWT_PUBLIC_KEY` - The public key to verify tokens
 - `JWT_ACC_REQ_HEADER` - The request header name for access tokens
 - `JWT_REF_REQ_HEADER` - The request header name for refresh tokens
 - `JWT_ACC_EXP` - The amount of time before an access token expires from its instantiation
@@ -95,99 +97,143 @@ To run this project, you will need to add the following environment variables to
 
 ## API Reference
 
-1. Gets new user form models
+1. Retrieves a form model to:
 
-```http
-  GET /api/users/form-models
-```
+   #### Create a new user
+
+   ```http
+     GET /api/users/form-models/create-user
+   ```
+
+   #### Authenticate a user
+
+   ```http
+     GET /api/users/form-models/authenticate-user
+   ```
+
+   #### Reset a user's password
+
+   ```http
+     GET /api/users/form-models/password-reset
+   ```
+
+   #### Update a user's password
+
+   ```http
+     GET /api/users/form-models/update-password
+   ```
 
 <br />
 
 2. Creates a new user
 
-```http
-  POST /api/users/new
-```
+   ```http
+   POST /api/users/new
+   ```
 
-- **Parameter type** - JSON Request Body
+   - **Parameter type** - JSON Request Body
 
-  | Parameter   | Type     | Required | Min Length | Max Length | Description           |
-  | :---------- | :------- | :------- | :--------- | :--------- | :-------------------- |
-  | `firstName` | `string` | `true`   | 2          | 255        | The user's first name |
-  | `lastName`  | `string` | `true`   | 2          | 255        | The user's last name  |
-  | `email`     | `string` | `true`   | 5          | 100        | The user's email      |
-  | `password`  | `string` | `true`   | 5          | 100        | The user's password   |
+     | Parameter   | Type     | Required | Min Length | Max Length | Description           |
+     | :---------- | :------- | :------- | :--------- | :--------- | :-------------------- |
+     | `firstName` | `string` | `true`   | 2          | 255        | The user's first name |
+     | `lastName`  | `string` | `true`   | 2          | 255        | The user's last name  |
+     | `email`     | `string` | `true`   | 5          | 100        | The user's email      |
+     | `password`  | `string` | `true`   | 5          | 100        | The user's password   |
 
   <br />
 
 3. Authenticates a user
 
-```http
-  POST /api/users/
-```
+   ```http
+     POST /api/users
+   ```
 
-- **Parameter type** - JSON Request Body
+   - **Parameter type** - JSON Request Body
 
-  | Parameter  | Type     | Required | Description         |
-  | :--------- | :------- | :------- | :------------------ |
-  | `email`    | `string` | `true`   | The user's email    |
-  | `password` | `string` | `true`   | The user's password |
+     | Parameter  | Type     | Required | Description         |
+     | :--------- | :------- | :------- | :------------------ |
+     | `email`    | `string` | `true`   | The user's email    |
+     | `password` | `string` | `true`   | The user's password |
 
   <br />
 
 4. Creates a new refresh token
 
-```http
-  POST /api/users/refreshToken
-```
+   ```http
+     POST /api/users/refresh-token
+   ```
 
-- **Parameter type** - JSON Request Body
+   - **Parameter type** - JSON Request Body
 
-  | Parameter | Type     | Required | Description                       |
-  | :-------- | :------- | :------- | :-------------------------------- |
-  | `token`   | `string` | `true`   | The user's previous refresh token |
-
-  <br />
-
-5. Sends data to a JayCloud service API with the user's authorization
-
-```http
-  ALL /api/data
-```
-
-- **Parameter type** - JSON Request Body
-
-  | Parameter    | Type     | Required | Description                                                 |
-  | :----------- | :------- | :------- | :---------------------------------------------------------- |
-  | `app`        | `string` | `true`   | The name of the JayCloud service to send the request to     |
-  | `appApiPath` | `string` | `true`   | The API path of the JayCloud service to send the request to |
+     | Parameter | Type     | Required | Description                       |
+     | :-------- | :------- | :------- | :-------------------------------- |
+     | `token`   | `string` | `true`   | The user's previous refresh token |
 
   <br />
 
-6. Resets a user's password
+5. Resets a user's password
 
-```http
-  POST /api/users/password-reset
-```
+   ```http
+     POST /api/users/password-reset
+   ```
 
-- **Parameter type** - JSON Request Body
+   - **Parameter type** - JSON Request Body
 
-  | Parameter | Type     | Required | Description      |
-  | :-------- | :------- | :------- | :--------------- |
-  | `email`   | `string` | `true`   | The user's email |
+     | Parameter | Type     | Required | Description      |
+     | :-------- | :------- | :------- | :--------------- |
+     | `email`   | `string` | `true`   | The user's email |
 
   <br />
 
-7. Updates a user's password
+6. Updates a user's password
 
-```http
-  POST /api/users/
-```
+   ```http
+     POST /api/users/update-password
+   ```
 
-- **Parameter type** - JSON Request Body
+   - **Parameter type** - JSON Request Body
 
-  | Parameter  | Type     | Required | Description                              |
-  | :--------- | :------- | :------- | :--------------------------------------- |
-  | `email`    | `string` | `true`   | The user's email                         |
-  | `password` | `string` | `true`   | The user's new password                  |
-  | `token`    | `string` | `true`   | The user's approved password reset token |
+     | Parameter  | Type     | Required | Description                 |
+     | :--------- | :------- | :------- | :-------------------------- |
+     | `password` | `string` | `true`   | The user's new password     |
+     | `token`    | `string` | `true`   | The user's reset link token |
+
+  <br />
+
+7. Sends data to a JayCloud service api (with the user's info if the request is authorized)
+
+   ```http
+     POST /api/data
+   ```
+
+   - **Parameter type** - JSON Request Body
+
+     | Parameter   | Type     | Required | Description                                                             |
+     | :---------- | :------- | :------- | :---------------------------------------------------------------------- |
+     | `serviceId` | `string` | `true`   | The id of the JayCloud service to send the request to                   |
+     | `apiMethod` | `string` | `true`   | The HTTP method to use when sending the request to the JayCloud service |
+     | `apiPath`   | `string` | `true`   | The api path of the JayCloud service's api to send the request to       |
+
+  <br />
+
+8. Retrieves a list of JayCloud services
+
+   ```http
+     GET /api/services
+   ```
+
+  <br />
+
+9. Retrieves the logo of a JayCloud serivce
+
+   ```http
+     GET /api/services/logo/:serviceId
+   ```
+
+   - **Parameter type** - URL Route Parameter
+
+     | Parameter   | Type     | Required | Description                                             |
+     | :---------- | :------- | :------- | :------------------------------------------------------ |
+     | `serviceId` | `string` | `true`   | The id of the JayCloud service to retrieve the logo for |
+
+  <br />

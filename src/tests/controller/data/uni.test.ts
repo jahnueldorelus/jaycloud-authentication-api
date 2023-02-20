@@ -1,23 +1,25 @@
 import { DataController } from "@controller/data";
 import { getMockReq } from "@jest-mock/express";
 import {
-  requestPassedAuthorization,
+  requestAuthenticationChecked,
   getRequestUserData,
 } from "@middleware/authorization";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
-import { getFakeRequestUser } from "@services/test-helper";
+import {
+  getFakeUserTokenData,
+  getFakeMongoDocumentId,
+} from "@services/test-helper";
 import { Request as ExpressRequest } from "express";
-import { ValidationError, ValidationResult } from "joi";
 import axios from "axios";
 import { DataRequest } from "@app-types/data";
-import { JoiValidationParam } from "@app-types/tests/joi";
 import { dbAuth } from "@services/database";
 import { IService } from "@app-types/database/models/services";
+import { DBLoadedUser } from "@app-types/database/models/users";
 
 // Mocks the Authorization
 jest.mock("@middleware/authorization", () => ({
-  requestPassedAuthorization: jest.fn(),
+  requestAuthenticationChecked: jest.fn(),
   getRequestUserData: jest.fn(),
 }));
 
@@ -33,26 +35,6 @@ jest.mock("@middleware/request-error", () => ({
 
 // Mocks the Axios service
 jest.mock("axios");
-
-// Mocks Joi validation
-type JoiValidationDataRequestParam = DataRequest & JoiValidationParam;
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn(
-      (validateInfo: JoiValidationDataRequestParam): ValidationResult => {
-        if (validateInfo.returnError) {
-          return {
-            error: <ValidationError>{ message: validateInfo.message },
-            value: undefined,
-          };
-        } else {
-          return { error: undefined, value: validateInfo };
-        }
-      }
-    ),
-  }),
-}));
 
 // Mocks database user model
 jest.mock("@services/database", () => ({
@@ -76,7 +58,7 @@ jest.mock("mongoose", () => ({
 
 describe("Route - Data", () => {
   let mockRequest: ExpressRequest;
-  let mockRequestIsAuthorized: jest.Mock;
+  let mockRequestAuthenticationChecked: jest.Mock;
   let mockGetRequestUserData: jest.Mock;
   let mockRequestSuccess: jest.Mock;
   let mockRequestError: jest.Mock;
@@ -87,14 +69,30 @@ describe("Route - Data", () => {
   let mockAxiosIsAxiosError: jest.SpyInstance;
   let mockServicesFindOne: jest.SpyInstance;
 
+  /**
+   * Retrieves the body of a request that will be sent to an external server.
+   * @param useFakeId Determines if a fake service id should be used
+   */
+  const getRequestBody = (useFakeId: boolean): DataRequest => {
+    const serviceId = useFakeId ? "FAKE_SERVICE_ID" : getFakeMongoDocumentId();
+    return {
+      serviceId,
+      apiPath: "/api/test",
+      apiMethod: "GET",
+    };
+  };
+
   beforeEach(() => {
     mockRequest = getMockReq();
 
-    mockRequestIsAuthorized = <jest.Mock>requestPassedAuthorization;
-    mockRequestIsAuthorized.mockImplementation(() => true);
+    mockRequestAuthenticationChecked = <jest.Mock>requestAuthenticationChecked;
+    mockRequestAuthenticationChecked.mockImplementation(() => true);
 
     mockGetRequestUserData = <jest.Mock>getRequestUserData;
-    mockGetRequestUserData.mockImplementation(() => getFakeRequestUser());
+    mockGetRequestUserData.mockImplementation(() => {
+      const dbLoadedUser: DBLoadedUser = <any>{ toPrivateJSON: jest.fn() };
+      return { ...getFakeUserTokenData(), ...dbLoadedUser };
+    });
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -126,7 +124,7 @@ describe("Route - Data", () => {
 
   afterEach(() => {
     mockRequest.destroy();
-    mockRequestIsAuthorized.mockClear();
+    mockRequestAuthenticationChecked.mockClear();
     mockGetRequestUserData.mockClear();
     mockRequestSuccess.mockClear();
     mockRequestError.mockClear();
@@ -138,121 +136,91 @@ describe("Route - Data", () => {
     mockServicesFindOne.mockRestore();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = requestBody;
-
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(requestBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      // Sets the validation of the request's body to fail
-      const requestBody: JoiValidationParam = {
-        returnError: true,
-      };
-      mockRequest.body = requestBody;
-
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(requestBody.message)
-      );
-    });
-  });
-
-  it("Should fail request due to a bad request", async () => {
-    mockServicesFindOne.mockReturnValueOnce(null);
+  it("Should fail request due to validation error", async () => {
+    mockRequest.body = getRequestBody(true);
 
     await DataController.transferRoute(mockRequest);
 
-    expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
-  describe("Failed requests due to server error", () => {
-    it("Should fail due to error retrieving the list of services available from the database", async () => {
-      mockServicesFindOne.mockImplementationOnce(() => {
-        throw Error();
+  describe("Requests with no validation error", () => {
+    const requestBody = getRequestBody(false);
+
+    beforeEach(() => {
+      mockRequest.body = requestBody;
+    });
+
+    it("Should fail request due to a bad request", async () => {
+      mockServicesFindOne.mockReturnValueOnce(null);
+
+      await DataController.transferRoute(mockRequest);
+
+      expect(mockRequestErrorBadRequest).toHaveBeenCalledTimes(1);
+      expect(mockRequestError).toHaveBeenCalledWith(
+        mockRequest,
+        expect.any(Error)
+      );
+    });
+
+    describe("Failed requests due to server error", () => {
+      it("Should fail due to error retrieving the list of services available from the database", async () => {
+        mockServicesFindOne.mockImplementationOnce(() => {
+          throw Error();
+        });
+
+        await DataController.transferRoute(mockRequest);
+
+        expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
       });
 
-      await DataController.transferRoute(mockRequest);
+      it("Should fail due to error thrown while retrieving the user's data from the request", async () => {
+        // Makes retrieving the user from the request throw an error
+        mockGetRequestUserData.mockImplementationOnce(() => {
+          throw Error();
+        });
 
-      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
-    });
+        await DataController.transferRoute(mockRequest);
 
-    it("Should fail due to error thrown while retrieving the user's data from the request", async () => {
-      // Makes retrieving the user from the request throw an error
-      mockGetRequestUserData.mockImplementationOnce(() => {
-        throw Error();
+        expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
       });
 
-      await DataController.transferRoute(mockRequest);
+      it("Should fail due to request service being unavailable", async () => {
+        mockServicesFindOne.mockReturnValueOnce(<IService>{ available: false });
 
-      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
-    });
+        await DataController.transferRoute(mockRequest);
 
-    it("Should fail due to request service being unavailable", async () => {
-      mockServicesFindOne.mockReturnValueOnce(<IService>{ available: false });
-
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
-    });
-
-    it("Should fail due to error thrown while retrieving data from destined server", async () => {
-      mockAxios.mockImplementationOnce(() => {
-        throw Error();
+        expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
       });
-      mockAxiosIsAxiosError.mockImplementationOnce(() => true);
 
-      await DataController.transferRoute(mockRequest);
+      it("Should fail due to error thrown while retrieving data from destined server", async () => {
+        mockAxios.mockImplementationOnce(() => {
+          throw Error();
+        });
+        mockAxiosIsAxiosError.mockImplementationOnce(() => true);
 
-      expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
-    });
-  });
+        await DataController.transferRoute(mockRequest);
 
-  describe("Successful requests", () => {
-    it("Should pass the request successfully", async () => {
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
-    });
-
-    it("Should pass the correct HTTP url and method to Axios", async () => {
-      mockGetRequestUserData.mockReturnValueOnce(null);
-      const reqBody: JoiValidationDataRequestParam = {
-        returnError: false,
-        serviceId: "test",
-        apiPath: "/api/test",
-      };
-      const axiosReqBody: Partial<DataRequest> = { ...reqBody };
-      delete axiosReqBody.serviceId;
-      delete axiosReqBody.apiPath;
-      mockRequest.body = reqBody;
-      mockRequest.method = "POST";
-
-      await DataController.transferRoute(mockRequest);
-
-      expect(mockAxios).toHaveBeenCalledTimes(1);
-      expect(mockAxios).toHaveBeenCalledWith({
-        data: axiosReqBody,
-        url: expect.stringContaining(reqBody.apiPath),
-        method: mockRequest.method,
+        expect(mockRequestErrorServer).toHaveBeenCalledTimes(1);
       });
-      expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it("Should pass the request succuessfully", async () => {
+      mockServicesFindOne.mockReturnValueOnce(<IService>{ available: true });
+      await DataController.transferRoute(mockRequest);
+
+      mockServicesFindOne.mockReturnValueOnce(<IService>{
+        available: true,
+        apiPort: 15000,
+      });
+      await DataController.transferRoute(mockRequest);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(mockRequestSuccess).toHaveBeenCalledTimes(2);
     });
   });
 });

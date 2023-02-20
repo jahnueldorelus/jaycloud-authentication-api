@@ -5,6 +5,8 @@ import {
   NextFunction,
 } from "express";
 import { UserController } from "@controller/user";
+import { validateRequestAuthorization } from "@middleware/authorization";
+import { ExpressRequestAndUser } from "@app-types/authorization";
 
 // Express router for user routes
 export const userRouter = Router();
@@ -15,6 +17,16 @@ userRouter.post(
   "/new",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await UserController.createNewUser(req);
+    next();
+  }
+);
+
+// Updates a user account
+userRouter.post(
+  "/update",
+  validateRequestAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.updateUser(<ExpressRequestAndUser>req);
     next();
   }
 );
@@ -30,7 +42,7 @@ userRouter.post(
 
 // Creates a new refresh token for a user
 userRouter.post(
-  "/refreshToken",
+  "/refresh-token",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await UserController.createNewRefreshToken(req);
     next();
@@ -63,8 +75,26 @@ formModelRouter.get("/create-user", async (req, res, next) => {
   next();
 });
 
-// Retrieves the form model to create a new user
+// Retrieves the form model to update a user
+formModelRouter.get("/update-user", async (req, res, next) => {
+  await UserController.getUpdateUserFormModel(req);
+  next();
+});
+
+// Retrieves the form model to authenticate a user
 formModelRouter.get("/authenticate-user", async (req, res, next) => {
   await UserController.getAuthenticateUserFormModel(req);
+  next();
+});
+
+// Retrieves the form model to reset a user's password
+formModelRouter.get("/password-reset", async (req, res, next) => {
+  await UserController.getPasswordResetFormModel(req);
+  next();
+});
+
+// Retrieves the form model to update a user's password
+formModelRouter.get("/update-password", async (req, res, next) => {
+  await UserController.getUpdatePasswordFormModel(req);
   next();
 });

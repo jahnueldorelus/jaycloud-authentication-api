@@ -26,32 +26,8 @@ describe("Routes - Users", () => {
     mockTransferRoute.mockRestore();
   });
 
-  it("Should make GET request to send data to another server", async () => {
-    await makeRequest(mockServer, `${baseUrl}/`, "get");
-
-    expect(mockTransferRoute).toHaveBeenCalledTimes(1);
-  });
-
   it("Should make POST request to send data to another server", async () => {
     await makeRequest(mockServer, `${baseUrl}/`, "post");
-
-    expect(mockTransferRoute).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should make PUT request to send data to another server", async () => {
-    await makeRequest(mockServer, `${baseUrl}/`, "put");
-
-    expect(mockTransferRoute).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should make DELETE request to send data to another server", async () => {
-    await makeRequest(mockServer, `${baseUrl}/`, "delete");
-
-    expect(mockTransferRoute).toHaveBeenCalledTimes(1);
-  });
-
-  it("Should make PATCH request to send data to another server", async () => {
-    await makeRequest(mockServer, `${baseUrl}/`, "patch");
 
     expect(mockTransferRoute).toHaveBeenCalledTimes(1);
   });

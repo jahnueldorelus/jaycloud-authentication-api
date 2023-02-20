@@ -25,7 +25,8 @@ describe("Startup - Configuration", () => {
     envNames.jwt.accessExpiration = "";
     envNames.jwt.accessReqHeader = "";
     envNames.jwt.alg = "";
-    envNames.jwt.key = "";
+    envNames.jwt.privateKey = "";
+    envNames.jwt.publicKey = "";
     envNames.jwt.refreshExpDays = "";
     envNames.jwt.refreshReqHeader = "";
 

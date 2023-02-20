@@ -88,7 +88,6 @@ usersSchema.static(
 usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
   // The user's data to attach to their web token
   const userData: TokenData = {
-    id: this.id,
     firstName: this.firstName,
     lastName: this.lastName,
     email: this.email,
@@ -97,7 +96,7 @@ usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
   // Returns the user's web token
   return jwtSign(
     userData,
-    <string>process.env[envNames.jwt.key],
+    <string>process.env[envNames.jwt.privateKey],
     <SignOptions>{
       algorithm: <string>process.env[envNames.jwt.alg],
       expiresIn: <string>process.env[envNames.jwt.accessExpiration],

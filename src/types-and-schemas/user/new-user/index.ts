@@ -1,18 +1,21 @@
 import { FormModelInputOptionWithJoi } from "@app-types/form-model";
 import Joi from "joi";
 import { RegExpError } from "@services/reg-exp-error";
-import { UserData } from "@app-types/user";
 import { JoiValidationResults } from "@app-types/joi-validation";
 
-type NewUserAttributes = {
-  [key: string]: FormModelInputOptionWithJoi;
-  firstName: FormModelInputOptionWithJoi;
-  lastName: FormModelInputOptionWithJoi;
-  email: FormModelInputOptionWithJoi;
-  password: FormModelInputOptionWithJoi;
-};
+interface User<T> {
+  firstName: T;
+  lastName: T;
+  email: T;
+  password: T;
+}
 
-export type ValidNewUserAccount = JoiValidationResults<UserData>;
+export type NewUser = User<string>;
+export type ValidNewUserAccount = JoiValidationResults<NewUser>;
+
+interface NewUserAttributes extends User<FormModelInputOptionWithJoi> {
+  [key: string]: FormModelInputOptionWithJoi;
+}
 
 export const newUserAttributes: NewUserAttributes = {
   firstName: {
@@ -27,7 +30,7 @@ export const newUserAttributes: NewUserAttributes = {
       regex: ["^[a-zA-ZÀ-ÿ\\s]{2,255}$"],
       regexErrorLabel: new RegExpError(true, true, false, false, 2, 255).label,
     },
-    joiSchema: Joi.string().lowercase().min(2).max(255).required(),
+    joiSchema: Joi.string().lowercase().min(2).max(255).trim().required(),
   },
   lastName: {
     label: "Last Name",
@@ -41,7 +44,7 @@ export const newUserAttributes: NewUserAttributes = {
       regex: ["^[a-zA-ZÀ-ÿ\\s]{2,255}$"],
       regexErrorLabel: new RegExpError(true, true, false, false, 2, 255).label,
     },
-    joiSchema: Joi.string().lowercase().min(2).max(255).required(),
+    joiSchema: Joi.string().lowercase().min(2).max(255).trim().required(),
   },
   email: {
     label: "Email",
@@ -71,6 +74,7 @@ export const newUserAttributes: NewUserAttributes = {
       .min(5)
       .max(100)
       .email({ tlds: { allow: false } })
+      .trim()
       .required(),
   },
   password: {
@@ -85,6 +89,6 @@ export const newUserAttributes: NewUserAttributes = {
       regex: ["^[\\D\\d\\s]{5,100}$"],
       regexErrorLabel: new RegExpError(true, true, true, true, 5, 100).label,
     },
-    joiSchema: Joi.string().min(5).max(100).required(),
+    joiSchema: Joi.string().min(5).max(100).trim().required(),
   },
 };

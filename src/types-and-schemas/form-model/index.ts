@@ -1,4 +1,4 @@
-import { Schema } from "joi";
+import { AnySchema } from "joi";
 
 type FormModelInputType =
   | "alpha"
@@ -29,7 +29,7 @@ export type FormModelInputOption = {
 };
 
 export interface FormModelInputOptionWithJoi extends FormModelInputOption {
-  joiSchema: Schema;
+  joiSchema: AnySchema;
 }
 
 export type FormModel = {

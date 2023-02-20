@@ -3,10 +3,10 @@ import Joi from "joi";
 import { genSalt, hash } from "bcrypt";
 import { dbAuth } from "@services/database";
 import {
+  NewUser,
   newUserAttributes,
   ValidNewUserAccount,
 } from "@app-types/user/new-user";
-import { UserData } from "@app-types/user";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
@@ -24,13 +24,18 @@ const newAccountSchema = Joi.object({
  * Deterimines if the user's new account information is valid.
  * @param newAccount The user's information to validate
  */
-const validateAccount = (newAccount: UserData): ValidNewUserAccount => {
+const validateAccount = (newAccount: NewUser): ValidNewUserAccount => {
   const { error, value } = newAccountSchema.validate(newAccount);
-  return {
-    isValid: error ? false : true,
-    errorMessage: error ? error.message : null,
-    validatedValue: value,
-  };
+
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
 };
 
 /**
@@ -39,7 +44,7 @@ const validateAccount = (newAccount: UserData): ValidNewUserAccount => {
  */
 export const createNewUser = async (req: ExpressRequest): Promise<void> => {
   // The user's new account info from the request
-  const newAccountInfo: UserData = req.body;
+  const newAccountInfo: NewUser = req.body;
 
   // Determines if the user's information is valid
   const { isValid, errorMessage, validatedValue } =
@@ -50,7 +55,7 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
     const dbSession = await connection.startSession();
 
     try {
-      // Generates a salt for encryption
+      // Generates a salt for hashing
       const salt = await genSalt();
       // Hashes the user's password
       validatedValue.password = await hash(validatedValue.password, salt);
@@ -98,7 +103,9 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
         },
       ]);
     } catch (error: any) {
-      await dbSession.abortTransaction();
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
 
       // If the error is a duplicate email
       if (error && error.code === 11000 && error.keyPattern.email === 1) {
@@ -118,6 +125,6 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
   }
   // If the user's account information is invalid
   else {
-    RequestError(req, Error(errorMessage || undefined)).validation();
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

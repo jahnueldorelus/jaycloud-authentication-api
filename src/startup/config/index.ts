@@ -15,7 +15,8 @@ export const envNames = {
   },
   jwt: {
     alg: "JWT_ALGORITHM",
-    key: "JWT_KEY",
+    privateKey: "JWT_PRIVATE_KEY",
+    publicKey: "JWT_PUBLIC_KEY",
     accessExpiration: "JWT_ACC_EXP",
     accessReqHeader: "JWT_ACC_REQ_HEADER",
     refreshExpDays: "JWT_REF_EXP_DAYS",
@@ -28,6 +29,8 @@ export const envNames = {
   origins: {
     local: "ORIGIN_LOCAL_HOST_ADDR",
     lan: "ORIGIN_LAN_ADDR",
+    wanDev: "ORIGIN_WAN_DEV_ADDR",
+    wanProd: "ORIGIN_WAN_PROD_ADDR",
   },
   mail: {
     username: "EMAIL_USERNAME",
@@ -65,8 +68,11 @@ export default (): CheckConfigReturn => {
   if (!process.env[envNames.jwt.alg]) {
     errorNames.push(envNames.jwt.alg);
   }
-  if (!process.env[envNames.jwt.key]) {
-    errorNames.push(envNames.jwt.key);
+  if (!process.env[envNames.jwt.privateKey]) {
+    errorNames.push(envNames.jwt.privateKey);
+  }
+  if (!process.env[envNames.jwt.publicKey]) {
+    errorNames.push(envNames.jwt.publicKey);
   }
   if (!process.env[envNames.jwt.accessReqHeader]) {
     errorNames.push(envNames.jwt.accessReqHeader);

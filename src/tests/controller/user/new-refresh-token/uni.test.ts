@@ -1,5 +1,3 @@
-import { JoiValidationParam } from "@app-types/tests/joi";
-import { ValidationError, ValidationResult } from "joi";
 import { Request as ExpressRequest } from "express";
 import { RequestErrorMethods } from "@app-types/request-error";
 import { getMockReq } from "@jest-mock/express";
@@ -8,23 +6,8 @@ import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
 import { createNewRefreshToken } from "@controller/user/components/new-refresh-token";
 import { reqErrorMessages } from "@services/request-error-messages";
-
-// Mocks Joi validation
-jest.mock("joi", () => ({
-  ...jest.requireActual("joi"),
-  object: () => ({
-    validate: jest.fn((validateInfo: JoiValidationParam): ValidationResult => {
-      if (validateInfo.returnError) {
-        return {
-          error: <ValidationError>{ message: validateInfo.message },
-          value: undefined,
-        };
-      } else {
-        return { error: undefined, value: validateInfo };
-      }
-    }),
-  }),
-}));
+import { RefreshToken } from "@app-types/token/refresh-token";
+import { getFakeMongoGUID } from "@services/test-helper";
 
 // Mocks database models
 jest.mock("@services/database", () => ({
@@ -78,6 +61,10 @@ describe("Route - Users: Creating a Refresh Token", () => {
 
   beforeEach(() => {
     mockRequest = getMockReq();
+    const requestBody: RefreshToken = {
+      token: getFakeMongoGUID(),
+    };
+    mockRequest.body = requestBody;
 
     mockRequestSuccess = <jest.Mock>RequestSuccess;
 
@@ -92,10 +79,12 @@ describe("Route - Users: Creating a Refresh Token", () => {
     }));
 
     mockRefreshTokenIsExpired = jest.fn(() => false);
+
     mockGetRefreshTokenUser = jest.fn(() => ({
       generateAccessToken: () => true,
       toPrivateJSON: () => {},
     }));
+
     mockFindOneRefreshToken = jest
       .spyOn<any, any>(dbAuth.refreshTokensModel, "findOne")
       .mockImplementation(() => ({
@@ -107,6 +96,7 @@ describe("Route - Users: Creating a Refresh Token", () => {
       }));
 
     mockDeleteRefreshTokenFamily = jest.fn(() => true);
+
     mockFindByIdRefreshTokenFamily = jest
       .spyOn<any, any>(dbAuth.refreshTokenFamiliesModel, "findById")
       .mockImplementation(() => ({
@@ -133,36 +123,19 @@ describe("Route - Users: Creating a Refresh Token", () => {
     mockCreateRefreshToken.mockRestore();
   });
 
-  describe("Failed requests due to validation error", () => {
-    it("Should return a custom error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = {
-        returnError: true,
-        // Custom error message to be passed to request error handler
-        message: "VALIDATION",
-      };
-      mockRequest.body = reqBody;
+  it("Should fail request due to a validation error", async () => {
+    const reqBody: RefreshToken = {
+      token: "FAKE_REFRESH_TOKEN_ID",
+    };
+    mockRequest.body = reqBody;
 
-      await createNewRefreshToken(mockRequest);
+    await createNewRefreshToken(mockRequest);
 
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
-
-    it("Should return a default error message with the request's response", async () => {
-      const reqBody: JoiValidationParam = { returnError: true };
-      mockRequest.body = reqBody;
-
-      await createNewRefreshToken(mockRequest);
-
-      expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
-      expect(mockRequestError).toHaveBeenCalledWith(
-        mockRequest,
-        Error(reqBody.message)
-      );
-    });
+    expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockRequest,
+      expect.any(Error)
+    );
   });
 
   describe("Failed requests due to invalid refresh token", () => {
