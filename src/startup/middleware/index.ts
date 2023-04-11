@@ -5,6 +5,7 @@ import { requestFailedWithError } from "@middleware/request-error";
 import { requestPassedWithSuccess } from "@middleware/request-success";
 import cors, { CorsOptions } from "cors";
 import { envNames } from "@startup/config";
+import cookieParser from "cookie-parser";
 
 /**
  * Retrieves the options for the cross origin resource sharing.
@@ -17,6 +18,8 @@ export const corsOptions = (): CorsOptions => ({
       (origin && origin.match(<string>process.env[envNames.origins.lan])) ||
       (origin && origin.match(<string>process.env[envNames.origins.wanDev])) ||
       (origin && origin.match(<string>process.env[envNames.origins.wanProd])) ||
+      (origin &&
+        origin.includes(<string>process.env[envNames.origins.domain])) ||
       // Allows access from POSTMAN only in development mode
       (process.env[envNames.nodeEnv] === "development" && origin === undefined)
     ) {
@@ -37,6 +40,7 @@ export const corsOptions = (): CorsOptions => ({
     <string>process["env"]["JWT_ACC_REQ_HEADER"],
     <string>process["env"]["JWT_REF_REQ_HEADER"],
   ],
+  credentials: true,
 });
 
 /**
@@ -58,6 +62,9 @@ export const addStartMiddleware = (server: Express): void => {
 
   // Retrieves the token from the request if available and sets it in "request.token"
   server.use(bearerToken());
+
+  // Parses cookies
+  server.use(cookieParser(<string>process.env[envNames.cookie.key]));
 };
 
 /**

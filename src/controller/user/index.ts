@@ -10,6 +10,7 @@ import { getPasswordResetFormModel } from "./components/password-reset-form-mode
 import { getUpdatePasswordFormModel } from "./components/update-password-form-model";
 import { resetPassword } from "./components/reset-password";
 import { updatePassword } from "./components/update-password";
+import { redirectToUiAuth } from "./components/redirect-to-ui-auth";
 import { ExpressRequestAndUser } from "@app-types/authorization";
 
 type Controller = {
@@ -24,6 +25,10 @@ type Controller = {
   getUpdatePasswordFormModel: (arg0: ExpressRequest) => Promise<void>;
   resetPassword: (arg0: ExpressRequest) => Promise<void>;
   updatePassword: (arg0: ExpressRequest) => Promise<void>;
+  redirectToUiAuth: (
+    arg0: ExpressRequest,
+    arg2: string | null
+  ) => Promise<void>;
 };
 
 export const UserController: Controller = {
@@ -38,4 +43,5 @@ export const UserController: Controller = {
   getUpdatePasswordFormModel,
   resetPassword,
   updatePassword,
+  redirectToUiAuth,
 };

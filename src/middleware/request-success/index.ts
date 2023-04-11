@@ -1,11 +1,13 @@
 import { Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import {
+  CookieInfo,
   ExpressRequestSuccess,
   ExtraHeaders,
   RequestSuccessData,
   RequestSuccessFile,
 } from "@app-types/request-success";
+import { envNames } from "@startup/config";
 
 /**
  * Handles all successful requests.
@@ -20,7 +22,6 @@ export const requestPassedWithSuccess = (
 ) => {
   // If there's a request error - send the error with the request's response
   if (req.success) {
-    // Sets the response's headers if available
     if (req.success.headers) {
       req.success.headers.forEach((header) => {
         res.setHeader(header.headerName, header.headerValue);
@@ -29,7 +30,18 @@ export const requestPassedWithSuccess = (
 
     res.status(StatusCodes.OK);
 
-    // Sends the response back with its appropriate data
+    if (req.success.cookies) {
+      for (let cookie of req.success.cookies) {
+        res.cookie(cookie.key, cookie.value, {
+          domain: <string>process.env[envNames.origins.domain],
+          expires: cookie.expDate,
+          httpOnly: true,
+          secure: true,
+          signed: true,
+        });
+      }
+    }
+
     req.success.file
       ? res.sendFile(req.success.file)
       : res.send(req.success.data);
@@ -45,13 +57,15 @@ export const requestPassedWithSuccess = (
  * @param data The data to send in the response
  * @param headers Headers to set in the response
  * @param file The file to send in the response
+ * @param cookies The list of cookcies to send in the response
  */
 export const RequestSuccess = (
   req: ExpressRequestSuccess,
   data: RequestSuccessData,
-  headers?: ExtraHeaders,
-  file?: RequestSuccessFile
+  headers?: ExtraHeaders | null,
+  file?: RequestSuccessFile | null,
+  cookies?: CookieInfo[] | null
 ): void => {
   // Adds the object data to the request
-  req.success = { data, headers, file };
+  req.success = { data, headers, file, cookies };
 };

@@ -31,6 +31,7 @@ export const envNames = {
     lan: "ORIGIN_LAN_ADDR",
     wanDev: "ORIGIN_WAN_DEV_ADDR",
     wanProd: "ORIGIN_WAN_PROD_ADDR",
+    domain: "ORIGIN_DOMAIN",
   },
   mail: {
     username: "EMAIL_USERNAME",
@@ -40,6 +41,11 @@ export const envNames = {
   uiBaseUrl: {
     dev: "UI_BASE_URL_DEV",
     prod: "UI_BASE_URL_PROD",
+  },
+  cookie: {
+    initialAuthReq: "COOKIE_INIT_AUTH_REQ",
+    authId: "COOKIE_AUTH_ID",
+    key: "COOKIE_KEY",
   },
 };
 
@@ -100,6 +106,15 @@ export default (): CheckConfigReturn => {
   if (!process.env[envNames.origins.lan]) {
     errorNames.push(envNames.origins.lan);
   }
+  if (!process.env[envNames.origins.wanDev]) {
+    errorNames.push(envNames.origins.wanDev);
+  }
+  if (!process.env[envNames.origins.wanProd]) {
+    errorNames.push(envNames.origins.wanProd);
+  }
+  if (!process.env[envNames.origins.domain]) {
+    errorNames.push(envNames.origins.domain);
+  }
   // Checks email configuration
   if (!process.env[envNames.mail.password]) {
     errorNames.push(envNames.mail.password);
@@ -109,6 +124,16 @@ export default (): CheckConfigReturn => {
   }
   if (!process.env[envNames.mail.username]) {
     errorNames.push(envNames.mail.username);
+  }
+  // Checks cookie configuration
+  if (!process.env[envNames.cookie.authId]) {
+    errorNames.push(envNames.cookie.authId);
+  }
+  if (!process.env[envNames.cookie.initialAuthReq]) {
+    errorNames.push(envNames.cookie.initialAuthReq);
+  }
+  if (!process.env[envNames.cookie.key]) {
+    errorNames.push(envNames.cookie.key);
   }
   return {
     configComplete: errorNames.length > 0 ? false : true,

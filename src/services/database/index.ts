@@ -4,6 +4,7 @@ import { refreshTokensModel } from "./models/refresh-tokens";
 import { refreshTokenFamiliesModel } from "./models/refresh-token-families";
 import { approvedPasswordResetModel } from "./models/approved-password-reset";
 import { servicesModel } from "./models/services";
+import { ssoModel } from "./models/sso";
 import { envNames } from "@startup/config";
 
 const connectToDatabase = () => {
@@ -28,6 +29,7 @@ const connectToDatabase = () => {
     refreshTokenFamiliesModel,
     approvedPasswordResetModel,
     servicesModel,
+    ssoModel,
   };
 };
 

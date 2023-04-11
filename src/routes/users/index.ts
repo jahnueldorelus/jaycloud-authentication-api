@@ -12,6 +12,18 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 export const userRouter = Router();
 const formModelRouter = Router();
 
+// Redirects initial auth request from service to auth UI.
+userRouter.get(
+  "/sso/",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    const serviceUrl = req.query["serviceUrl"]
+      ? req.query["serviceUrl"].toString()
+      : null;
+    await UserController.redirectToUiAuth(req, serviceUrl);
+    next();
+  }
+);
+
 // Creates a new user account
 userRouter.post(
   "/new",
