@@ -5,6 +5,8 @@ import { RequestSuccess } from "@middleware/request-success";
 import { dbAuth } from "@services/database";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { envNames } from "@startup/config";
+import { genSalt, hash } from "bcrypt";
+import { randomUUID } from "crypto";
 import { Request as ExpressRequest } from "express";
 import { connection } from "mongoose";
 
@@ -28,9 +30,18 @@ export const getSSOToken = async (req: ExpressRequest) => {
       throw Error();
     }
 
-    const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null, {
-      session: dbSession,
-    });
+    // Generates a salt for hashing
+    const salt = await genSalt();
+    const newSSOId = randomUUID();
+    const newHashedSSOId = await hash(newSSOId, salt);
+
+    const ssoDoc = await dbAuth.ssoModel.findOneAndUpdate(
+      { ssoId: ssoToken },
+      { ssoId: newHashedSSOId },
+      {
+        session: dbSession,
+      }
+    );
 
     if (!ssoDoc || !ssoDoc.userId) {
       throw Error();
@@ -44,7 +55,7 @@ export const getSSOToken = async (req: ExpressRequest) => {
 
     const authSSOCookieInfo: CookieInfo = {
       key: ssoTokenCookieKey,
-      value: ssoDoc.ssoId,
+      value: newHashedSSOId,
       expDate: ssoDoc.expDate,
       sameSite: "lax",
     };
@@ -52,7 +63,7 @@ export const getSSOToken = async (req: ExpressRequest) => {
     RequestSuccess(
       req,
       <SSOTokenResponse>{
-        token: ssoDoc.ssoId,
+        token: newSSOId,
       },
       null,
       null,

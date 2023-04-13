@@ -2,7 +2,7 @@ import { HydratedDocument, Model } from "mongoose";
 
 export type ISSO = {
   reqId: string;
-  ssoId: string;
+  ssoId: string | null;
   userId: string | null;
   expDate: Date;
 };

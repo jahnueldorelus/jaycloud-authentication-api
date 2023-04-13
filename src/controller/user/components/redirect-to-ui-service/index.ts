@@ -11,6 +11,8 @@ import { CookieInfo, CookieRemoval } from "@app-types/request-success";
 import { RedirectToServiceUIResponse } from "@app-types/user/sso";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
+import { genSalt, hash } from "bcrypt";
+import { randomUUID } from "crypto";
 
 export const redirectToUiService = async (req: ExpressRequestAndUser) => {
   const dbSession = await connection.startSession();
@@ -41,10 +43,15 @@ export const redirectToUiService = async (req: ExpressRequestAndUser) => {
         throw Error();
       }
 
+      // Generates a salt for hashing
+      const salt = await genSalt();
+      const newSSOId = randomUUID();
+      const hashedSSOId = await hash(newSSOId, salt);
+
       // Updates the initial auth request with the user's ID
       const ssoDoc = await dbAuth.ssoModel.findOneAndUpdate(
         { reqId: initAuthReqId },
-        { userId: reqUser._id },
+        { userId: reqUser._id, ssoId: hashedSSOId },
         { session: dbSession }
       );
 
@@ -64,7 +71,7 @@ export const redirectToUiService = async (req: ExpressRequestAndUser) => {
       const ssoTokenCookieInfo: CookieInfo = {
         expDate: ssoDoc.expDate,
         key: ssoTokenCookieKey,
-        value: ssoDoc.ssoId,
+        value: hashedSSOId,
         sameSite: "lax",
       };
 

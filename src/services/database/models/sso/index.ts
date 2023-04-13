@@ -10,16 +10,16 @@ const ssoSchema = new Schema<ISSO, SSOModel, ISSOMethods>(
     reqId: {
       type: String,
       required: true,
-      minlength: 36,
-      maxlength: 36,
+      minlength: 59,
+      maxlength: 60,
       unique: true,
     },
     ssoId: {
       type: String,
-      required: true,
-      minlength: 36,
-      maxlength: 36,
-      unique: true,
+      required: false,
+      minlength: 59,
+      maxlength: 60,
+      default: null,
     },
     userId: {
       type: String,

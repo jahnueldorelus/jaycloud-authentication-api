@@ -14,6 +14,7 @@ import {
   ValidServiceUrl,
 } from "@app-types/user/sso";
 import { CookieInfo } from "@app-types/request-success";
+import { genSalt, hash } from "bcrypt";
 
 // Schema validation
 const initialAuthReqSchema = Joi.object({
@@ -84,10 +85,15 @@ export const redirectToUiAuth = async (req: ExpressRequest) => {
         "days"
       );
 
+      // Generates a salt for hashing
+      const salt = await genSalt();
+      const newReqId = randomUUID();
+      const hashedReqId = await hash(newReqId, salt);
+
       const ssoInfo: ISSO = {
         expDate: expAuthReqDate.toDate(),
-        reqId: randomUUID(),
-        ssoId: randomUUID(),
+        reqId: hashedReqId,
+        ssoId: null,
         userId: null,
       };
 
@@ -104,7 +110,7 @@ export const redirectToUiAuth = async (req: ExpressRequest) => {
       const authReqCookieInfo: CookieInfo = {
         expDate: ssoReq.expDate,
         key: authReqCookieKey,
-        value: ssoReq.reqId,
+        value: hashedReqId,
         sameSite: "lax",
       };
 
