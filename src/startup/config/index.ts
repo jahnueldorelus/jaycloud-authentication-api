@@ -44,7 +44,9 @@ export const envNames = {
   },
   cookie: {
     initialAuthReq: "COOKIE_INIT_AUTH_REQ",
-    authId: "COOKIE_AUTH_ID",
+    ssoId: "COOKIE_SSO_ID",
+    serviceUrl: "COOKIE_SERVICE_URL",
+    serviceDomain: "COOKIE_SERVICE_DOMAIN",
     key: "COOKIE_KEY",
   },
 };
@@ -126,11 +128,17 @@ export default (): CheckConfigReturn => {
     errorNames.push(envNames.mail.username);
   }
   // Checks cookie configuration
-  if (!process.env[envNames.cookie.authId]) {
-    errorNames.push(envNames.cookie.authId);
-  }
   if (!process.env[envNames.cookie.initialAuthReq]) {
     errorNames.push(envNames.cookie.initialAuthReq);
+  }
+  if (!process.env[envNames.cookie.ssoId]) {
+    errorNames.push(envNames.cookie.ssoId);
+  }
+  if (!process.env[envNames.cookie.serviceUrl]) {
+    errorNames.push(envNames.cookie.serviceUrl);
+  }
+  if (!process.env[envNames.cookie.serviceDomain]) {
+    errorNames.push(envNames.cookie.serviceDomain);
   }
   if (!process.env[envNames.cookie.key]) {
     errorNames.push(envNames.cookie.key);

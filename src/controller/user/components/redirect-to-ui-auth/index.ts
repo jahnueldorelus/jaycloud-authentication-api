@@ -7,80 +7,134 @@ import { dbAuth } from "@services/database";
 import { ISSO } from "@app-types/database/models/sso";
 import moment from "moment";
 import { RequestError } from "@middleware/request-error";
+import Joi from "joi";
+import {
+  RedirectToAuthUIResponse,
+  ServiceInfo,
+  ValidServiceUrl,
+} from "@app-types/user/sso";
+import { CookieInfo } from "@app-types/request-success";
 
-export const redirectToUiAuth = async (
-  req: ExpressRequest,
-  serviceUrl: string | null
-) => {
-  const dbSession = await connection.startSession();
+// Schema validation
+const initialAuthReqSchema = Joi.object({
+  serviceUrl: Joi.string().uri().required(),
+});
 
-  const authUrl =
-    process.env[envNames.nodeEnv] === "production"
-      ? process.env[envNames.origins.wanProd]
-      : process.env[envNames.origins.wanDev];
+/**
+ * Deterimines if the request's service's information is valid.
+ * @param serviceInfo The request's service information
+ */
+const validateServiceInfo = (serviceInfo: ServiceInfo): ValidServiceUrl => {
+  const { error, value } = initialAuthReqSchema.validate(serviceInfo, {
+    allowUnknown: false,
+  });
 
-  try {
-    dbSession.startTransaction();
+  if (error) {
+    return {
+      errorMessage: error.message,
+      isValid: false,
+      validatedValue: undefined,
+    };
+  } else {
+    return { errorMessage: null, isValid: true, validatedValue: value };
+  }
+};
 
-    // Initial auth request cookie name
-    const authCookieName = <string>process.env[envNames.cookie.initialAuthReq];
+export const redirectToUiAuth = async (req: ExpressRequest) => {
+  const requestData: ServiceInfo = req.body;
 
-    // Initial auth request id from cookie
-    const initAuthReqId = req.signedCookies[authCookieName];
+  const { isValid, errorMessage, validatedValue } =
+    validateServiceInfo(requestData);
 
-    // Removes the old initial auth request if it exists
-    if (initAuthReqId) {
-      await dbAuth.ssoModel.findOneAndRemove(
-        { reqId: initAuthReqId },
-        { session: dbSession }
+  // If the request's service information is valid
+  if (isValid) {
+    const dbSession = await connection.startSession();
+
+    const authUrl =
+      process.env[envNames.nodeEnv] === "production"
+        ? process.env[envNames.origins.wanProd]
+        : process.env[envNames.origins.wanDev];
+
+    try {
+      dbSession.startTransaction();
+
+      // Initial auth request service url cookie key
+      const serviceUrlCookieKey = <string>(
+        process.env[envNames.cookie.serviceUrl]
       );
+      // Initial auth request cookie key
+      const authReqCookieKey = <string>(
+        process.env[envNames.cookie.initialAuthReq]
+      );
+      // Initial auth request id from cookie
+      const initAuthReqId = req.signedCookies[authReqCookieKey];
+
+      // Removes the old initial auth request if it exists
+      if (initAuthReqId) {
+        await dbAuth.ssoModel.findOneAndRemove(
+          { reqId: initAuthReqId },
+          { session: dbSession }
+        );
+      }
+
+      // Creates a new initial auth request
+      const expAuthReqDate = moment(new Date());
+      expAuthReqDate.add(
+        parseInt(<string>process.env[envNames.jwt.refreshExpDays]),
+        "days"
+      );
+
+      const ssoInfo: ISSO = {
+        expDate: expAuthReqDate.toDate(),
+        reqId: randomUUID(),
+        ssoId: randomUUID(),
+        userId: null,
+      };
+
+      const [ssoReq] = await dbAuth.ssoModel.create([ssoInfo], {
+        session: dbSession,
+      });
+
+      if (!ssoReq) {
+        throw Error();
+      }
+
+      await dbSession.commitTransaction();
+
+      const authReqCookieInfo: CookieInfo = {
+        expDate: ssoReq.expDate,
+        key: authReqCookieKey,
+        value: ssoReq.reqId,
+        sameSite: "lax",
+      };
+
+      const serviceUrlCookieInfo: CookieInfo = {
+        key: serviceUrlCookieKey,
+        value: validatedValue.serviceUrl,
+        sameSite: "strict",
+      };
+
+      RequestSuccess(
+        req,
+        <RedirectToAuthUIResponse>{
+          authUrl: authUrl + "/login?sso=true",
+        },
+        null,
+        null,
+        [authReqCookieInfo, serviceUrlCookieInfo]
+      );
+    } catch (error: any) {
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
+
+      RequestError(req, Error("Failed to initialize auth request.")).server();
+    } finally {
+      await dbSession.endSession();
     }
-
-    // Creates a new initial auth request
-    const expDate = moment(new Date());
-    expDate.add(
-      parseInt(<string>process.env[envNames.jwt.refreshExpDays]),
-      "days"
-    );
-
-    const ssoInfo: Omit<ISSO, "userId"> = {
-      expDate: expDate.toDate(),
-      reqId: randomUUID(),
-      ssoId: randomUUID(),
-    };
-
-    const [ssoReq] = await dbAuth.ssoModel.create([ssoInfo], {
-      session: dbSession,
-    });
-
-    if (!ssoReq) {
-      throw Error();
-    }
-
-    await dbSession.commitTransaction();
-
-    const reqCookieInfo = {
-      expDate: ssoReq.expDate,
-      key: authCookieName,
-      value: ssoReq.reqId,
-    };
-
-    RequestSuccess(
-      req,
-      {
-        authUrl: authUrl + "/login?serviceUrl=" + serviceUrl,
-      },
-      null,
-      null,
-      [reqCookieInfo]
-    );
-  } catch (error: any) {
-    if (dbSession.inTransaction()) {
-      await dbSession.abortTransaction();
-    }
-
-    RequestError(req, Error("Failed to initialize auth request.")).server();
-  } finally {
-    await dbSession.endSession();
+  }
+  // If the given service info from the request is invalid
+  else {
+    RequestError(req, Error(errorMessage)).validation();
   }
 };

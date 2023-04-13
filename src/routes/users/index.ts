@@ -12,14 +12,30 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 export const userRouter = Router();
 const formModelRouter = Router();
 
-// Redirects initial auth request from service to auth UI.
-userRouter.get(
-  "/sso/",
+// Redirects initial auth request from service UI to auth UI.
+userRouter.post(
+  "/sso",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    const serviceUrl = req.query["serviceUrl"]
-      ? req.query["serviceUrl"].toString()
-      : null;
-    await UserController.redirectToUiAuth(req, serviceUrl);
+    await UserController.redirectToUiAuth(req);
+    next();
+  }
+);
+
+// Redirects initial auth request from auth UI to service UI.
+userRouter.post(
+  "/sso-redirect",
+  validateRequestAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.redirectToUiService(<ExpressRequestAndUser>req);
+    next();
+  }
+);
+
+// Retrieves a CSRF token
+userRouter.get(
+  "/sso-token",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.getSSOToken(req);
     next();
   }
 );

@@ -26,6 +26,7 @@ const ssoSchema = new Schema<ISSO, SSOModel, ISSOMethods>(
       required: false,
       minLength: 24,
       maxLength: 24,
+      default: null,
     },
     expDate: {
       type: Date,
