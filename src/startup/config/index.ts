@@ -31,6 +31,8 @@ export const envNames = {
     lan: "ORIGIN_LAN_ADDR",
     wanDev: "ORIGIN_WAN_DEV_ADDR",
     wanProd: "ORIGIN_WAN_PROD_ADDR",
+    apiProd: "ORIGIN_PROD_API",
+    apiDev: "ORIGIN_DEV_API",
     domain: "ORIGIN_DOMAIN",
   },
   mail: {
@@ -113,6 +115,12 @@ export default (): CheckConfigReturn => {
   }
   if (!process.env[envNames.origins.wanProd]) {
     errorNames.push(envNames.origins.wanProd);
+  }
+  if (!process.env[envNames.origins.apiDev]) {
+    errorNames.push(envNames.origins.apiDev);
+  }
+  if (!process.env[envNames.origins.apiProd]) {
+    errorNames.push(envNames.origins.apiProd);
   }
   if (!process.env[envNames.origins.domain]) {
     errorNames.push(envNames.origins.domain);

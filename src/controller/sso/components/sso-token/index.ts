@@ -1,5 +1,5 @@
 import { CookieInfo, CookieRemoval } from "@app-types/request-success";
-import { SSOTokenResponse } from "@app-types/user/sso";
+import { SSOTokenResponse } from "@app-types/sso";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
 import { dbAuth } from "@services/database";

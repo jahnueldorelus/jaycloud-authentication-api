@@ -1,4 +1,4 @@
-import { PrivateUserData } from "@app-types/user";
+import { PrivateSSOUserData, PrivateUserData } from "@app-types/user";
 import { ClientSession, HydratedDocument, Model } from "mongoose";
 
 export type IUser = {
@@ -17,6 +17,10 @@ export type IUserMethods = {
    * Generates a JSON that excludes a user's private information.
    */
   toPrivateJSON(): PrivateUserData;
+  /**
+   * Generates a JSON that excludes a user's private information for sso.
+   */
+  toPrivateSSOJSON(): PrivateSSOUserData;
   /**
    * Retrieves the user's full name.
    */

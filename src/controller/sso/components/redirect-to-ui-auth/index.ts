@@ -12,7 +12,7 @@ import {
   RedirectToAuthUIResponse,
   ServiceInfo,
   ValidServiceUrl,
-} from "@app-types/user/sso";
+} from "@app-types/sso";
 import { CookieInfo } from "@app-types/request-success";
 import { genSalt, hash } from "bcrypt";
 

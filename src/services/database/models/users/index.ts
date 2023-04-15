@@ -2,7 +2,7 @@ import { TokenData } from "@app-types/token/access-token";
 import { ClientSession, connection, model, Schema } from "mongoose";
 import { sign as jwtSign, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { PrivateUserData, UserData } from "@app-types/user";
+import { PrivateSSOUserData, PrivateUserData, UserData } from "@app-types/user";
 import {
   IUser,
   IUserMethods,
@@ -106,9 +106,21 @@ usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
 
 usersSchema.method<DBLoadedUser>("toPrivateJSON", function () {
   const privateJSON: PrivateUserData = <UserData>this.toJSON();
-  delete privateJSON.id;
   delete privateJSON.password;
   delete privateJSON.updatedAt;
+  delete privateJSON.__v;
+
+  return privateJSON;
+});
+
+usersSchema.method<DBLoadedUser>("toPrivateSSOJSON", function () {
+  const privateJSON: PrivateSSOUserData = <UserData>this.toJSON();
+  delete privateJSON._id;
+  delete privateJSON.email;
+  delete privateJSON.password;
+  delete privateJSON.createdAt;
+  delete privateJSON.updatedAt;
+  delete privateJSON.__v;
 
   return privateJSON;
 });

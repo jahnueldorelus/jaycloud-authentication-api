@@ -5,7 +5,10 @@ import {
   NextFunction,
 } from "express";
 import { SSOController } from "@controller/sso";
-import { validateRequestAuthorization } from "@middleware/authorization";
+import {
+  validateRequestAuthorization,
+  validateSSOReqAuthorization,
+} from "@middleware/authorization";
 import { ExpressRequestAndUser } from "@app-types/authorization";
 
 // Express router for sso routes
@@ -35,6 +38,26 @@ ssoRouter.get(
   "/sso-token",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await SSOController.getSSOToken(req);
+    next();
+  }
+);
+
+// Retrieves the user's data
+ssoRouter.post(
+  "/sso-user",
+  validateSSOReqAuthorization,
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.getUser(<ExpressRequestAndUser>req);
+    next();
+  }
+);
+
+// Retrieves data from a JayCloud service API
+ssoRouter.post(
+  "/sso-data",
+  validateSSOReqAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await SSOController.getData(<ExpressRequestAndUser>req);
     next();
   }
 );

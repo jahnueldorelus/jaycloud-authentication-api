@@ -8,7 +8,7 @@ import {
 } from "@middleware/authorization";
 import { ExpressRequestAndUser } from "@app-types/authorization";
 import { CookieInfo, CookieRemoval } from "@app-types/request-success";
-import { RedirectToServiceUIResponse } from "@app-types/user/sso";
+import { RedirectToServiceUIResponse } from "@app-types/sso";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { genSalt, hash } from "bcrypt";
