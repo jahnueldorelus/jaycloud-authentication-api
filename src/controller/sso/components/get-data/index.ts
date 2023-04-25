@@ -75,9 +75,9 @@ export const getData = async (req: ExpressRequestAndUser) => {
 
         const originDomain = <string>process.env[envNames.origins.domain];
 
-        // If a request was made to be send to a non JayCloud url
+        // If a request was made to be sent to a non JayCloud service url
         if (!service || !validatedValue.apiUrl.includes(originDomain)) {
-          throw Error(reqErrorMessages.forbiddenUser);
+          throw Error(reqErrorMessages.badRequest);
         }
 
         /**
@@ -97,8 +97,13 @@ export const getData = async (req: ExpressRequestAndUser) => {
             ? process.env[envNames.origins.apiProd]
             : process.env[envNames.origins.apiDev];
 
+        const serviceApiPath = validatedValue.apiUrl.slice(
+          validatedValue.apiHost.length
+        );
+        const serviceApiUrl = service.localApiUrl + serviceApiPath;
+
         // Sends the request to the JayCloud service API
-        const response = await axios(validatedValue.apiUrl, {
+        const response = await axios(serviceApiUrl, {
           method: validatedValue.apiMethod,
           data: <object>newReqData,
           headers: {
@@ -121,11 +126,8 @@ export const getData = async (req: ExpressRequestAndUser) => {
         }
 
         // If the service requested doesn't exist
-        if (error.message === reqErrorMessages.forbiddenUser) {
-          RequestError(
-            req,
-            Error(reqErrorMessages.forbiddenUser)
-          ).notAuthorized();
+        if (error.message === reqErrorMessages.badRequest) {
+          RequestError(req, Error(reqErrorMessages.badRequest)).notAuthorized();
         }
 
         // Default error

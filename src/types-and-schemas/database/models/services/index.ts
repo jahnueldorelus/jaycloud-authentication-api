@@ -9,6 +9,7 @@ export type IService = {
   logoFileName: string;
   description: string;
   available: boolean;
+  localApiUrl: string | null;
 };
 
 export type IServiceMethods = {};

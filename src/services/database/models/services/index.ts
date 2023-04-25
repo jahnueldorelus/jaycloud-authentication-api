@@ -59,6 +59,11 @@ const servicesSchema = new Schema<IService, ServicesModel, IServiceMethods>(
       type: Boolean,
       required: true,
     },
+    localApiUrl: {
+      type: String,
+      required: true,
+      default: null,
+    },
   },
   {
     timestamps: true,
