@@ -5,6 +5,7 @@ import { getSSOToken } from "@controller/sso/components/sso-token";
 import { getUser } from "@controller/sso/components/get-user";
 import { ExpressRequestAndUser } from "@app-types/authorization";
 import { getData } from "@controller/sso/components/get-data";
+import { signOutUser } from "@controller/sso/components/sign-out-user";
 
 type Controller = {
   redirectToUiAuth: (arg0: ExpressRequest) => Promise<void>;
@@ -12,6 +13,7 @@ type Controller = {
   getSSOToken: (arg0: ExpressRequest) => Promise<void>;
   getUser: (arg0: ExpressRequestAndUser) => void;
   getData: (arg0: ExpressRequestAndUser) => Promise<void>;
+  signOutUser: (arg0: ExpressRequestAndUser) => Promise<void>;
 };
 
 export const SSOController: Controller = {
@@ -20,4 +22,5 @@ export const SSOController: Controller = {
   getSSOToken,
   getUser,
   getData,
+  signOutUser
 };

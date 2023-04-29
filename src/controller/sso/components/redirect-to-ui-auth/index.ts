@@ -89,11 +89,13 @@ export const redirectToUiAuth = async (req: ExpressRequest) => {
       const salt = await genSalt();
       const newReqId = randomUUID();
       const hashedReqId = await hash(newReqId, salt);
+      const newSSOId = randomUUID();
+      const hashedSSOId = await hash(newSSOId, salt);
 
       const ssoInfo: ISSO = {
         expDate: expAuthReqDate.toDate(),
         reqId: hashedReqId,
-        ssoId: null,
+        ssoId: hashedSSOId,
         userId: null,
       };
 

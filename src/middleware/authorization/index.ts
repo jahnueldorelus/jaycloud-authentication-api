@@ -145,16 +145,21 @@ export const validateSSOReqAuthorization = async (
   // If the request's sso token is valid
   if (isValid) {
     const dbSession = await connection.startSession();
-    dbSession.startTransaction();
-
+    
     try {
+      dbSession.startTransaction();
+      
       // SSO token cookie key
       const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
       // SSO token key from cookie
       const ssoToken = req.signedCookies[ssoTokenCookieKey];
 
+      if (!ssoToken) {
+        throw Error(reqErrorMessages.invalidToken);
+      }
+
       // Determines if the SSO token from the request matches the cookie
-      const isTokenTheSame = compare(validatedValue.token, ssoToken);
+      const isTokenTheSame = await compare(validatedValue.token, ssoToken);
 
       if (!isTokenTheSame) {
         throw Error(reqErrorMessages.invalidToken);

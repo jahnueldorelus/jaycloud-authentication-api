@@ -42,6 +42,16 @@ ssoRouter.get(
   }
 );
 
+// Signs out the user
+ssoRouter.post(
+  "/sign-out",
+  validateSSOReqAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await SSOController.signOutUser(<ExpressRequestAndUser>req);
+    next();
+  }
+)
+
 // Retrieves the user's data
 ssoRouter.post(
   "/sso-user",
