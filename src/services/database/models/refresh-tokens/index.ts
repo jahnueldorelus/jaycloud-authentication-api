@@ -51,8 +51,14 @@ const refreshTokensSchema = new Schema<
 
 refreshTokensSchema.static(
   "createToken",
-  async function (userId: string, familyId: string, session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
+  async function (
+    userId: string,
+    familyId: string,
+    givenSession?: ClientSession
+  ) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
 
     try {
       // Creates a new date for the token's expiration
@@ -66,7 +72,7 @@ refreshTokensSchema.static(
       const token = createUUID();
 
       // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
+      if (!givenSession || !givenSession.inTransaction()) {
         dbSession.startTransaction();
       }
 
@@ -74,19 +80,23 @@ refreshTokensSchema.static(
         [{ token, expDate: expDate.toDate(), userId, familyId }],
         { session: dbSession }
       );
-      await dbSession.commitTransaction();
+
+      // Commits the transaction if it was created within this method
+      if (!givenSession) {
+        await dbSession.commitTransaction();
+      }
 
       return refreshTokens[0] || null;
     } catch (error) {
       // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
+      if (!givenSession && dbSession.inTransaction()) {
         await dbSession.abortTransaction();
       }
 
       return null;
     } finally {
       // Ends the session if it was created within this method
-      if (!session) {
+      if (!givenSession) {
         await dbSession.endSession();
       }
     }
@@ -99,27 +109,32 @@ refreshTokensSchema.method<DBLoadedRefreshToken>("isExpired", function () {
 
 refreshTokensSchema.method<DBLoadedRefreshToken>(
   "expireToken",
-  async function (session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
+  async function (givenSession?: ClientSession) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
 
     try {
       // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
+      if (!givenSession || !givenSession.inTransaction()) {
         dbSession.startTransaction();
       }
 
       this.expDate = new Date();
       await this.save({ session: dbSession });
 
-      await dbSession.commitTransaction();
+      // Commits the transaction if it was created within this method
+      if (!givenSession) {
+        await dbSession.commitTransaction();
+      }
     } catch (error) {
       // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
+      if (!givenSession && dbSession.inTransaction()) {
         await dbSession.abortTransaction();
       }
     } finally {
       // Ends the session if it was created within this method
-      if (!session) {
+      if (!givenSession) {
         await dbSession.endSession();
       }
     }
@@ -128,31 +143,37 @@ refreshTokensSchema.method<DBLoadedRefreshToken>(
 
 refreshTokensSchema.method<DBLoadedRefreshToken>(
   "getUser",
-  async function (session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
+  async function (givenSession?: ClientSession) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
 
     try {
       // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
+      if (!givenSession || !givenSession.inTransaction()) {
         dbSession.startTransaction();
       }
 
       const refreshTokenUser: DBLoadedUser | null = await dbAuth.usersModel
         .findById(this.userId)
         .session(dbSession);
-      await dbSession.commitTransaction();
+
+      // Commits the transaction if it was created within this method
+      if (!givenSession) {
+        await dbSession.commitTransaction();
+      }
 
       return refreshTokenUser || null;
     } catch (error) {
       // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
+      if (!givenSession && dbSession.inTransaction()) {
         await dbSession.abortTransaction();
       }
 
       return null;
     } finally {
       // Ends the session if it was created within this method
-      if (!session) {
+      if (!givenSession) {
         await dbSession.endSession();
       }
     }

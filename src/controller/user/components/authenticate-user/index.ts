@@ -6,6 +6,8 @@ import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { envNames } from "@startup/config";
+import { ISSO } from "@app-types/database/models/sso";
+import { CookieInfo } from "@app-types/request-success";
 
 /**
  * Authenticates a user
@@ -35,6 +37,7 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
         user.id,
         dbSession
       );
+
     if (!refreshTokenFamily) {
       throw Error();
     }
@@ -45,10 +48,45 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
       dbSession
     );
 
+    if (!accessToken || !refreshToken) {
+      throw Error();
+    }
+
+    // Creates a new SSO record to provide SSO functionality across all services
+    const encryptedSSOToken = dbAuth.ssoModel.createEncryptedToken(user);
+
+    if (!encryptedSSOToken) {
+      throw Error();
+    }
+
+    const ssoInfo: ISSO = {
+      expDate: refreshToken.expDate,
+      ssoId: encryptedSSOToken,
+      userId: user.id,
+    };
+
+    const [ssoDoc] = await dbAuth.ssoModel.create([ssoInfo], {
+      session: dbSession,
+    });
+
+    if (!ssoDoc) {
+      throw Error();
+    }
+
+    const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
+    const ssoTokenCookieInfo: CookieInfo = {
+      expDate: ssoDoc.expDate,
+      key: ssoTokenCookieKey,
+      value: ssoDoc.ssoId,
+      sameSite: "lax",
+    };
+
     await dbSession.commitTransaction();
 
-    if (accessToken && refreshToken) {
-      RequestSuccess(req, user.toPrivateJSON(), [
+    RequestSuccess(
+      req,
+      user.toPrivateJSON(),
+      [
         // The access token
         {
           headerName: <string>process.env[envNames.jwt.accessReqHeader],
@@ -59,10 +97,10 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
           headerName: <string>process.env[envNames.jwt.refreshReqHeader],
           headerValue: refreshToken.token,
         },
-      ]);
-    } else {
-      throw Error();
-    }
+      ],
+      null,
+      [ssoTokenCookieInfo]
+    );
   } catch (error: any) {
     if (dbSession.inTransaction()) {
       await dbSession.abortTransaction();

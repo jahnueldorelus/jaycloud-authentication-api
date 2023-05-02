@@ -18,7 +18,6 @@ import { reqErrorMessages } from "@services/request-error-messages";
 import { dbAuth } from "@services/database";
 import { connection } from "mongoose";
 import { DBLoadedUser } from "@app-types/database/models/users";
-import { compare } from "bcrypt";
 
 const tokenDataSchema = Joi.object({
   firstName: newUserAttributes.firstName.joiSchema,
@@ -54,21 +53,22 @@ export const validateRequestAuthorization = async (
         algorithms: [jwtAlgorithm],
       });
 
-      // If the user's token's validation failed
       if (tokenDataSchema.validate(tokenInfo).error) {
         throw Error();
       }
 
-      // If the user from the token doesn't exist
       dbSession.startTransaction();
+
+      // Checks if the user of the request exists
       const dbUser = await dbAuth.usersModel.findOne({
         email: tokenInfo.email,
       });
-      await dbSession.commitTransaction();
 
       if (!dbUser) {
         throw Error(reqErrorMessages.nonExistentUser);
       }
+
+      await dbSession.commitTransaction();
 
       // Saves the user's info to the request
       userReq.user = dbUser;
@@ -84,6 +84,7 @@ export const validateRequestAuthorization = async (
           Error(reqErrorMessages.nonExistentUser)
         ).notAuthorized();
       }
+
       // Error decoding the token (default)
       else {
         RequestError(
@@ -145,10 +146,10 @@ export const validateSSOReqAuthorization = async (
   // If the request's sso token is valid
   if (isValid) {
     const dbSession = await connection.startSession();
-    
+
     try {
       dbSession.startTransaction();
-      
+
       // SSO token cookie key
       const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
       // SSO token key from cookie
@@ -158,18 +159,18 @@ export const validateSSOReqAuthorization = async (
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      // Determines if the SSO token from the request matches the cookie
-      const isTokenTheSame = await compare(validatedValue.token, ssoToken);
-
-      if (!isTokenTheSame) {
-        throw Error(reqErrorMessages.invalidToken);
-      }
-
       const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null, {
         session: dbSession,
       });
 
       if (!ssoDoc) {
+        throw Error(reqErrorMessages.invalidToken);
+      }
+
+      const isTokenTheSame =
+        validatedValue.token === dbAuth.ssoModel.getDecryptedToken(ssoDoc);
+
+      if (!isTokenTheSame) {
         throw Error(reqErrorMessages.invalidToken);
       }
 

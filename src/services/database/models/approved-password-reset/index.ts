@@ -39,12 +39,14 @@ const approvedPasswordResetSchema = new Schema<
 
 approvedPasswordResetSchema.static(
   "deleteExpiredApprovedPassResets",
-  async function (session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
+  async function (givenSession?: ClientSession) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
 
     try {
       // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
+      if (!givenSession || !givenSession.inTransaction()) {
         dbSession.startTransaction();
       }
 
@@ -69,19 +71,22 @@ approvedPasswordResetSchema.static(
         { session: dbSession }
       );
 
-      await dbSession.commitTransaction();
+      // Commits the transaction if it was created within this method
+      if (!givenSession) {
+        await dbSession.commitTransaction();
+      }
 
       return true;
     } catch (error) {
       // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
+      if (!givenSession && dbSession.inTransaction()) {
         await dbSession.abortTransaction();
       }
 
       return false;
     } finally {
       // Ends the session if it was created within this method
-      if (!session) {
+      if (!givenSession) {
         await dbSession.endSession();
       }
     }
@@ -90,12 +95,14 @@ approvedPasswordResetSchema.static(
 
 approvedPasswordResetSchema.static(
   "createApprovedPasswordReset",
-  async function (userId: string, session?: ClientSession) {
-    const dbSession = session ? session : await connection.startSession();
+  async function (userId: string, givenSession?: ClientSession) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
 
     try {
       // Creates a new transaction if no session was provided
-      if (!session || !session.inTransaction()) {
+      if (!givenSession || !givenSession.inTransaction()) {
         dbSession.startTransaction();
       }
 
@@ -117,19 +124,22 @@ approvedPasswordResetSchema.static(
           session: dbSession,
         });
 
-      await dbSession.commitTransaction();
+      // Commits the transaction if it was created within this method
+      if (!givenSession) {
+        await dbSession.commitTransaction();
+      }
 
       return approvedPasswordResets[0] || null;
     } catch (error: any) {
       // Aborts the transaction if it was created within this method
-      if (!session && dbSession.inTransaction()) {
+      if (!givenSession && dbSession.inTransaction()) {
         await dbSession.abortTransaction();
       }
 
       return null;
     } finally {
       // Ends the session if it was created within this method
-      if (!session) {
+      if (!givenSession) {
         await dbSession.endSession();
       }
     }

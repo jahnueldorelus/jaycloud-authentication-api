@@ -5,6 +5,8 @@ import {
   ExpressRequestError,
   RequestErrorMethods,
 } from "@app-types/request-error";
+import { CookieRemoval } from "@app-types/request-success";
+import { envNames } from "@startup/config";
 
 /**
  * Handles all errors from a request. This is the last middleware
@@ -18,6 +20,14 @@ export const requestFailedWithError = (
 ) => {
   // If there's a request error - send the error with the request's response
   if (req.failed) {
+    // Removes cookies
+    if (req.cookiesToRemove) {
+      const requestOriginDomain = <string>process.env[envNames.origins.domain];
+
+      for (let cookie of req.cookiesToRemove) {
+        res.clearCookie(cookie.key, { domain: requestOriginDomain });
+      }
+    }
     res.status(req.failed.status).send(req.failed.errorMessage);
   } else {
     /**
@@ -34,12 +44,16 @@ export const requestFailedWithError = (
  * Creates a network request error
  * @param req A network request
  * @param error The error that occured with the request
+ * @param cookiesToRemove The list of cookies to remove
  * @returns The methods available to be called to specify the request error
  */
 export const RequestError = (
   req: ExpressRequestError,
-  error: Error
+  error: Error,
+  cookiesToRemove?: CookieRemoval[]
 ): RequestErrorMethods => {
+  req.cookiesToRemove = cookiesToRemove;
+
   /**
    * Creates a request error
    * @param defaultMessage The default error message

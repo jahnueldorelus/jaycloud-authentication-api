@@ -1,3 +1,4 @@
+import { CookieRemoval } from "@app-types/request-success";
 import { Request as ExpressRequest } from "express";
 
 // Express request error methods
@@ -18,4 +19,5 @@ type RequestError = {
 // Express request with an error property
 export interface ExpressRequestError extends ExpressRequest {
   failed?: RequestError;
+  cookiesToRemove?: CookieRemoval[];
 }

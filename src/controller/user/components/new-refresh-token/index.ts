@@ -1,4 +1,3 @@
-import { Request as ExpressRequest } from "express";
 import Joi from "joi";
 import { dbAuth } from "@services/database";
 import { RequestSuccess } from "@middleware/request-success";
@@ -10,10 +9,12 @@ import {
   ValidRefreshToken,
 } from "@app-types/token/refresh-token";
 import { envNames } from "@startup/config";
+import { ExpressRequestAndUser } from "@app-types/authorization";
+import { CookieRemoval } from "@app-types/request-success";
 
 // Schema validation
 const refreshTokenSchema = Joi.object({
-  token: Joi.string().guid().required(),
+  refreshToken: Joi.string().guid().required(),
 });
 
 /**
@@ -41,21 +42,37 @@ const validateOldRefreshToken = (
  * @param req The network request
  */
 export const createNewRefreshToken = async (
-  req: ExpressRequest
+  req: ExpressRequestAndUser
 ): Promise<void> => {
-  const reqRefreshToken: RefreshToken = req.body;
+  // Checks if the user has a valid sso token
+  const ssoTokenKey = process.env[envNames.cookie.ssoId];
 
-  // Determines if the user's old refresh token is valid
-  const { isValid, errorMessage, validatedValue } =
-    validateOldRefreshToken(reqRefreshToken);
+  if (!ssoTokenKey) {
+    throw Error();
+  }
+  const ssoToken = <string>req.signedCookies[ssoTokenKey];
+  const ssoTokenCookieDeleteInfo: CookieRemoval = {
+    key: ssoTokenKey || "",
+  };
 
-  if (isValid) {
-    const dbSession = await connection.startSession();
+  const dbSession = await connection.startSession();
 
-    try {
+  try {
+    const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken });
+
+    if (!ssoDoc) {
+      throw Error(reqErrorMessages.invalidToken);
+    }
+
+    // Determines if the user's old refresh token is valid
+    const reqRefreshToken: RefreshToken = req.body;
+    const { isValid, validatedValue } =
+      validateOldRefreshToken(reqRefreshToken);
+
+    if (isValid) {
       dbSession.startTransaction();
       const oldRefreshToken = await dbAuth.refreshTokensModel
-        .findOne({ token: validatedValue.token })
+        .findOne({ token: validatedValue.refreshToken })
         .session(dbSession);
 
       // If no refresh token was found or if it's expired
@@ -115,25 +132,28 @@ export const createNewRefreshToken = async (
       } else {
         throw Error();
       }
-    } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
-      // Invalid refresh token error
-      if (error.message === reqErrorMessages.invalidToken) {
-        RequestError(req, error).badRequest();
-      } else {
-        // Default error
-        RequestError(
-          req,
-          Error("Failed to create a new refresh token.")
-        ).server();
-      }
-    } finally {
-      await dbSession.endSession();
+    } else {
+      RequestError(req, Error(reqErrorMessages.invalidToken), [
+        ssoTokenCookieDeleteInfo,
+      ]).validation();
     }
-  } else {
-    RequestError(req, Error(errorMessage)).validation();
+  } catch (error: any) {
+    // Invalid sso or refresh token
+    if (error.message === reqErrorMessages.invalidToken) {
+      RequestError(req, error, [ssoTokenCookieDeleteInfo]).badRequest();
+    }
+
+    // Default error
+    else {
+      RequestError(req, Error("Failed to create a new refresh token."), [
+        ssoTokenCookieDeleteInfo,
+      ]).server();
+    }
+  } finally {
+    if (dbSession.inTransaction()) {
+      await dbSession.abortTransaction();
+    }
+
+    await dbSession.endSession();
   }
 };

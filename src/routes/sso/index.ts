@@ -45,12 +45,30 @@ ssoRouter.get(
 // Signs out the user
 ssoRouter.post(
   "/sign-out",
-  validateSSOReqAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await SSOController.signOutUser(<ExpressRequestAndUser>req);
     next();
   }
-)
+);
+
+// Redirects a service to the authentication ui to sign out
+ssoRouter.post(
+  "/sign-out-auth-redirect",
+  validateSSOReqAuthorization,
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await SSOController.signOutAuthRedirect(<ExpressRequestAndUser>req);
+    next();
+  }
+);
+
+// Redirects a signed out user back to the previous service they were using (if one exists)
+ssoRouter.post(
+  "/sign-out-service-redirect",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await SSOController.redirectSignedOutUser(<ExpressRequestAndUser>req);
+    next();
+  }
+);
 
 // Retrieves the user's data
 ssoRouter.post(

@@ -1,10 +1,10 @@
 import { JoiValidationResults } from "@app-types/joi-validation";
 
-export type ServiceInfo = {
+export type ServiceUrl = {
   serviceUrl: string;
 };
 
-export type ValidServiceUrl = JoiValidationResults<ServiceInfo>;
+export type ValidServiceUrl = JoiValidationResults<ServiceUrl>;
 
 export type RedirectToAuthUIResponse = {
   authUrl: string;

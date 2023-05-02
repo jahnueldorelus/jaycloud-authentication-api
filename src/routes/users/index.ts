@@ -44,7 +44,7 @@ userRouter.post(
 userRouter.post(
   "/refresh-token",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await UserController.createNewRefreshToken(req);
+    await UserController.createNewRefreshToken(<ExpressRequestAndUser>req);
     next();
   }
 );
