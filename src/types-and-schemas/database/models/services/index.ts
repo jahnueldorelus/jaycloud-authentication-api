@@ -1,3 +1,4 @@
+import { PrivateServiceData } from "@app-types/service";
 import { HydratedDocument, Model } from "mongoose";
 
 export type IService = {
@@ -12,12 +13,13 @@ export type IService = {
   localApiUrl: string | null;
 };
 
-export type IServiceMethods = {};
+export type IServiceMethods = {
+ /**
+   * Generates a JSON that excludes a service's private information.
+   */
+ toPrivateJSON(): PrivateServiceData;
+};
 
 export interface ServicesModel extends Model<IService, {}, IServiceMethods> {}
 
 export type DBLoadedService = HydratedDocument<IService, IServiceMethods>;
-
-export interface UIRequestService extends Partial<DBLoadedService> {
-  uiUrl: string;
-}

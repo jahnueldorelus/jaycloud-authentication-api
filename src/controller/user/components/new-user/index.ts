@@ -11,6 +11,8 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import { envNames } from "@startup/config";
+import { ISSO } from "@app-types/database/models/sso";
+import { CookieInfo } from "@app-types/request-success";
 
 // Schema validation
 const newAccountSchema = Joi.object({
@@ -85,23 +87,59 @@ export const createNewUser = async (req: ExpressRequest): Promise<void> => {
         refreshTokenFamily.id,
         dbSession
       );
-      if (!refreshToken) {
+      if (!accessToken || !refreshToken) {
         throw Error();
       }
+
+      // Creates a new SSO record to provide SSO functionality across all services
+      const encryptedSSOToken = dbAuth.ssoModel.createEncryptedToken(user);
+
+      if (!encryptedSSOToken) {
+        throw Error();
+      }
+
+      const ssoInfo: ISSO = {
+        expDate: refreshToken.expDate,
+        ssoId: encryptedSSOToken,
+        userId: user.id,
+      };
+
+      const [ssoDoc] = await dbAuth.ssoModel.create([ssoInfo], {
+        session: dbSession,
+      });
+
+      if (!ssoDoc) {
+        throw Error();
+      }
+
+      const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
+      const ssoTokenCookieInfo: CookieInfo = {
+        expDate: ssoDoc.expDate,
+        key: ssoTokenCookieKey,
+        value: ssoDoc.ssoId,
+        sameSite: "lax",
+      };
+
       await dbSession.commitTransaction();
 
-      RequestSuccess(req, user.toPrivateJSON(), [
-        // The access token
-        {
-          headerName: <string>process.env[envNames.jwt.accessReqHeader],
-          headerValue: accessToken,
-        },
-        // The refresh token
-        {
-          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-          headerValue: refreshToken.token,
-        },
-      ]);
+      RequestSuccess(
+        req,
+        user.toPrivateJSON(),
+        [
+          // The access token
+          {
+            headerName: <string>process.env[envNames.jwt.accessReqHeader],
+            headerValue: accessToken,
+          },
+          // The refresh token
+          {
+            headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+            headerValue: refreshToken.token,
+          },
+        ],
+        null,
+        [ssoTokenCookieInfo]
+      );
     } catch (error: any) {
       if (dbSession.inTransaction()) {
         await dbSession.abortTransaction();

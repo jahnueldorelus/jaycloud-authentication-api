@@ -3,8 +3,6 @@ import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
 import { connection } from "mongoose";
 import { dbAuth } from "@services/database";
-import { envNames } from "@startup/config";
-import { UIRequestService } from "@app-types/database/models/services";
 
 export const getServices = async (req: ExpressRequest) => {
   const dbSession = await connection.startSession();
@@ -21,16 +19,9 @@ export const getServices = async (req: ExpressRequest) => {
 
     await dbSession.commitTransaction();
 
-    const currentEnv = process.env[envNames.nodeEnv];
-    const modifiedServicesList = servicesList.map((service) => {
-      const modifiedService = <UIRequestService>{ ...service.toJSON() };
-      modifiedService.uiUrl =
-        currentEnv === "production" ? service.prodUiUrl : service.devUiUrl;
-
-      delete modifiedService.prodUiUrl;
-      delete modifiedService.devUiUrl;
-      return modifiedService;
-    });
+    const modifiedServicesList = servicesList.map((service) =>
+      service.toPrivateJSON()
+    );
 
     RequestSuccess(req, modifiedServicesList);
   } catch (error: any) {
