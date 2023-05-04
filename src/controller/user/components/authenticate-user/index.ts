@@ -6,8 +6,6 @@ import { RequestError } from "@middleware/request-error";
 import { connection } from "mongoose";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { envNames } from "@startup/config";
-import { ISSO } from "@app-types/database/models/sso";
-import { CookieInfo } from "@app-types/request-success";
 
 /**
  * Authenticates a user
@@ -52,34 +50,15 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
       throw Error();
     }
 
-    // Creates a new SSO record to provide SSO functionality across all services
-    const encryptedSSOToken = dbAuth.ssoModel.createEncryptedToken(user);
+    const ssoTokenCookieInfo = await dbAuth.ssoModel.createUserSSOToken(
+      user,
+      refreshToken.expDate,
+      dbSession
+    );
 
-    if (!encryptedSSOToken) {
+    if (!ssoTokenCookieInfo) {
       throw Error();
     }
-
-    const ssoInfo: ISSO = {
-      expDate: refreshToken.expDate,
-      ssoId: encryptedSSOToken,
-      userId: user.id,
-    };
-
-    const [ssoDoc] = await dbAuth.ssoModel.create([ssoInfo], {
-      session: dbSession,
-    });
-
-    if (!ssoDoc) {
-      throw Error();
-    }
-
-    const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
-    const ssoTokenCookieInfo: CookieInfo = {
-      expDate: ssoDoc.expDate,
-      key: ssoTokenCookieKey,
-      value: ssoDoc.ssoId,
-      sameSite: "lax",
-    };
 
     await dbSession.commitTransaction();
 

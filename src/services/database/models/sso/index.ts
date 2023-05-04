@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { ClientSession, connection, model, Schema } from "mongoose";
 import CryptoJS from "crypto-js";
 import {
   DBLoadedSSO,
@@ -9,6 +9,7 @@ import {
 import { randomUUID } from "crypto";
 import { envNames } from "@startup/config";
 import { DBLoadedUser } from "@app-types/database/models/users";
+import { CookieInfo } from "@app-types/request-success";
 
 /**
  * ANY CHANGES MADE TO THE SCHEMA MUST ALSO BE MADE IN MODEL'S TYPES
@@ -51,7 +52,11 @@ const getEncryptDecryptKey = (userId: string | null) => {
   }
 };
 
-ssoSchema.static("createEncryptedToken", function (user: DBLoadedUser) {
+/**
+ * Generates an encrypted sso token (aka sso id) for a user.
+ * @param user The user to create an encrypted sso token for
+ */
+const createEncryptedToken = (user: DBLoadedUser) => {
   if (!user) {
     return null;
   }
@@ -66,7 +71,71 @@ ssoSchema.static("createEncryptedToken", function (user: DBLoadedUser) {
   const encryptedSSOToken = CryptoJS.AES.encrypt(newSSOToken, encryptionKey);
 
   return encryptedSSOToken.toString();
-});
+};
+
+ssoSchema.static(
+  "createUserSSOToken",
+  async function (
+    user: DBLoadedUser,
+    expDate: Date,
+    givenSession?: ClientSession
+  ) {
+    const dbSession = givenSession
+      ? givenSession
+      : await connection.startSession();
+
+    try {
+      // Creates a new transaction if no session was provided
+      if (!givenSession || !givenSession.inTransaction()) {
+        dbSession.startTransaction();
+      }
+
+      // Creates a new SSO record to provide SSO functionality across all services
+      const encryptedSSOToken = createEncryptedToken(user);
+
+      if (!encryptedSSOToken) {
+        throw Error();
+      }
+
+      const ssoInfo: ISSO = {
+        expDate: expDate,
+        ssoId: encryptedSSOToken,
+        userId: user.id,
+      };
+
+      const [ssoDoc] = await this.create([ssoInfo], {
+        session: dbSession,
+      });
+
+      if (!ssoDoc) {
+        throw Error();
+      }
+
+      const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
+
+      const ssoTokenCookieInfo: CookieInfo = {
+        expDate: ssoDoc.expDate,
+        key: ssoTokenCookieKey,
+        value: ssoDoc.ssoId,
+        sameSite: "lax",
+      };
+
+      return ssoTokenCookieInfo;
+    } catch (error) {
+      // Aborts the transaction if it was created within this method
+      if (!givenSession && dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
+
+      return null;
+    } finally {
+      // Ends the session if it was created within this method
+      if (!givenSession) {
+        await dbSession.endSession();
+      }
+    }
+  }
+);
 
 ssoSchema.static("getDecryptedToken", function (ssoDoc: DBLoadedSSO) {
   const decryptionKey = getEncryptDecryptKey(ssoDoc.userId);
