@@ -40,6 +40,10 @@ const usersSchema = new Schema<IUser, UsersModel, IUserMethods>(
       required: true,
       minLength: 5,
     },
+    isAdmin: {
+      type: Boolean,
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -122,6 +126,7 @@ usersSchema.method<DBLoadedUser>("toPrivateJSON", function () {
     email: userData.email,
     firstName: userData.firstName,
     lastName: userData.lastName,
+    isAdmin: userData.isAdmin,
   };
 
   return privateJSON;
@@ -131,6 +136,7 @@ usersSchema.method<DBLoadedUser>("toPrivateSSOJSON", function () {
   const privateJSON: PrivateSSOUserData = {
     firstName: this.firstName,
     lastName: this.lastName,
+    isAdmin: this.isAdmin,
   };
 
   return privateJSON;

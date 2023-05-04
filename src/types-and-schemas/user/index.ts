@@ -1,13 +1,14 @@
-export type UserData = {
+import { IUser } from "@app-types/database/models/users";
+
+export type UserData = IUser & {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type PrivateUserData = Omit<UserData, "id" | "password" | "updatedAt">;
 
-export type PrivateSSOUserData = Pick<UserData, "firstName" | "lastName">;
+export type PrivateSSOUserData = Pick<
+  UserData,
+  "firstName" | "lastName" | "isAdmin"
+>;

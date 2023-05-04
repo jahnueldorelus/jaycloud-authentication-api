@@ -6,6 +6,7 @@ export type IUser = {
   lastName: string;
   email: string;
   password: string;
+  isAdmin: boolean;
 };
 
 export type IUserMethods = {
