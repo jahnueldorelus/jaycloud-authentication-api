@@ -115,22 +115,23 @@ usersSchema.method<DBLoadedUser>("generateAccessToken", function () {
 });
 
 usersSchema.method<DBLoadedUser>("toPrivateJSON", function () {
-  const privateJSON: PrivateUserData = <UserData>this.toJSON();
-  delete privateJSON.password;
-  delete privateJSON.updatedAt;
-  delete privateJSON.__v;
+  const userData: UserData = this.toJSON();
+
+  const privateJSON: PrivateUserData = {
+    createdAt: userData.createdAt,
+    email: userData.email,
+    firstName: userData.firstName,
+    lastName: userData.lastName,
+  };
 
   return privateJSON;
 });
 
 usersSchema.method<DBLoadedUser>("toPrivateSSOJSON", function () {
-  const privateJSON: PrivateSSOUserData = <UserData>this.toJSON();
-  delete privateJSON._id;
-  delete privateJSON.email;
-  delete privateJSON.password;
-  delete privateJSON.createdAt;
-  delete privateJSON.updatedAt;
-  delete privateJSON.__v;
+  const privateJSON: PrivateSSOUserData = {
+    firstName: this.firstName,
+    lastName: this.lastName,
+  };
 
   return privateJSON;
 });

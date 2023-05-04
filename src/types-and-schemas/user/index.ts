@@ -8,12 +8,6 @@ export type UserData = {
   updatedAt: string;
 };
 
-type PersonalUserData = Omit<UserData, "id"> & { _id: string; __v: number };
+export type PrivateUserData = Omit<UserData, "id" | "password" | "updatedAt">;
 
-// Makes some properties of the user's data optional to allow deletion
-export type PrivateUserData = Partial<PersonalUserData> &
-  Omit<UserData, "password" | "updatedAt">;
-
-// Makes some properties of the user's data optional to allow deletion
-export type PrivateSSOUserData = Partial<PersonalUserData> &
-  Pick<UserData, "firstName" | "lastName">;
+export type PrivateSSOUserData = Pick<UserData, "firstName" | "lastName">;
