@@ -145,9 +145,6 @@ export default (): CheckConfigReturn => {
   if (!process.env[envNames.cookie.serviceUrl]) {
     errorNames.push(envNames.cookie.serviceUrl);
   }
-  if (!process.env[envNames.cookie.serviceDomain]) {
-    errorNames.push(envNames.cookie.serviceDomain);
-  }
   if (!process.env[envNames.cookie.key]) {
     errorNames.push(envNames.cookie.key);
   }
