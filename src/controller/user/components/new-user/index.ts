@@ -18,7 +18,6 @@ const newAccountSchema = Joi.object({
   lastName: newUserAttributes.lastName.joiSchema,
   email: newUserAttributes.email.joiSchema,
   password: newUserAttributes.password.joiSchema,
-  isAdmin: false, // Every new user is not an admin by default
 });
 
 /**

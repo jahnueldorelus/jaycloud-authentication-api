@@ -43,6 +43,7 @@ const usersSchema = new Schema<IUser, UsersModel, IUserMethods>(
     isAdmin: {
       type: Boolean,
       required: true,
+      default: false,
     },
   },
   {
