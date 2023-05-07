@@ -28,7 +28,7 @@ export interface SSOModel extends Model<ISSO, {}, ISSOMethods> {
     user: DBLoadedUser,
     expDate: Date,
     givenSession?: ClientSession
-  ): CookieInfo | null;
+  ): Promise<CookieInfo | null>;
 }
 
 export type DBLoadedSSO = HydratedDocument<ISSO, ISSOMethods>;
