@@ -107,6 +107,6 @@ export const signOutUser = async (req: ExpressRequestAndUser) => {
   }
   // If the given request info is invalid
   else {
-    RequestError(req, Error(errorMessage)).validation();
+    RequestError(req, Error(errorMessage)).notAuthorized();
   }
 };
