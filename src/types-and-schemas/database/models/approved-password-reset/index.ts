@@ -1,3 +1,4 @@
+import moment from "moment";
 import { ClientSession, HydratedDocument, Model } from "mongoose";
 
 export type IApprovedPasswordReset = {
@@ -10,6 +11,11 @@ export type IApprovedPasswordResetMethods = {};
 
 export interface ApprovedPasswordResetModel
   extends Model<IApprovedPasswordReset, {}, IApprovedPasswordResetMethods> {
+  /**
+   * Determines the amount of time before an approved password reset expires
+   */
+  getPasswordResetExpireTime(): moment.Moment;
+
   /**
    * Deletes all approved password resets that have expired.
    * @param session — The DB session to use

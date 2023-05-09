@@ -37,6 +37,26 @@ const validateUserEmail = (userEmail: UserEmail): ValidUserEmail => {
 };
 
 /**
+ * Gets the amount of time before a password reset expires as a string.
+ * @param expDate The date the password reset expires
+ */
+const getTimeWhenPasswordResetExpires = (
+  expDate: moment.Moment | Date
+): string => {
+  const tempDate: moment.Moment = moment.isMoment(expDate)
+    ? expDate
+    : moment(expDate);
+
+  const timeDiffBeforeExp = tempDate.diff(moment(new Date()));
+
+  const numOfMinBeforeExp = Math.round(
+    moment.duration(timeDiffBeforeExp).asMinutes()
+  );
+
+  return `${numOfMinBeforeExp} minutes`;
+};
+
+/**
  * Creates a temporary token for a password reset.
  * @param req The network request
  */
@@ -110,15 +130,10 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
         }
       });
 
-      const approvedPasswordResetExp = moment(approvedPasswordReset.expDate);
-      const timeDiffBeforeExp = approvedPasswordResetExp.diff(
-        moment(new Date())
+      RequestSuccess(
+        req,
+        getTimeWhenPasswordResetExpires(approvedPasswordReset.expDate)
       );
-      const numOfMinBeforeExp = Math.round(
-        moment.duration(timeDiffBeforeExp).asMinutes()
-      );
-
-      RequestSuccess(req, `${numOfMinBeforeExp} minutes`);
     } catch (error: any) {
       if (dbSession.inTransaction()) {
         await dbSession.abortTransaction();
@@ -129,7 +144,10 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
        * that the user doesn't exist due to security purposes.
        */
       if (error.message === reqErrorMessages.nonExistentUser) {
-        RequestSuccess(req, true);
+        const expDate =
+          dbAuth.approvedPasswordResetModel.getPasswordResetExpireTime();
+
+        RequestSuccess(req, getTimeWhenPasswordResetExpires(expDate));
       } else {
         // Default error message
         RequestError(

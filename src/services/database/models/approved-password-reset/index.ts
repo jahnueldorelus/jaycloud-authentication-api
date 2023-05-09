@@ -37,6 +37,16 @@ const approvedPasswordResetSchema = new Schema<
   }
 );
 
+approvedPasswordResetSchema.static("getPasswordResetExpireTime", function () {
+  const expDate = moment(new Date());
+  expDate.add(
+    parseInt(<string>process.env[envNames.crypto.tempTokenExpMinutes]),
+    "minutes"
+  );
+
+  return expDate;
+});
+
 approvedPasswordResetSchema.static(
   "deleteExpiredApprovedPassResets",
   async function (givenSession?: ClientSession) {
@@ -113,11 +123,7 @@ approvedPasswordResetSchema.static(
       const token = randomBytes(12).toString("hex");
 
       // Creates a new date for the token's expiration
-      const expDate = moment(new Date());
-      expDate.add(
-        parseInt(<string>process.env[envNames.crypto.tempTokenExpMinutes]),
-        "minutes"
-      );
+      const expDate = this.getPasswordResetExpireTime();
 
       const approvedPasswordResets: DBLoadedApprovedPasswordReset[] =
         await this.create([{ userId, token, expDate: expDate.toDate() }], {
