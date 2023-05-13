@@ -15,6 +15,7 @@ if (!configResults.configComplete) {
 import express from "express";
 import { addServerRoutes } from "@startup/routes";
 import { addStartMiddleware, addEndMiddleware } from "@startup/middleware";
+import { startBackgroundTasks } from "@startup/cron";
 
 // Express server
 const server = express();
@@ -27,6 +28,9 @@ addServerRoutes(server);
 
 // Adds all the ending middlware used by the server
 addEndMiddleware(server);
+
+// Starts all scheduled background tasks
+startBackgroundTasks();
 
 // The port for the server to listen on
 let port: number | string;
