@@ -40,6 +40,15 @@ userRouter.post(
   }
 );
 
+// Signs out the user
+userRouter.post(
+  "/sign-out",
+  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    await UserController.signOutUser(<ExpressRequestAndUser>req);
+    next();
+  }
+);
+
 // Creates a new refresh token for a user
 userRouter.post(
   "/refresh-token",
@@ -58,7 +67,7 @@ userRouter.post(
   }
 );
 
-// Resets the user's password
+// Updates the user's password
 userRouter.post(
   "/update-password",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {

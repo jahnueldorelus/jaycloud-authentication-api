@@ -2,6 +2,7 @@ import { Request as ExpressRequest } from "express";
 import { createNewUser } from "./components/new-user";
 import { updateUser } from "./components/update-user";
 import { authenticateUser } from "./components/authenticate-user";
+import { signOutUser } from "./components/sign-out-user";
 import { createNewRefreshToken } from "./components/new-refresh-token";
 import { getNewUserFormModel } from "./components/new-user-form-model";
 import { getUpdateUserFormModel } from "./components/update-user-form-model";
@@ -16,6 +17,7 @@ type Controller = {
   createNewUser: (arg0: ExpressRequest) => Promise<void>;
   updateUser: (arg0: ExpressRequestAndUser) => Promise<void>;
   authenticateUser: (arg0: ExpressRequest) => Promise<void>;
+  signOutUser: (arg0: ExpressRequestAndUser) => Promise<void>;
   createNewRefreshToken: (arg0: ExpressRequestAndUser) => Promise<void>;
   getNewUserFormModel: (arg0: ExpressRequest) => Promise<void>;
   getUpdateUserFormModel: (arg0: ExpressRequest) => Promise<void>;
@@ -30,6 +32,7 @@ export const UserController: Controller = {
   createNewUser,
   updateUser,
   authenticateUser,
+  signOutUser,
   createNewRefreshToken,
   getNewUserFormModel,
   getUpdateUserFormModel,

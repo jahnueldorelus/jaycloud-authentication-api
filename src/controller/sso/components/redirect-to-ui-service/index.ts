@@ -11,7 +11,7 @@ import { RedirectToServiceUIResponse } from "@app-types/sso";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
 
-export const redirectToUiService = async (req: ExpressRequestAndUser) => {
+export const redirectToServiceUi = async (req: ExpressRequestAndUser) => {
   const dbSession = await connection.startSession();
   const reqUser = getRequestUserData(req);
 
