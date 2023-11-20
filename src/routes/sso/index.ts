@@ -71,12 +71,12 @@ ssoRouter.post(
   }
 );
 
-// Retrieves data from a JayCloud service API
+// Verifies if a request is authenticated and returns the authenticated user's id
 ssoRouter.post(
-  "/sso-data",
+  "/verify",
   validateSSOReqAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.getData(<ExpressRequestAndUser>req);
+    await SSOController.getUserId(<ExpressRequestAndUser>req);
     next();
   }
 );

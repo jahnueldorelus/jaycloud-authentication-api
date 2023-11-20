@@ -152,8 +152,9 @@ export const validateSSOReqAuthorization = async (
 
       // SSO token cookie key
       const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
-      // SSO token key from cookie
-      const ssoToken = req.signedCookies[ssoTokenCookieKey];
+      // SSO token key from cookie or header
+      const ssoToken =
+        req.signedCookies[ssoTokenCookieKey] || req.headers["sso-token"];
 
       if (!ssoToken) {
         throw Error(reqErrorMessages.invalidToken);

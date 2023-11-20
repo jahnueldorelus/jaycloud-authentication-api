@@ -4,7 +4,7 @@ import { redirectToServiceUi } from "@controller/sso/components/redirect-to-ui-s
 import { getSSOToken } from "@controller/sso/components/sso-token";
 import { getUser } from "@controller/sso/components/get-user";
 import { ExpressRequestAndUser } from "@app-types/authorization";
-import { getData } from "@controller/sso/components/get-data";
+import { getUserId } from "@controller/sso/components/get-user-id";
 import { signOutAuthRedirect } from "@controller/sso/components/sign-out-auth-redirect";
 import { redirectSignedOutUser } from "@controller/sso/components/redirect-signed-out-user";
 
@@ -13,7 +13,7 @@ type Controller = {
   redirectToServiceUi: (arg0: ExpressRequestAndUser) => Promise<void>;
   getSSOToken: (arg0: ExpressRequest) => Promise<void>;
   getUser: (arg0: ExpressRequestAndUser) => void;
-  getData: (arg0: ExpressRequestAndUser) => Promise<void>;
+  getUserId: (arg0: ExpressRequestAndUser) => Promise<void>;
   signOutAuthRedirect: (arg0: ExpressRequestAndUser) => Promise<void>;
   redirectSignedOutUser: (arg0: ExpressRequest) => Promise<void>;
 };
@@ -23,7 +23,7 @@ export const SSOController: Controller = {
   redirectToServiceUi,
   getSSOToken,
   getUser,
-  getData,
+  getUserId,
   signOutAuthRedirect,
   redirectSignedOutUser,
 };
