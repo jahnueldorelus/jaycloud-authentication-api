@@ -6,6 +6,7 @@ import { requestPassedWithSuccess } from "@middleware/request-success";
 import cors, { CorsOptions } from "cors";
 import { envNames } from "@startup/config";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
 
 /**
  * Retrieves the options for the cross origin resource sharing.
@@ -15,7 +16,6 @@ export const corsOptions = (): CorsOptions => ({
     // If the request's origin is an acceptable origin
     if (
       (origin && origin.match(<string>process.env[envNames.origins.local])) ||
-      (origin && origin.match(<string>process.env[envNames.origins.lan])) ||
       (origin &&
         origin.includes(<string>process.env[envNames.origins.domain])) ||
       // Allows access from POSTMAN only in development mode
@@ -63,6 +63,9 @@ export const addStartMiddleware = (server: Express): void => {
 
   // Parses cookies
   server.use(cookieParser(<string>process.env[envNames.cookie.key]));
+
+  // Logs all requests made to the server
+  server.use(morgan("dev"));
 };
 
 /**

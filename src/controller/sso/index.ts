@@ -13,7 +13,7 @@ type Controller = {
   redirectToServiceUi: (arg0: ExpressRequestAndUser) => Promise<void>;
   getSSOToken: (arg0: ExpressRequest) => Promise<void>;
   getUser: (arg0: ExpressRequestAndUser) => void;
-  getUserId: (arg0: ExpressRequestAndUser) => Promise<void>;
+  getUserId: (arg0: ExpressRequestAndUser) => void;
   signOutAuthRedirect: (arg0: ExpressRequestAndUser) => Promise<void>;
   redirectSignedOutUser: (arg0: ExpressRequest) => Promise<void>;
 };

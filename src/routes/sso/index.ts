@@ -75,8 +75,8 @@ ssoRouter.post(
 ssoRouter.post(
   "/verify",
   validateSSOReqAuthorization,
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.getUserId(<ExpressRequestAndUser>req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.getUserId(<ExpressRequestAndUser>req);
     next();
   }
 );
