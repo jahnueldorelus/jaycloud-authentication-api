@@ -1,32 +1,29 @@
 import { Request as ExpressRequest } from "express";
-import { redirectToUiAuth } from "@controller/sso/components/redirect-to-ui-auth";
-import { redirectToUiService } from "@controller/sso/components/redirect-to-ui-service";
+import { redirectToAuthUi } from "@controller/sso/components/redirect-to-ui-auth";
+import { redirectToServiceUi } from "@controller/sso/components/redirect-to-ui-service";
 import { getSSOToken } from "@controller/sso/components/sso-token";
 import { getUser } from "@controller/sso/components/get-user";
 import { ExpressRequestAndUser } from "@app-types/authorization";
-import { getData } from "@controller/sso/components/get-data";
-import { signOutUser } from "@controller/sso/components/sign-out-user";
+import { getUserId } from "@controller/sso/components/get-user-id";
 import { signOutAuthRedirect } from "@controller/sso/components/sign-out-auth-redirect";
 import { redirectSignedOutUser } from "@controller/sso/components/redirect-signed-out-user";
 
 type Controller = {
-  redirectToUiAuth: (arg0: ExpressRequest) => Promise<void>;
-  redirectToUiService: (arg0: ExpressRequestAndUser) => Promise<void>;
+  redirectToAuthUi: (arg0: ExpressRequest) => Promise<void>;
+  redirectToServiceUi: (arg0: ExpressRequestAndUser) => Promise<void>;
   getSSOToken: (arg0: ExpressRequest) => Promise<void>;
   getUser: (arg0: ExpressRequestAndUser) => void;
-  getData: (arg0: ExpressRequestAndUser) => Promise<void>;
-  signOutUser: (arg0: ExpressRequestAndUser) => Promise<void>;
+  getUserId: (arg0: ExpressRequestAndUser) => void;
   signOutAuthRedirect: (arg0: ExpressRequestAndUser) => Promise<void>;
   redirectSignedOutUser: (arg0: ExpressRequest) => Promise<void>;
 };
 
 export const SSOController: Controller = {
-  redirectToUiAuth,
-  redirectToUiService,
+  redirectToAuthUi,
+  redirectToServiceUi,
   getSSOToken,
   getUser,
-  getData,
-  signOutUser,
+  getUserId,
   signOutAuthRedirect,
   redirectSignedOutUser,
 };

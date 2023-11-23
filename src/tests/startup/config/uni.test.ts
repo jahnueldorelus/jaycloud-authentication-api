@@ -37,7 +37,7 @@ describe("Startup - Configuration", () => {
   });
 
   it("Should fail - Missing access control environment variables", () => {
-    envNames.origins.lan = "";
+    envNames.origins.domain = "";
     envNames.origins.local = "";
 
     const { configComplete, error } = checkConfig();

@@ -28,7 +28,6 @@ export const envNames = {
   },
   origins: {
     local: "ORIGIN_LOCAL_HOST_ADDR",
-    lan: "ORIGIN_LAN_ADDR",
     wanDev: "ORIGIN_WAN_DEV_ADDR",
     wanProd: "ORIGIN_WAN_PROD_ADDR",
     apiProd: "ORIGIN_PROD_API",
@@ -106,9 +105,6 @@ export default (): CheckConfigReturn => {
   // Checks Access-Control for CORS configuration
   if (!process.env[envNames.origins.local]) {
     errorNames.push(envNames.origins.local);
-  }
-  if (!process.env[envNames.origins.lan]) {
-    errorNames.push(envNames.origins.lan);
   }
   if (!process.env[envNames.origins.wanDev]) {
     errorNames.push(envNames.origins.wanDev);

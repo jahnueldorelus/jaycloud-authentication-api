@@ -14,39 +14,30 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 // Express router for sso routes
 export const ssoRouter = Router();
 
-// Redirects initial auth request from service UI to auth UI.
+// Redirects a service to the authentication ui to sign in.
 ssoRouter.post(
-  "/sso",
+  "/sign-in-auth-redirect",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.redirectToUiAuth(req);
+    await SSOController.redirectToAuthUi(req);
     next();
   }
 );
 
-// Redirects initial auth request from auth UI to service UI.
+// Redirects a signed in user back to the previous service where they requested to sign in
 ssoRouter.post(
-  "/sso-redirect",
+  "/sign-in-service-redirect",
   validateRequestAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.redirectToUiService(<ExpressRequestAndUser>req);
+    await SSOController.redirectToServiceUi(<ExpressRequestAndUser>req);
     next();
   }
 );
 
-// Retrieves a CSRF token
+// Retrieves a user's decrypted CSRF token
 ssoRouter.get(
   "/sso-token",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await SSOController.getSSOToken(req);
-    next();
-  }
-);
-
-// Signs out the user
-ssoRouter.post(
-  "/sign-out",
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.signOutUser(<ExpressRequestAndUser>req);
     next();
   }
 );
@@ -61,7 +52,7 @@ ssoRouter.post(
   }
 );
 
-// Redirects a signed out user back to the previous service they were using (if one exists)
+// Redirects a signed out user back to the previous service where they requested to sign out
 ssoRouter.post(
   "/sign-out-service-redirect",
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
@@ -70,7 +61,7 @@ ssoRouter.post(
   }
 );
 
-// Retrieves the user's data
+// Retrieves specialized data of the user for services using SSO
 ssoRouter.post(
   "/sso-user",
   validateSSOReqAuthorization,
@@ -80,12 +71,12 @@ ssoRouter.post(
   }
 );
 
-// Retrieves data from a JayCloud service API
+// Verifies if a request is authenticated and returns the authenticated user's id
 ssoRouter.post(
-  "/sso-data",
+  "/verify",
   validateSSOReqAuthorization,
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.getData(<ExpressRequestAndUser>req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.getUserId(<ExpressRequestAndUser>req);
     next();
   }
 );

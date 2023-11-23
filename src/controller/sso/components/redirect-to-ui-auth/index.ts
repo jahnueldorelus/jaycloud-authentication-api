@@ -35,7 +35,7 @@ const validateServiceInfo = (serviceInfo: ServiceUrl): ValidServiceUrl => {
   }
 };
 
-export const redirectToUiAuth = async (req: ExpressRequest) => {
+export const redirectToAuthUi = async (req: ExpressRequest) => {
   const requestData: ServiceUrl = req.body;
 
   const { isValid, errorMessage, validatedValue } =
