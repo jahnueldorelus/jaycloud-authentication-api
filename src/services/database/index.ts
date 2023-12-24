@@ -17,6 +17,8 @@ const connectToDatabase = () => {
     },
     authMechanism: "DEFAULT",
     directConnection: true,
+    tls: true,
+    tlsAllowInvalidCertificates: true,
   });
 
   connection.once("open", () =>
