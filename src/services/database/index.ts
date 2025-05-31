@@ -6,6 +6,13 @@ import { approvedPasswordResetModel } from "./models/approved-password-reset";
 import { servicesModel } from "./models/services";
 import { ssoModel } from "./models/sso";
 import { envNames } from "@startup/config";
+import { Pool, createPool } from "mysql2/promise";
+import { User } from "./tables/user";
+import { ApprovedPasswordReset } from "./tables/approved-password-reset";
+import { RefreshToken } from "./tables/refresh-token";
+import { RefreshTokenFamily } from "./tables/refresh-token-family";
+import { SSO } from "./tables/sso";
+import { Service } from "./tables/service";
 
 const connectToDatabase = () => {
   connect(process.env[envNames.db.host] || "", {
@@ -36,3 +43,57 @@ const connectToDatabase = () => {
 };
 
 export const dbAuth = connectToDatabase();
+
+class MysqlDatabase {
+  private readonly host?: string;
+  private readonly username?: string;
+  private readonly password?: string;
+  private readonly databaseName?: string;
+  private readonly pool: Pool;
+
+  public readonly user: User;
+  public readonly approvedPasswordReset: ApprovedPasswordReset;
+  public readonly refreshToken: RefreshToken;
+  public readonly refreshTokenFamily: RefreshTokenFamily;
+  public readonly sso: SSO;
+  public readonly service: Service;
+
+  constructor() {
+    this.host = process.env[envNames.mysql.host];
+    this.username = process.env[envNames.mysql.user];
+    this.password = process.env[envNames.mysql.password];
+    this.databaseName = process.env[envNames.mysql.databaseName];
+    this.pool = this.createPool();
+    this.pool.on("connection", (stream) =>
+      console.log(
+        "Added successfull connection to MySQL database - ID #" +
+          stream.threadId
+      )
+    );
+
+    this.user = new User(this.pool);
+    this.approvedPasswordReset = new ApprovedPasswordReset(this.pool);
+    this.refreshToken = new RefreshToken(this.pool);
+    this.refreshTokenFamily = new RefreshTokenFamily(this.pool);
+    this.sso = new SSO(this.pool);
+    this.service = new Service(this.pool);
+  }
+
+  /**
+   * Creates a database pool for managing connections.
+   */
+  private createPool(): Pool {
+    return createPool({
+      host: this.host,
+      user: this.username,
+      password: this.password,
+      database: this.databaseName,
+      decimalNumbers: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+  }
+}
+
+export const db = new MysqlDatabase();
