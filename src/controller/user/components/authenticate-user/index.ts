@@ -1,98 +1,106 @@
 import { Request as ExpressRequest } from "express";
-import { dbAuth } from "@services/database";
+import { db } from "@services/database";
 import { UserCredentials } from "@app-types/user/authenticate-user";
 import { RequestSuccess } from "@middleware/request-success";
-import { RequestError } from "@middleware/request-error";
-import { connection } from "mongoose";
-import { reqErrorMessages } from "@services/request-error-messages";
-import { envNames } from "@startup/config";
+// import { RequestError } from "@middleware/request-error";
+// import { connection } from "mongoose";
+// import { reqErrorMessages } from "@services/request-error-messages";
+// import { envNames } from "@startup/config";
 
 /**
- * Authenticates a user
+ * Authenticates a user.
  * @param req The network request
  */
 export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
   const credentials: UserCredentials = req.body;
+  const authenticatedInfo = await db.user.authenticateUser(
+    credentials.email,
+    credentials.password
+  );
 
-  const dbSession = await connection.startSession();
+  /** NEED TO CREATE FAILEDQUERY CLASS IN ORDER TO DO INSTANCEOF CHECKS */
 
-  try {
-    dbSession.startTransaction();
-    const user = await dbAuth.usersModel.authenticateUser(
-      credentials.email,
-      credentials.password,
-      dbSession
-    );
+  RequestSuccess(req, authenticatedInfo);
 
-    if (!user) {
-      throw Error(reqErrorMessages.authFailed);
-    }
+  // const dbSession = await connection.startSession();
 
-    const accessToken = user.generateAccessToken();
+  // try {
+  //   dbSession.startTransaction();
+  //   const user = await dbAuth.usersModel.authenticateUser(
+  //     credentials.email,
+  //     credentials.password,
+  //     dbSession
+  //   );
 
-    const refreshTokenFamily =
-      await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
-        user.id,
-        dbSession
-      );
+  //   if (!user) {
+  //     throw Error(reqErrorMessages.authFailed);
+  //   }
 
-    if (!refreshTokenFamily) {
-      throw Error();
-    }
+  //   const accessToken = user.generateAccessToken();
 
-    const refreshToken = await dbAuth.refreshTokensModel.createToken(
-      user.id,
-      refreshTokenFamily.id,
-      dbSession
-    );
+  //   const refreshTokenFamily =
+  //     await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
+  //       user.id,
+  //       dbSession
+  //     );
 
-    if (!accessToken || !refreshToken) {
-      throw Error();
-    }
+  //   if (!refreshTokenFamily) {
+  //     throw Error();
+  //   }
 
-    const ssoTokenCookieInfo = await dbAuth.ssoModel.createUserSSOToken(
-      user,
-      refreshToken.expDate,
-      dbSession
-    );
+  //   const refreshToken = await dbAuth.refreshTokensModel.createToken(
+  //     user.id,
+  //     refreshTokenFamily.id,
+  //     dbSession
+  //   );
 
-    if (!ssoTokenCookieInfo) {
-      throw Error();
-    }
+  //   if (!accessToken || !refreshToken) {
+  //     throw Error();
+  //   }
 
-    await dbSession.commitTransaction();
+  //   const ssoTokenCookieInfo = await dbAuth.ssoModel.createUserSSOToken(
+  //     user,
+  //     refreshToken.expDate,
+  //     dbSession
+  //   );
 
-    RequestSuccess(
-      req,
-      user.toPrivateJSON(),
-      [
-        // The access token
-        {
-          headerName: <string>process.env[envNames.jwt.accessReqHeader],
-          headerValue: accessToken,
-        },
-        // The refresh token
-        {
-          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-          headerValue: refreshToken.token,
-        },
-      ],
-      null,
-      [ssoTokenCookieInfo]
-    );
-  } catch (error: any) {
-    if (dbSession.inTransaction()) {
-      await dbSession.abortTransaction();
-    }
+  //   if (!ssoTokenCookieInfo) {
+  //     throw Error();
+  //   }
 
-    // Authentication failed error
-    if (error.message === reqErrorMessages.authFailed) {
-      RequestError(req, error).badRequest();
-    } else {
-      // Default error
-      RequestError(req, Error("Failed to authenticate user.")).server();
-    }
-  } finally {
-    await dbSession.endSession();
-  }
+  //   await dbSession.commitTransaction();
+
+  //   RequestSuccess(
+  //     req,
+  //     user.toPrivateJSON(),
+  //     [
+  //       // The access token
+  //       {
+  //         headerName: <string>process.env[envNames.jwt.accessReqHeader],
+  //         headerValue: accessToken,
+  //       },
+  //       // The refresh token
+  //       {
+  //         headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+  //         headerValue: refreshToken.token,
+  //       },
+  //     ],
+  //     null,
+  //     [ssoTokenCookieInfo]
+  //   );
+  // } catch (error: any) {
+  //   if (dbSession.inTransaction()) {
+  //     await dbSession.abortTransaction();
+  //   }
+
+  //   // Authentication failed error
+  //   if (error.message === reqErrorMessages.authFailed) {
+  //     RequestError(req, error).badRequest();
+  //   } else {
+  //     // Default error
+  //     RequestError(req, Error("Failed to authenticate user.")).server();
+  //   }
+  // } finally {
+  //   await dbSession.endSession();
+  // }
 };

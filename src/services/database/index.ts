@@ -1,4 +1,4 @@
-import { connect, connection } from "mongoose";
+import { connection } from "mongoose";
 import { usersModel } from "./models/users";
 import { refreshTokensModel } from "./models/refresh-tokens";
 import { refreshTokenFamiliesModel } from "./models/refresh-token-families";
@@ -6,27 +6,29 @@ import { approvedPasswordResetModel } from "./models/approved-password-reset";
 import { servicesModel } from "./models/services";
 import { ssoModel } from "./models/sso";
 import { envNames } from "@startup/config";
-import { Pool, createPool } from "mysql2/promise";
+import { Pool, createPool as mysqlCreatePool } from "mysql2/promise";
 import { User } from "./tables/user";
-import { ApprovedPasswordReset } from "./tables/approved-password-reset";
-import { RefreshToken } from "./tables/refresh-token";
 import { RefreshTokenFamily } from "./tables/refresh-token-family";
-import { SSO } from "./tables/sso";
-import { Service } from "./tables/service";
+import { RefreshToken } from "./tables/refresh-token";
+// import { ApprovedPasswordReset } from "./tables/approved-password-reset";
+// import { RefreshToken } from "./tables/refresh-token";
+// import { RefreshTokenFamily } from "./tables/refresh-token-family";
+// import { SSO } from "./tables/sso";
+// import { Service } from "./tables/service";
 
 const connectToDatabase = () => {
-  connect(process.env[envNames.db.host] || "", {
-    dbName: process.env[envNames.db.name],
-    authSource: process.env[envNames.db.name],
-    auth: {
-      username: process.env[envNames.db.user],
-      password: process.env[envNames.db.password],
-    },
-    authMechanism: "DEFAULT",
-    directConnection: true,
-    tls: true,
-    tlsAllowInvalidCertificates: true,
-  });
+  // connect(process.env[envNames.db.host] || "", {
+  //   dbName: process.env[envNames.db.name],
+  //   authSource: process.env[envNames.db.name],
+  //   auth: {
+  //     username: process.env[envNames.db.user],
+  //     password: process.env[envNames.db.password],
+  //   },
+  //   authMechanism: "DEFAULT",
+  //   directConnection: true,
+  //   tls: true,
+  //   tlsAllowInvalidCertificates: true,
+  // });
 
   connection.once("open", () =>
     console.log("Connected to MongoDB successfully")
@@ -52,11 +54,11 @@ class MysqlDatabase {
   private readonly pool: Pool;
 
   public readonly user: User;
-  public readonly approvedPasswordReset: ApprovedPasswordReset;
+  // public readonly approvedPasswordReset: ApprovedPasswordReset;
   public readonly refreshToken: RefreshToken;
   public readonly refreshTokenFamily: RefreshTokenFamily;
-  public readonly sso: SSO;
-  public readonly service: Service;
+  // public readonly sso: SSO;
+  // public readonly service: Service;
 
   constructor() {
     this.host = process.env[envNames.mysql.host];
@@ -72,27 +74,30 @@ class MysqlDatabase {
     );
 
     this.user = new User(this.pool);
-    this.approvedPasswordReset = new ApprovedPasswordReset(this.pool);
+    // this.approvedPasswordReset = new ApprovedPasswordReset(this.pool);
     this.refreshToken = new RefreshToken(this.pool);
     this.refreshTokenFamily = new RefreshTokenFamily(this.pool);
-    this.sso = new SSO(this.pool);
-    this.service = new Service(this.pool);
+    // this.sso = new SSO(this.pool);
+    // this.service = new Service(this.pool);
   }
 
   /**
    * Creates a database pool for managing connections.
    */
   private createPool(): Pool {
-    return createPool({
+    const pool = mysqlCreatePool({
       host: this.host,
       user: this.username,
       password: this.password,
       database: this.databaseName,
+      port: 3306,
       decimalNumbers: true,
       ssl: {
         rejectUnauthorized: false,
       },
     });
+
+    return pool;
   }
 }
 
