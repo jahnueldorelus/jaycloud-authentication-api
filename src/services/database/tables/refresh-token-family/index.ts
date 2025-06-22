@@ -17,7 +17,7 @@ export class RefreshTokenFamily {
    * @returns A refresh token family object or a failed query request
    */
   public async createFamily(
-    userId: string
+    userId: number
   ): Promise<
     | LoadedRefreshTokenFamily
     | FailedQueryResult<"invalid-user" | "server-error", null>

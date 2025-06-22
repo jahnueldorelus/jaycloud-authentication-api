@@ -2,10 +2,11 @@ import { Request as ExpressRequest } from "express";
 import { db } from "@services/database";
 import { UserCredentials } from "@app-types/user/authenticate-user";
 import { RequestSuccess } from "@middleware/request-success";
-// import { RequestError } from "@middleware/request-error";
-// import { connection } from "mongoose";
-// import { reqErrorMessages } from "@services/request-error-messages";
-// import { envNames } from "@startup/config";
+import { databaseQuery } from "@services/database/queries";
+import { RequestError } from "@middleware/request-error";
+import { reqErrorMessages } from "@services/request-error-messages";
+import { envNames } from "@startup/config";
+import { CookieInfo } from "@app-types/request-success";
 
 /**
  * Authenticates a user.
@@ -18,89 +19,40 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
     credentials.password
   );
 
-  /** NEED TO CREATE FAILEDQUERY CLASS IN ORDER TO DO INSTANCEOF CHECKS */
+  if (databaseQuery.isFailedQueryResult(authenticatedInfo)) {
+    if (
+      authenticatedInfo.message === "invalid-user" ||
+      authenticatedInfo.message === "bad-request"
+    ) {
+      RequestError(req, new Error(reqErrorMessages.authFailed)).badRequest();
+    } else {
+      RequestError(req, new Error("Failed to authenticate user.")).server();
+    }
+  } else {
+    const ssoCookie: CookieInfo = {
+      expDate: authenticatedInfo.ssoToken.expDate,
+      key: <string>process.env[envNames.cookie.ssoId],
+      value: authenticatedInfo.ssoToken.ssoKey,
+      sameSite: "lax",
+    };
 
-  RequestSuccess(req, authenticatedInfo);
-
-  // const dbSession = await connection.startSession();
-
-  // try {
-  //   dbSession.startTransaction();
-  //   const user = await dbAuth.usersModel.authenticateUser(
-  //     credentials.email,
-  //     credentials.password,
-  //     dbSession
-  //   );
-
-  //   if (!user) {
-  //     throw Error(reqErrorMessages.authFailed);
-  //   }
-
-  //   const accessToken = user.generateAccessToken();
-
-  //   const refreshTokenFamily =
-  //     await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
-  //       user.id,
-  //       dbSession
-  //     );
-
-  //   if (!refreshTokenFamily) {
-  //     throw Error();
-  //   }
-
-  //   const refreshToken = await dbAuth.refreshTokensModel.createToken(
-  //     user.id,
-  //     refreshTokenFamily.id,
-  //     dbSession
-  //   );
-
-  //   if (!accessToken || !refreshToken) {
-  //     throw Error();
-  //   }
-
-  //   const ssoTokenCookieInfo = await dbAuth.ssoModel.createUserSSOToken(
-  //     user,
-  //     refreshToken.expDate,
-  //     dbSession
-  //   );
-
-  //   if (!ssoTokenCookieInfo) {
-  //     throw Error();
-  //   }
-
-  //   await dbSession.commitTransaction();
-
-  //   RequestSuccess(
-  //     req,
-  //     user.toPrivateJSON(),
-  //     [
-  //       // The access token
-  //       {
-  //         headerName: <string>process.env[envNames.jwt.accessReqHeader],
-  //         headerValue: accessToken,
-  //       },
-  //       // The refresh token
-  //       {
-  //         headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-  //         headerValue: refreshToken.token,
-  //       },
-  //     ],
-  //     null,
-  //     [ssoTokenCookieInfo]
-  //   );
-  // } catch (error: any) {
-  //   if (dbSession.inTransaction()) {
-  //     await dbSession.abortTransaction();
-  //   }
-
-  //   // Authentication failed error
-  //   if (error.message === reqErrorMessages.authFailed) {
-  //     RequestError(req, error).badRequest();
-  //   } else {
-  //     // Default error
-  //     RequestError(req, Error("Failed to authenticate user.")).server();
-  //   }
-  // } finally {
-  //   await dbSession.endSession();
-  // }
+    RequestSuccess(
+      req,
+      authenticatedInfo.userPublicInfo,
+      [
+        // The access token
+        {
+          headerName: <string>process.env[envNames.jwt.accessReqHeader],
+          headerValue: authenticatedInfo.accessToken,
+        },
+        // The refresh token
+        {
+          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+          headerValue: authenticatedInfo.refreshToken.id.toString(),
+        },
+      ],
+      null,
+      [ssoCookie]
+    );
+  }
 };

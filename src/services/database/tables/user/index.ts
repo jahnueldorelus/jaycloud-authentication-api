@@ -4,7 +4,7 @@ import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
 import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
-// import { compare } from "bcrypt";
+import { compare } from "bcrypt";
 
 export class User {
   private readonly pool: Pool;
@@ -31,31 +31,42 @@ export class User {
         await this.pool.execute("SELECT * FROM User WHERE email = ?", [email])
       );
 
-      if (userData) {
-        // const passwordMatches = await compare(password, userData.user_password);
-        /** PURPOSELY MAKING PASSWORDS MATCH FOR TESTING **/
-        const passwordMatches = true;
+      if (!userData) {
+        return databaseQuery.createFailedQuery("invalid-user", null);
+      }
 
-        if (passwordMatches) {
-          const loadedUser = new LoadedUser(userData);
-          const userAccessToken = loadedUser.generateAccessToken();
-          const userRefreshToken = await loadedUser.generateRefreshToken();
+      const passwordMatches = await compare(password, userData.user_password);
 
-          return <AuthenticatedUserData>{
-            userPublicData: loadedUser.toPublicJson(),
-            accessToken: userAccessToken,
-            refreshToken: userRefreshToken,
-          };
+      if (passwordMatches) {
+        const loadedUser = new LoadedUser(userData);
+        const accessToken = loadedUser.generateAccessToken();
+        const refreshTokenOrigins =
+          await loadedUser.generateRefreshTokenOrigins();
+
+        if (refreshTokenOrigins) {
+          const ssoToken = await loadedUser.generateSsoToken(
+            refreshTokenOrigins.refreshToken.expDate
+          );
+
+          if (ssoToken) {
+            return <AuthenticatedUserData>{
+              userPublicInfo: loadedUser.getPublicInfoJson(),
+              accessToken,
+              refreshToken: refreshTokenOrigins.refreshToken,
+              refreshTokenFamily: refreshTokenOrigins.refreshTokenFamily,
+              ssoToken,
+            };
+          }
         }
       }
 
-      return databaseQuery.createFailedQuery("invalid-user", null);
+      throw Error();
     } catch (error) {
       if (databaseQuery.isQueryError(error)) {
         return databaseQuery.createFailedQuery("bad-request", null);
-      } else {
-        return databaseQuery.createFailedQuery("server-error", null);
       }
+
+      return databaseQuery.createFailedQuery("server-error", null);
     }
   }
 }

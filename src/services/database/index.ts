@@ -10,6 +10,7 @@ import { Pool, createPool as mysqlCreatePool } from "mysql2/promise";
 import { User } from "./tables/user";
 import { RefreshTokenFamily } from "./tables/refresh-token-family";
 import { RefreshToken } from "./tables/refresh-token";
+import { SsoToken } from "./tables/sso-token";
 // import { ApprovedPasswordReset } from "./tables/approved-password-reset";
 // import { RefreshToken } from "./tables/refresh-token";
 // import { RefreshTokenFamily } from "./tables/refresh-token-family";
@@ -57,7 +58,7 @@ class MysqlDatabase {
   // public readonly approvedPasswordReset: ApprovedPasswordReset;
   public readonly refreshToken: RefreshToken;
   public readonly refreshTokenFamily: RefreshTokenFamily;
-  // public readonly sso: SSO;
+  public readonly ssoToken: SsoToken;
   // public readonly service: Service;
 
   constructor() {
@@ -77,7 +78,7 @@ class MysqlDatabase {
     // this.approvedPasswordReset = new ApprovedPasswordReset(this.pool);
     this.refreshToken = new RefreshToken(this.pool);
     this.refreshTokenFamily = new RefreshTokenFamily(this.pool);
-    // this.sso = new SSO(this.pool);
+    this.ssoToken = new SsoToken(this.pool);
     // this.service = new Service(this.pool);
   }
 

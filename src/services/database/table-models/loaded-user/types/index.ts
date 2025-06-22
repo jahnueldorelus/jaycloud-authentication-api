@@ -1,4 +1,7 @@
 import { LoadedUser } from "..";
+import { LoadedRefreshToken } from "../../loaded-refresh-token";
+import { LoadedRefreshTokenFamily } from "../../loaded-refresh-token-family";
+import { LoadedSsoToken } from "../../loaded-sso-token";
 
 export type TokenData = {
   firstName: string;
@@ -12,10 +15,11 @@ export type UserPublicData = Omit<
   LoadedUser,
   | "password"
   | "generateAccessToken"
-  | "toPublicJson"
-  | "toSsoJson"
+  | "getPublicInfoJson"
+  | "getSsoInfoJson"
   | "getFullName"
-  | "generateRefreshToken"
+  | "generateRefreshTokenOrigins"
+  | "generateSsoToken"
 >;
 
 export type UserSsoData = Pick<
@@ -24,7 +28,14 @@ export type UserSsoData = Pick<
 >;
 
 export type AuthenticatedUserData = {
-  userPublicData: UserPublicData;
+  userPublicInfo: UserPublicData;
   accessToken: string;
-  refreshToken: any /**** PLEASE CHANGE ME TO ACTUAL REFREH TOKEN MODEL */;
+  refreshToken: LoadedRefreshToken;
+  refreshTokenFamily: LoadedRefreshTokenFamily;
+  ssoToken: LoadedSsoToken;
+};
+
+export type RefreshTokenOrigins = {
+  refreshTokenFamily: LoadedRefreshTokenFamily;
+  refreshToken: LoadedRefreshToken;
 };

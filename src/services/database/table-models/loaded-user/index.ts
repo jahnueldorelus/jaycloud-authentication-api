@@ -1,7 +1,15 @@
 import { DatabaseUserData } from "@services/database/tables/user/types";
 import { sign as jwtSign, SignOptions } from "jsonwebtoken";
-import { UserPublicData, TokenData, UserSsoData } from "./types";
+import {
+  UserPublicData,
+  TokenData,
+  UserSsoData,
+  RefreshTokenOrigins,
+} from "./types";
 import { envNames } from "@startup/config";
+import { db } from "@services/database";
+import { databaseQuery } from "@services/database/queries";
+import { LoadedSsoToken } from "../loaded-sso-token";
 
 export class LoadedUser {
   public readonly id: number;
@@ -44,22 +52,46 @@ export class LoadedUser {
   }
 
   /**
-   * Generates a new refresh token.
-   * @returns A refresh token
+   * Generates a refresh token and refresh family token.
+   * @returns A refresh token and refresh family token if successfully created. Otherwise null
    */
-  public async generateRefreshToken(): Promise<any> {
-    /**
-     *
-     * NEED TO WRITE FUNCTIONAL CODE HERE
-     *
-     */
+  public async generateRefreshTokenOrigins(): Promise<RefreshTokenOrigins | null> {
+    const refreshTokenFamily = await db.refreshTokenFamily.createFamily(
+      this.id
+    );
+
+    if (!databaseQuery.isFailedQueryResult(refreshTokenFamily)) {
+      const refreshToken = await db.refreshToken.createRefreshToken(
+        refreshTokenFamily.id
+      );
+
+      if (!databaseQuery.isFailedQueryResult(refreshToken)) {
+        return {
+          refreshToken,
+          refreshTokenFamily,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Generates a SSO token.
+   * @param expDate The expiration date of the SSO token
+   * @returns A SSO token if successfully created. Otherwise null
+   */
+  public async generateSsoToken(expDate: Date): Promise<LoadedSsoToken | null> {
+    const ssoToken = await db.ssoToken.createToken(this.id, expDate);
+
+    return databaseQuery.isFailedQueryResult(ssoToken) ? null : ssoToken;
   }
 
   /**
    * Generates an immutable JSON object without the user's private info.
    * @returns The user's public info in JSON format
    */
-  public toPublicJson(): UserPublicData {
+  public getPublicInfoJson(): UserPublicData {
     return Object.freeze({
       id: this.id,
       email: this.email,
@@ -73,7 +105,7 @@ export class LoadedUser {
    * Generates an immutable JSON object with the user's SSO info.
    * @returns The user's sso info in JSON format
    */
-  public toSsoJson(): UserSsoData {
+  public getSsoInfoJson(): UserSsoData {
     return Object.freeze({
       firstName: this.firstName,
       lastName: this.lastName,
