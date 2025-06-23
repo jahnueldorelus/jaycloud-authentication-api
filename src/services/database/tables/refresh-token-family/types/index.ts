@@ -1,4 +1,4 @@
 export type DatabaseRefreshTokenFamilyData = {
-  id: number;
+  token: number;
   user_id: number;
 };

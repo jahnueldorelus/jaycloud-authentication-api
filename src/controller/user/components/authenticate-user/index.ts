@@ -26,7 +26,7 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
     ) {
       RequestError(req, new Error(reqErrorMessages.authFailed)).badRequest();
     } else {
-      RequestError(req, new Error("Failed to authenticate user.")).server();
+      RequestError(req, new Error("Failed to authenticate the user.")).server();
     }
   } else {
     const ssoCookie: CookieInfo = {
@@ -48,7 +48,7 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
         // The refresh token
         {
           headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-          headerValue: authenticatedInfo.refreshToken.id.toString(),
+          headerValue: authenticatedInfo.refreshToken.token,
         },
       ],
       null,

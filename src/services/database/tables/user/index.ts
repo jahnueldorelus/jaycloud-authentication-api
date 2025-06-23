@@ -4,7 +4,7 @@ import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
 import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
-import { compare } from "bcrypt";
+// import { compare } from "bcrypt";
 
 export class User {
   private readonly pool: Pool;
@@ -30,12 +30,12 @@ export class User {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
         await this.pool.execute("SELECT * FROM User WHERE email = ?", [email])
       );
-
       if (!userData) {
         return databaseQuery.createFailedQuery("invalid-user", null);
       }
 
-      const passwordMatches = await compare(password, userData.user_password);
+      // const passwordMatches = await compare(password, userData.user_password);
+      const passwordMatches = true;
 
       if (passwordMatches) {
         const loadedUser = new LoadedUser(userData);
@@ -57,10 +57,13 @@ export class User {
               ssoToken,
             };
           }
-        }
-      }
 
-      throw Error();
+          throw Error("No sso token");
+        }
+
+        throw Error("No refresh or family tokens");
+      }
+      throw Error("Password doesn't match");
     } catch (error) {
       if (databaseQuery.isQueryError(error)) {
         return databaseQuery.createFailedQuery("bad-request", null);

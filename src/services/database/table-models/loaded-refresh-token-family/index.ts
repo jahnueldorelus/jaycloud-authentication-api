@@ -2,11 +2,11 @@ import { db } from "@services/database";
 import { DatabaseRefreshTokenFamilyData } from "@services/database/tables/refresh-token-family/types";
 
 export class LoadedRefreshTokenFamily {
-  public readonly id: number;
+  public readonly token: number;
   public readonly userId: number;
 
   constructor(tokenData: DatabaseRefreshTokenFamilyData) {
-    this.id = tokenData.id;
+    this.token = tokenData.token;
     this.userId = tokenData.user_id;
   }
 
@@ -14,6 +14,6 @@ export class LoadedRefreshTokenFamily {
    * Attempts to delete the refresh token.
    */
   public async deleteTokenFamily(): Promise<boolean> {
-    return await db.refreshTokenFamily.deleteFamily(this.id);
+    return await db.refreshTokenFamily.deleteFamily(this.token);
   }
 }

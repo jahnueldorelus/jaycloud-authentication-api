@@ -37,7 +37,7 @@ export class RefreshToken {
 
       const refreshTokenData: DatabaseRefreshTokenData | null =
         databaseQuery.getOneQueryData<DatabaseRefreshTokenData>(
-          await this.pool.execute("INSERT INTO RefreshToken VALUES (?,?,?)", [
+          await this.pool.execute("call create_refresh_token(?, ?, ?)", [
             familyId,
             token,
             expDate.toDate(),
@@ -59,9 +59,9 @@ export class RefreshToken {
    * @param tokenId The id of the token
    * @returns A boolean determining if the token was expired
    */
-  public async expireRefreshToken(tokenId: number): Promise<boolean> {
+  public async expireRefreshToken(tokenId: string): Promise<boolean> {
     try {
-      await this.pool.execute("DELETE FROM RefreshToken WHERE ID = ?", [
+      await this.pool.execute("DELETE FROM RefreshToken WHERE token = ?", [
         tokenId,
       ]);
       return true;

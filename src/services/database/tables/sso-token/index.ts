@@ -5,6 +5,7 @@ import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { DatabaseSsoToken } from "./types";
 import { LoadedSsoToken } from "@services/database/table-models/loaded-sso-token";
+import { AES } from "crypto-js";
 
 export class SsoToken {
   private readonly pool: Pool;
@@ -42,7 +43,7 @@ export class SsoToken {
     }
 
     const randomToken = randomUUID();
-    const encryptedToken = CryptoJS.AES.encrypt(randomToken, encryptionKey);
+    const encryptedToken = AES.encrypt(randomToken, encryptionKey);
 
     return encryptedToken.toString();
   }
@@ -62,7 +63,7 @@ export class SsoToken {
 
       const ssoTokenData: DatabaseSsoToken | null =
         databaseQuery.getOneQueryData<DatabaseSsoToken>(
-          await this.pool.execute("INSERT INTO SsoToken VALUES (?,?,?)", [
+          await this.pool.execute("call create_sso_token(?, ?, ?)", [
             ssoTokenId,
             userId,
             expDate,

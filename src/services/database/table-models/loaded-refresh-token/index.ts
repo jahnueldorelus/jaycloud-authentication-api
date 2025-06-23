@@ -2,13 +2,11 @@ import { db } from "@services/database";
 import { DatabaseRefreshTokenData } from "@services/database/tables/refresh-token/types";
 
 export class LoadedRefreshToken {
-  public readonly id: number;
   public readonly token: string;
   public readonly expDate: Date;
   public readonly familyId: number;
 
   constructor(refreshTokenData: DatabaseRefreshTokenData) {
-    this.id = refreshTokenData.id;
     this.token = refreshTokenData.token;
     this.expDate = new Date(refreshTokenData.expiration_date);
     this.familyId = refreshTokenData.family_id;
@@ -27,7 +25,7 @@ export class LoadedRefreshToken {
    * @returns A boolean determining if the token was expired
    */
   public async expireToken(): Promise<boolean> {
-    return await db.refreshToken.expireRefreshToken(this.id);
+    return await db.refreshToken.expireRefreshToken(this.token);
   }
 
   /**

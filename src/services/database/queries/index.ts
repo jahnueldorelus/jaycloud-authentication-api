@@ -2,25 +2,38 @@ import { FailedQueryResult, QueryError, QueryResult } from "./types";
 
 class DatabaseQuery {
   /**
-   * Retrieves a single piece of data from a database query.
+   * Retrieves a single entity from a database query.
    * @param queryResult The result of a database query
    * @returns A single item from a database query or null
    */
   public getOneQueryData<T>(queryResult: QueryResult): T | null {
-    const dataList = <T[]>queryResult[0];
+    const queryResponse = queryResult[0];
 
-    return dataList.length === 1 ? <T>dataList[0] : null;
+    // If there's only the database entity in the query response list
+    if (queryResponse.length === 1) {
+      return <T>queryResponse[0];
+    }
+
+    // If there's the database entities list and ResultSetHeader object in the query response list
+    if (queryResponse.length >= 1 && Array.isArray(queryResponse[0])) {
+      const entityList = queryResponse[0];
+
+      if (entityList.length === 1) {
+        return entityList[0];
+      }
+    }
+
+    return null;
   }
 
   /**
-   * Retrieves a list of data from a database query.
+   * Retrieves a list of entities from a database query.
    * @param queryResult The result of a database query
    * @returns A list of items from a database query or null
    */
-  public getManyQueryData<T>(queryResult: QueryResult): T | null {
-    const dataList = <T[]>queryResult[0];
-
-    return dataList.length === 1 ? <T>dataList : null;
+  public getManyQueryData<T>(queryResult: QueryResult): T[] {
+    const queryResponse = <T[]>queryResult[0];
+    return queryResponse;
   }
 
   /**

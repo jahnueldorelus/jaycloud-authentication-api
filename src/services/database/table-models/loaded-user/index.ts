@@ -10,6 +10,7 @@ import { envNames } from "@startup/config";
 import { db } from "@services/database";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedSsoToken } from "../loaded-sso-token";
+import { LoadedRefreshTokenFamily } from "../loaded-refresh-token-family";
 
 export class LoadedUser {
   public readonly id: number;
@@ -60,9 +61,9 @@ export class LoadedUser {
       this.id
     );
 
-    if (!databaseQuery.isFailedQueryResult(refreshTokenFamily)) {
+    if (refreshTokenFamily instanceof LoadedRefreshTokenFamily) {
       const refreshToken = await db.refreshToken.createRefreshToken(
-        refreshTokenFamily.id
+        refreshTokenFamily.token
       );
 
       if (!databaseQuery.isFailedQueryResult(refreshToken)) {
@@ -83,7 +84,6 @@ export class LoadedUser {
    */
   public async generateSsoToken(expDate: Date): Promise<LoadedSsoToken | null> {
     const ssoToken = await db.ssoToken.createToken(this.id, expDate);
-
     return databaseQuery.isFailedQueryResult(ssoToken) ? null : ssoToken;
   }
 

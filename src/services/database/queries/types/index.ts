@@ -1,6 +1,6 @@
-import { FieldPacket, QueryResult as MysqlQueryResult } from "mysql2";
+import { FieldPacket, RowDataPacket } from "mysql2";
 
-export type QueryResult = [MysqlQueryResult, FieldPacket[]];
+export type QueryResult = [RowDataPacket[], FieldPacket[]];
 
 export type QueryError = {
   code: string;

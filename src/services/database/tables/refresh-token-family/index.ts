@@ -3,6 +3,7 @@ import { FailedQueryResult } from "@services/database/queries/types";
 import { Pool } from "mysql2/promise";
 import { DatabaseRefreshTokenFamilyData } from "./types";
 import { LoadedRefreshTokenFamily } from "@services/database/table-models/loaded-refresh-token-family";
+import { v4 as createUUID } from "uuid";
 
 export class RefreshTokenFamily {
   private readonly pool: Pool;
@@ -23,9 +24,11 @@ export class RefreshTokenFamily {
     | FailedQueryResult<"invalid-user" | "server-error", null>
   > {
     try {
+      const token: string = createUUID();
       const refreshTokenFamilyData =
         databaseQuery.getOneQueryData<DatabaseRefreshTokenFamilyData>(
-          await this.pool.execute("INSERT INTO RefreshTokenFamily VALUES (?)", [
+          await this.pool.execute("call create_refresh_token_family(?,?)", [
+            token,
             userId,
           ])
         );
