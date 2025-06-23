@@ -34,6 +34,14 @@ export class User {
         return databaseQuery.createFailedQuery("invalid-user", null);
       }
 
+      /**
+       *
+       *
+       * MAKE SURE TO UNCOMMENT THE CODE BELOW AFTER THE FUNCTIONALITY TO CREATE
+       * A USER IS COMPLETED
+       *
+       *
+       */
       // const passwordMatches = await compare(password, userData.user_password);
       const passwordMatches = true;
 
