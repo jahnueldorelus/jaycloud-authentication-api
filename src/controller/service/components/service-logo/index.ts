@@ -1,88 +1,37 @@
 import { Request as ExpressRequest } from "express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
-import { connection } from "mongoose";
-import { dbAuth } from "@services/database";
-import { reqErrorMessages } from "@services/request-error-messages";
+import { db } from "@services/database";
 import path from "path";
-import Joi from "joi";
-import { ServiceId, ValidServiceId } from "@app-types/service";
-
-// Schema validation
-const serviceIdSchema = Joi.string().token().min(24).max(24).required();
+import { databaseQuery } from "@services/database/queries";
 
 /**
- * Deterimines if the service id is valid.
- * @param serviceId The service id to validate
+ * Retrieves the logo of a service.
+ * @param req The express request
+ * @param serviceId The id of the service whose logo to retrieve
  */
-const validateServiceId = (serviceId: ServiceId): ValidServiceId => {
-  const { error, value } = serviceIdSchema.validate(serviceId);
-
-  if (error) {
-    return {
-      errorMessage: error.message,
-      isValid: false,
-      validatedValue: undefined,
-    };
-  } else {
-    return { errorMessage: null, isValid: true, validatedValue: value };
-  }
-};
-
-export const getServiceLogo = async (
+export async function getServiceLogo(
   req: ExpressRequest,
-  serviceId: string
-) => {
-  // Determines if the user's old refresh token is valid
-  const {
-    isValid,
-    errorMessage,
-    validatedValue: validServiceId,
-  } = validateServiceId(serviceId);
+  serviceId: number
+): Promise<void> {
+  const result = await db.service.getServiceLogoFileName(serviceId);
 
-  if (isValid) {
-    const dbSession = await connection.startSession();
-
-    try {
-      dbSession.startTransaction();
-      const serviceLogo = await dbAuth.servicesModel.findById(
-        validServiceId,
-        { logoFileName: 1 },
-        { session: dbSession }
-      );
-      await dbSession.commitTransaction();
-
-      if (!serviceLogo) {
-        throw Error(reqErrorMessages.badRequest);
-      }
-
-      const pathToServiceLogo = path.resolve(
-        `./src/assets/images/${serviceLogo.logoFileName}`
-      );
-
-      RequestSuccess(req, undefined, undefined, pathToServiceLogo);
-    } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-      if (error.message === reqErrorMessages.badRequest) {
-        RequestError(
-          req,
-          Error(
-            `Failed to retrieve logo. The service ID provided, "${serviceId}" doesn't exist`
-          )
-        ).badRequest();
-      } else {
-        // Default error
-        RequestError(
-          req,
-          Error("Failed to retrieve the service's logo")
-        ).server();
-      }
-    } finally {
-      await dbSession.endSession();
+  if (databaseQuery.isFailedQueryResult(result)) {
+    if (result.message === "invalid-service-id") {
+      RequestError(
+        req,
+        Error(
+          `Failed to retrieve logo. The service ID provided, "${serviceId}" doesn't exist`
+        )
+      ).badRequest();
+    } else {
+      RequestError(
+        req,
+        Error("Failed to retrieve the service's logo")
+      ).server();
     }
   } else {
-    RequestError(req, Error(errorMessage)).validation();
+    const pathToServiceLogo = path.resolve(`./src/assets/images/${result}`);
+    RequestSuccess(req, undefined, undefined, pathToServiceLogo);
   }
-};
+}

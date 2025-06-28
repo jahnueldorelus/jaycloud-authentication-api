@@ -4,7 +4,7 @@ import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
 import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
-// import { compare } from "bcrypt";
+import { compare } from "bcrypt";
 
 export class User {
   private readonly pool: Pool;
@@ -30,20 +30,12 @@ export class User {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
         await this.pool.execute("SELECT * FROM User WHERE email = ?", [email])
       );
+
       if (!userData) {
         return databaseQuery.createFailedQuery("invalid-user", null);
       }
 
-      /**
-       *
-       *
-       * MAKE SURE TO UNCOMMENT THE CODE BELOW AFTER THE FUNCTIONALITY TO CREATE
-       * A USER IS COMPLETED
-       *
-       *
-       */
-      // const passwordMatches = await compare(password, userData.user_password);
-      const passwordMatches = true;
+      const passwordMatches = await compare(password, userData.user_password);
 
       if (passwordMatches) {
         const loadedUser = new LoadedUser(userData);

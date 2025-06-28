@@ -1,39 +1,25 @@
 import { Request as ExpressRequest } from "express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
-import { connection } from "mongoose";
-import { dbAuth } from "@services/database";
+import { db } from "@services/database";
+import { databaseQuery } from "@services/database/queries";
 
-export const getServices = async (req: ExpressRequest) => {
-  const dbSession = await connection.startSession();
-  try {
-    dbSession.startTransaction();
+/**
+ * Retrieves the list of application services from the database.
+ * @param req The express request
+ */
+export async function getServices(req: ExpressRequest) {
+  const listOfServices = await db.service.getListOfServices();
 
-    const servicesList = await dbAuth.servicesModel.find(
-      {},
-      { prodApiUrl: 0, devApiUrl: 0 },
-      {
-        session: dbSession,
-      }
-    );
-
-    await dbSession.commitTransaction();
-
-    const modifiedServicesList = servicesList.map((service) =>
-      service.toPrivateJSON()
-    );
-
-    RequestSuccess(req, modifiedServicesList);
-  } catch (error: any) {
-    if (dbSession.inTransaction()) {
-      await dbSession.abortTransaction();
-    }
-
+  if (databaseQuery.isFailedQueryResult(listOfServices)) {
     RequestError(
       req,
       Error("Failed to retrieve the list of services")
     ).server();
-  } finally {
-    await dbSession.endSession();
+  } else {
+    RequestSuccess(
+      req,
+      listOfServices.map((service) => service.getPublicInfoJson())
+    );
   }
-};
+}

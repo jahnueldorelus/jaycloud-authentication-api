@@ -11,6 +11,7 @@ import { User } from "./tables/user";
 import { RefreshTokenFamily } from "./tables/refresh-token-family";
 import { RefreshToken } from "./tables/refresh-token";
 import { SsoToken } from "./tables/sso-token";
+import { Service } from "./tables/service";
 // import { ApprovedPasswordReset } from "./tables/approved-password-reset";
 // import { RefreshToken } from "./tables/refresh-token";
 // import { RefreshTokenFamily } from "./tables/refresh-token-family";
@@ -59,7 +60,7 @@ class MysqlDatabase {
   public readonly refreshToken: RefreshToken;
   public readonly refreshTokenFamily: RefreshTokenFamily;
   public readonly ssoToken: SsoToken;
-  // public readonly service: Service;
+  public readonly service: Service;
 
   constructor() {
     this.host = process.env[envNames.mysql.host];
@@ -79,7 +80,7 @@ class MysqlDatabase {
     this.refreshToken = new RefreshToken(this.pool);
     this.refreshTokenFamily = new RefreshTokenFamily(this.pool);
     this.ssoToken = new SsoToken(this.pool);
-    // this.service = new Service(this.pool);
+    this.service = new Service(this.pool);
   }
 
   /**

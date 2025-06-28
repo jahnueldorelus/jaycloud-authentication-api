@@ -31,7 +31,7 @@ class DatabaseQuery {
    * @param queryResult The result of a database query
    * @returns A list of items from a database query or null
    */
-  public getManyQueryData<T>(queryResult: QueryResult): T[] {
+  public getManyQueryData<T>(queryResult: QueryResult): T[] | null {
     const queryResponse = <T[]>queryResult[0];
     return queryResponse;
   }
