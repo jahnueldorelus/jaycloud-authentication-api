@@ -14,7 +14,7 @@ export async function getServiceLogo(
   req: ExpressRequest,
   serviceId: number
 ): Promise<void> {
-  const result = await db.service.getServiceLogoFileName(serviceId);
+  const result = await db.service.getOneService(serviceId);
 
   if (databaseQuery.isFailedQueryResult(result)) {
     if (result.message === "invalid-service-id") {
@@ -31,7 +31,9 @@ export async function getServiceLogo(
       ).server();
     }
   } else {
-    const pathToServiceLogo = path.resolve(`./src/assets/images/${result}`);
+    const pathToServiceLogo = path.resolve(
+      `./src/assets/images/${result.logoFilename}`
+    );
     RequestSuccess(req, undefined, undefined, pathToServiceLogo);
   }
 }

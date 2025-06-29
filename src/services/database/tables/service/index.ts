@@ -36,14 +36,15 @@ export class Service {
   }
 
   /**
-   * Attempts to get the file name of a service's logo.
+   * Attempts to retrieve a single service's information.
    * @param id The id of the service
-   * @returns A string of the logo's file name or a failed query request
+   * @returns The service's info or a failed query request
    */
-  public async getServiceLogoFileName(
+  public async getOneService(
     id: number
   ): Promise<
-    string | FailedQueryResult<"server-error" | "invalid-service-id", null>
+    | LoadedService
+    | FailedQueryResult<"server-error" | "invalid-service-id", null>
   > {
     try {
       const serviceData = databaseQuery.getOneQueryData<DatabaseService>(
@@ -55,8 +56,7 @@ export class Service {
       if (!serviceData) {
         return databaseQuery.createFailedQuery("invalid-service-id", null);
       } else {
-        const loadedService: LoadedService = new LoadedService(serviceData);
-        return loadedService.logoFilename;
+        return new LoadedService(serviceData);
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);
