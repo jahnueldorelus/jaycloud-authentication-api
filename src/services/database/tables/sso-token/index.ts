@@ -61,19 +61,44 @@ export class SsoToken {
     try {
       const ssoTokenId = this.createEncryptedToken(userId);
 
-      const ssoTokenData: DatabaseSsoToken | null =
-        databaseQuery.getOneQueryData<DatabaseSsoToken>(
-          await this.pool.execute("call create_sso_token(?, ?, ?)", [
-            ssoTokenId,
-            userId,
-            expDate,
-          ])
-        );
+      const ssoTokenData = databaseQuery.getOneQueryData<DatabaseSsoToken>(
+        await this.pool.execute("call create_sso_token(?, ?, ?)", [
+          ssoTokenId,
+          userId,
+          expDate,
+        ])
+      );
 
       if (ssoTokenData) {
-        return new LoadedSsoToken(ssoTokenData);
+        return new LoadedSsoToken(ssoTokenData, this.getEncryptDecryptKey);
       } else {
         throw Error();
+      }
+    } catch (error) {
+      return databaseQuery.createFailedQuery("server-error", null);
+    }
+  }
+
+  /**
+   * Attempts to retrieve a SSO token.
+   * @param ssoKey The id of the SSO token
+   */
+  public async getToken(
+    ssoKey: number
+  ): Promise<
+    LoadedSsoToken | FailedQueryResult<"server-error" | "invalid-request", null>
+  > {
+    try {
+      const ssoTokenData = databaseQuery.getOneQueryData<DatabaseSsoToken>(
+        await this.pool.execute("SELECT * FROM SsoToken WHERE sso_key = ?", [
+          ssoKey,
+        ])
+      );
+
+      if (!ssoTokenData) {
+        return databaseQuery.createFailedQuery("invalid-request", null);
+      } else {
+        return new LoadedSsoToken(ssoTokenData, this.getEncryptDecryptKey);
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);

@@ -19,7 +19,7 @@ const initialAuthReqSchema = Joi.object({
  * Deterimines if the request's service's information is valid.
  * @param serviceInfo The request's service information
  */
-const validateServiceInfo = (serviceInfo: ServiceUrl): ValidServiceUrl => {
+function validateServiceInfo(serviceInfo: ServiceUrl): ValidServiceUrl {
   const { error, value } = initialAuthReqSchema.validate(serviceInfo, {
     allowUnknown: false,
   });
@@ -33,9 +33,13 @@ const validateServiceInfo = (serviceInfo: ServiceUrl): ValidServiceUrl => {
   } else {
     return { errorMessage: null, isValid: true, validatedValue: value };
   }
-};
+}
 
-export const redirectToAuthUi = async (req: ExpressRequest) => {
+/**
+ * Attempts to redirect the request to the authentication ui.
+ * @param req The express request
+ */
+export function redirectToAuthUi(req: ExpressRequest): void {
   const requestData: ServiceUrl = req.body;
 
   const { isValid, errorMessage, validatedValue } =
@@ -71,4 +75,4 @@ export const redirectToAuthUi = async (req: ExpressRequest) => {
   else {
     RequestError(req, Error(errorMessage)).validation();
   }
-};
+}

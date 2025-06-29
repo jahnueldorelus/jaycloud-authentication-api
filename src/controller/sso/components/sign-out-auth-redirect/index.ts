@@ -32,7 +32,12 @@ const validateServiceUrl = (serviceUrl: ServiceUrl): ValidServiceUrl => {
   }
 };
 
-export const signOutAuthRedirect = async (req: ExpressRequestAndUser) => {
+/**
+ * Retrieves the URL for a service to request signing out the currently
+ * authorized user.
+ * @param req The express request
+ */
+export function signOutAuthRedirect(req: ExpressRequestAndUser): void {
   if (requestIsAuthorized(req)) {
     const requestData: ServiceUrl = req.body;
 
@@ -65,4 +70,4 @@ export const signOutAuthRedirect = async (req: ExpressRequestAndUser) => {
       RequestError(req, Error(errorMessage)).validation();
     }
   }
-};
+}

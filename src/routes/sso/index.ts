@@ -17,8 +17,8 @@ export const ssoRouter = Router();
 // Redirects a service to the authentication ui to sign in.
 ssoRouter.post(
   "/sign-in-auth-redirect",
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.redirectToAuthUi(req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.redirectToAuthUi(req);
     next();
   }
 );
@@ -27,8 +27,8 @@ ssoRouter.post(
 ssoRouter.post(
   "/sign-in-service-redirect",
   validateRequestAuthorization,
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.redirectToServiceUi(<ExpressRequestAndUser>req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.redirectToServiceUi(<ExpressRequestAndUser>req);
     next();
   }
 );
@@ -46,8 +46,8 @@ ssoRouter.get(
 ssoRouter.post(
   "/sign-out-auth-redirect",
   validateSSOReqAuthorization,
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.signOutAuthRedirect(<ExpressRequestAndUser>req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.signOutAuthRedirect(<ExpressRequestAndUser>req);
     next();
   }
 );
@@ -55,8 +55,8 @@ ssoRouter.post(
 // Redirects a signed out user back to the previous service where they requested to sign out
 ssoRouter.post(
   "/sign-out-service-redirect",
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
-    await SSOController.redirectSignedOutUser(<ExpressRequestAndUser>req);
+  (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    SSOController.redirectSignedOutUser(<ExpressRequestAndUser>req);
     next();
   }
 );

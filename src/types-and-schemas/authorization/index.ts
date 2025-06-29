@@ -1,9 +1,9 @@
-import { DBLoadedUser } from "@app-types/database/models/users";
 import { JoiValidationResults } from "@app-types/joi-validation";
+import { LoadedUser } from "@services/database/table-models/loaded-user";
 import { Request } from "express";
 
 export interface ExpressRequestAndUser extends Request {
-  user: DBLoadedUser;
+  user: LoadedUser;
 }
 
 export type SSOToken = {

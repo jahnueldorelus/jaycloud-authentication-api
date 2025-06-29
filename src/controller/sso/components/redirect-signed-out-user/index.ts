@@ -5,10 +5,15 @@ import { CookieRemoval } from "@app-types/request-success";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
 
-export const redirectSignedOutUser = async (req: ExpressRequest) => {
+/**
+ * Attempts to redirect the signed out user to the service they were
+ * on before they were signed out. If they were already on the authentication ui,
+ * they will not be redirected to any service.
+ * @param req The express request
+ */
+export function redirectSignedOutUser(req: ExpressRequest): void {
   try {
     const serviceUrlCookieKey = <string>process.env[envNames.cookie.serviceUrl];
-
     const jayCloudAppUrl = <string>req.signedCookies[serviceUrlCookieKey];
     const authUiUrl =
       process.env[envNames.nodeEnv] === "production"
@@ -33,4 +38,4 @@ export const redirectSignedOutUser = async (req: ExpressRequest) => {
     // Default error
     RequestError(req, Error(reqErrorMessages.badRequest)).badRequest();
   }
-};
+}

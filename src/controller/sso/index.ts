@@ -9,13 +9,13 @@ import { signOutAuthRedirect } from "@controller/sso/components/sign-out-auth-re
 import { redirectSignedOutUser } from "@controller/sso/components/redirect-signed-out-user";
 
 type Controller = {
-  redirectToAuthUi: (arg0: ExpressRequest) => Promise<void>;
-  redirectToServiceUi: (arg0: ExpressRequestAndUser) => Promise<void>;
+  redirectToAuthUi: (arg0: ExpressRequest) => void;
+  redirectToServiceUi: (arg0: ExpressRequestAndUser) => void;
   getSSOToken: (arg0: ExpressRequest) => Promise<void>;
   getUser: (arg0: ExpressRequestAndUser) => void;
   getUserId: (arg0: ExpressRequestAndUser) => void;
-  signOutAuthRedirect: (arg0: ExpressRequestAndUser) => Promise<void>;
-  redirectSignedOutUser: (arg0: ExpressRequest) => Promise<void>;
+  signOutAuthRedirect: (arg0: ExpressRequestAndUser) => void;
+  redirectSignedOutUser: (arg0: ExpressRequest) => void;
 };
 
 export const SSOController: Controller = {

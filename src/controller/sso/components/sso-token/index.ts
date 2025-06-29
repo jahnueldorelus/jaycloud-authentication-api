@@ -2,15 +2,17 @@ import { CookieRemoval } from "@app-types/request-success";
 import { SSOTokenResponse } from "@app-types/sso";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
-import { dbAuth } from "@services/database";
+import { db } from "@services/database";
+import { databaseQuery } from "@services/database/queries";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { envNames } from "@startup/config";
 import { Request as ExpressRequest } from "express";
-import { connection } from "mongoose";
 
-export const getSSOToken = async (req: ExpressRequest) => {
-  const dbSession = await connection.startSession();
-
+/**
+ * Attempts to retrieve the
+ * @param req The express request
+ */
+export async function getSSOToken(req: ExpressRequest): Promise<void> {
   const authReqCookieKey = <string>process.env[envNames.cookie.initialAuthReq];
   const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
 
@@ -22,30 +24,24 @@ export const getSSOToken = async (req: ExpressRequest) => {
   };
 
   try {
-    dbSession.startTransaction();
-
     // SSO token key from cookie
-    const ssoToken = req.signedCookies[ssoTokenCookieKey];
+    const ssoKey = req.signedCookies[ssoTokenCookieKey];
 
-    if (!ssoToken) {
+    if (!ssoKey) {
       throw Error();
     }
 
-    const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null, {
-      session: dbSession,
-    });
+    const ssoToken = await db.ssoToken.getToken(ssoKey);
 
-    if (!ssoDoc) {
+    if (databaseQuery.isFailedQueryResult(ssoToken)) {
       throw Error();
     }
 
-    const decryptedSSOToken = dbAuth.ssoModel.getDecryptedToken(ssoDoc);
+    const decryptedSSOToken = ssoToken.getDecryptedToken();
 
     if (!decryptedSSOToken) {
       throw Error();
     }
-
-    await dbSession.commitTransaction();
 
     RequestSuccess(
       req,
@@ -58,15 +54,9 @@ export const getSSOToken = async (req: ExpressRequest) => {
       [initAuthReqCookieDeleteInfo]
     );
   } catch (error: any) {
-    if (dbSession.inTransaction()) {
-      await dbSession.abortTransaction();
-    }
-
     RequestError(req, Error(reqErrorMessages.forbiddenUser), [
       initAuthReqCookieDeleteInfo,
       ssoTokenCookieDeleteInfo,
     ]).notAuthorized();
-  } finally {
-    await dbSession.endSession();
   }
-};
+}
