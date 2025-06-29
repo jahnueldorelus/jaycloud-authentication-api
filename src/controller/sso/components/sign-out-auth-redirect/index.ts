@@ -16,7 +16,7 @@ const serviceUrlSchema = Joi.object({
  * Deterimines if the request's data is valid.
  * @param serviceUrl The service url to validate
  */
-const validateServiceUrl = (serviceUrl: ServiceUrl): ValidServiceUrl => {
+function validateServiceUrl(serviceUrl: ServiceUrl): ValidServiceUrl {
   const { error, value } = serviceUrlSchema.validate(serviceUrl, {
     allowUnknown: true,
   });
@@ -30,7 +30,7 @@ const validateServiceUrl = (serviceUrl: ServiceUrl): ValidServiceUrl => {
   } else {
     return { errorMessage: null, isValid: true, validatedValue: value };
   }
-};
+}
 
 /**
  * Retrieves the URL for a service to request signing out the currently
