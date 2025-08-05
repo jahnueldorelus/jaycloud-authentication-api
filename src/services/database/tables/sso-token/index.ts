@@ -84,7 +84,7 @@ export class SsoToken {
    * @param ssoKey The id of the SSO token
    */
   public async getToken(
-    ssoKey: number
+    ssoKey: string
   ): Promise<
     LoadedSsoToken | FailedQueryResult<"server-error" | "invalid-request", null>
   > {

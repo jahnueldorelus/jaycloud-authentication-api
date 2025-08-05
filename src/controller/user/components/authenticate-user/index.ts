@@ -12,7 +12,7 @@ import { CookieInfo } from "@app-types/request-success";
  * Authenticates a user.
  * @param req The network request
  */
-export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
+export async function authenticateUser(req: ExpressRequest): Promise<void> {
   const credentials: UserCredentials = req.body;
   const authenticatedInfo = await db.user.authenticateUser(
     credentials.email,
@@ -55,4 +55,4 @@ export const authenticateUser = async (req: ExpressRequest): Promise<void> => {
       [ssoCookie]
     );
   }
-};
+}

@@ -53,7 +53,7 @@ export class RefreshTokenFamily {
   /**
    * Attempts to delete a refresh token family.
    * @param familyId The family id of the refresh token
-   * @returns A boolean that determines if a refresh token was deleted.
+   * @returns A boolean that determines if a refresh token family was deleted.
    */
   public async deleteFamily(familyId: number): Promise<boolean> {
     try {

@@ -16,7 +16,7 @@ export class LoadedRefreshToken {
    * Determines if the token is expired.
    * @returns A boolean determining if the token is expired
    */
-  public isTokenExpired(): boolean {
+  public get tokenIsExpired(): boolean {
     return this.expDate.getTime() < new Date().getTime();
   }
 

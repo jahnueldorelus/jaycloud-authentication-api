@@ -14,9 +14,9 @@ import { cloneDeep } from "lodash";
  * from all inputs and adding both a request body property and an input name.
  * @param userFormModelInputs The form model to update
  */
-export const configureAuthenticateUserFormModel = (
+export function configureAuthenticateUserFormModel(
   userFormModelInputs: Record<string, FormModelInputOptionWithJoi>
-): FormModelInputOption[] => {
+): FormModelInputOption[] {
   const inputOptions = Object.keys(userFormModelInputs);
 
   const newInputOptions = inputOptions.map((inputName) => {
@@ -48,13 +48,13 @@ export const configureAuthenticateUserFormModel = (
   });
 
   return <FormModelInputOption[]>newInputOptions;
-};
+}
 
 /**
  * Retrieves the form model for authenticating a user.
  * @param req The network request
  */
-export const getAuthenticateUserFormModel = async (req: ExpressRequest) => {
+export async function getAuthenticateUserFormModel(req: ExpressRequest) {
   const newUserAttributesCopy = cloneDeep(newUserAttributes);
 
   for (let key of Object.keys(newUserAttributesCopy)) {
@@ -69,4 +69,4 @@ export const getAuthenticateUserFormModel = async (req: ExpressRequest) => {
   };
 
   RequestSuccess(req, authenticateUserModelForm);
-};
+}

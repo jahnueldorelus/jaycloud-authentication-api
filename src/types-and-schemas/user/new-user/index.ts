@@ -8,6 +8,7 @@ interface User<T> {
   lastName: T;
   email: T;
   password: T;
+  isAdmin: T;
 }
 
 export type NewUser = User<string>;
@@ -90,5 +91,19 @@ export const newUserAttributes: NewUserAttributes = {
       regexErrorLabel: new RegExpError(true, true, true, true, 5, 100).label,
     },
     joiSchema: Joi.string().min(5).max(100).trim().required(),
+  },
+  isAdmin: {
+    label: "Password",
+    type: "alpha",
+    multiline: false,
+    validation: {
+      allowNull: false,
+      max: 5,
+      min: 4,
+      required: true,
+      regex: ["^[true][false]{4,5}$"],
+      regexErrorLabel: new RegExpError(false, false, false, true, 4, 5).label,
+    },
+    joiSchema: Joi.boolean().required(),
   },
 };

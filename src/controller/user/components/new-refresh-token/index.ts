@@ -1,8 +1,7 @@
 import Joi from "joi";
-import { dbAuth } from "@services/database";
+import { db } from "@services/database";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
-import { connection } from "mongoose";
 import { reqErrorMessages } from "@services/request-error-messages";
 import {
   RefreshToken,
@@ -11,6 +10,7 @@ import {
 import { envNames } from "@startup/config";
 import { ExpressRequestAndUser } from "@app-types/authorization";
 import { CookieRemoval } from "@app-types/request-success";
+import { databaseQuery } from "@services/database/queries";
 
 // Schema validation
 const refreshTokenSchema = Joi.object({
@@ -21,9 +21,9 @@ const refreshTokenSchema = Joi.object({
  * Deterimines if the user's refresh token is valid.
  * @param refreshToken The user's refresh token to validate
  */
-const validateOldRefreshToken = (
+function validateOldRefreshToken(
   refreshToken: RefreshToken
-): ValidRefreshToken => {
+): ValidRefreshToken {
   const { error, value } = refreshTokenSchema.validate(refreshToken);
 
   if (error) {
@@ -35,15 +35,15 @@ const validateOldRefreshToken = (
   } else {
     return { errorMessage: null, isValid: true, validatedValue: value };
   }
-};
+}
 
 /**
  * Creates a new refresh token.
  * @param req The network request
  */
-export const createNewRefreshToken = async (
+export async function createNewRefreshToken(
   req: ExpressRequestAndUser
-): Promise<void> => {
+): Promise<void> {
   // Checks if the user has a valid sso token
   const ssoTokenKey = process.env[envNames.cookie.ssoId];
 
@@ -55,69 +55,55 @@ export const createNewRefreshToken = async (
     key: ssoTokenKey || "",
   };
 
-  const dbSession = await connection.startSession();
-
   try {
-    const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken });
+    const ssoInfo = await db.ssoToken.getToken(ssoToken);
 
-    if (!ssoDoc) {
-      throw Error(reqErrorMessages.invalidToken);
+    if (databaseQuery.isFailedQueryResult(ssoInfo)) {
+      if (ssoInfo.message === "invalid-request") {
+        RequestError(req, new Error(reqErrorMessages.badRequest)).badRequest();
+      } else {
+        RequestError(req, new Error(reqErrorMessages.serverError)).server();
+      }
     }
 
     // Determines if the user's old refresh token is valid
     const reqRefreshToken: RefreshToken = req.body;
-    const { isValid, validatedValue } =
-      validateOldRefreshToken(reqRefreshToken);
+    const {
+      isValid: refreshTokenIsValid,
+      validatedValue: validatedReqRefreshToken,
+    } = validateOldRefreshToken(reqRefreshToken);
 
-    if (isValid) {
-      dbSession.startTransaction();
-      const oldRefreshToken = await dbAuth.refreshTokensModel
-        .findOne({ token: validatedValue.refreshToken })
-        .session(dbSession);
+    if (refreshTokenIsValid) {
+      const oldRefreshToken = await db.refreshToken.getRefreshTokenByKey(
+        validatedReqRefreshToken.refreshToken
+      );
 
-      // If no refresh token was found or if it's expired
-      if (
-        !oldRefreshToken ||
-        (oldRefreshToken && oldRefreshToken.isExpired())
-      ) {
-        // Deletes the entire token family if an expired token was given
-        if (oldRefreshToken && oldRefreshToken.isExpired()) {
-          const refreshTokenFamily =
-            await dbAuth.refreshTokenFamiliesModel.findById(
-              oldRefreshToken.familyId
-            );
-          let deletedRefreshTokenFamily = false;
-
-          if (refreshTokenFamily) {
-            deletedRefreshTokenFamily = await refreshTokenFamily.deleteFamily(
-              dbSession
-            );
-          }
-
-          if (!refreshTokenFamily || !deletedRefreshTokenFamily) {
-            throw Error();
-          }
-        }
-
+      if (databaseQuery.isFailedQueryResult(oldRefreshToken)) {
+        throw Error(reqErrorMessages.invalidToken);
+      }
+      // Deletes the refresh token family is token is expired
+      else if (oldRefreshToken.tokenIsExpired) {
+        await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const refreshTokenUser = await oldRefreshToken.getUser(dbSession);
-      if (!refreshTokenUser) {
-        throw Error();
+      const oldTokenIsExpired = await oldRefreshToken.expireToken();
+
+      if (!oldTokenIsExpired) {
+        throw Error(reqErrorMessages.serverError);
+      }
+      const refreshTokenUser = await oldRefreshToken.getUser();
+
+      if (databaseQuery.isFailedQueryResult(refreshTokenUser)) {
+        throw Error(reqErrorMessages.serverError);
       }
 
-      await oldRefreshToken.expireToken();
       const newAccessToken = refreshTokenUser.generateAccessToken();
-      const newRefreshToken = await dbAuth.refreshTokensModel.createToken(
-        refreshTokenUser.id,
-        oldRefreshToken.familyId,
-        dbSession
-      );
-      await dbSession.commitTransaction();
+      const refreshTokenOrigins =
+        await refreshTokenUser.generateRefreshTokenOrigins();
 
-      if (newAccessToken && newRefreshToken) {
-        RequestSuccess(req, refreshTokenUser.toPrivateJSON(), [
+      if (newAccessToken && refreshTokenOrigins) {
+        RequestSuccess(req, refreshTokenUser.getPublicInfoJson(), [
           // The access token
           {
             headerName: <string>process.env[envNames.jwt.accessReqHeader],
@@ -126,13 +112,15 @@ export const createNewRefreshToken = async (
           // The refresh token
           {
             headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-            headerValue: newRefreshToken.token,
+            headerValue: refreshTokenOrigins.refreshToken.token,
           },
         ]);
       } else {
-        throw Error();
+        throw Error(reqErrorMessages.serverError);
       }
-    } else {
+    }
+    // Request refresh token is invalid
+    else {
       RequestError(req, Error(reqErrorMessages.invalidToken), [
         ssoTokenCookieDeleteInfo,
       ]).validation();
@@ -149,11 +137,5 @@ export const createNewRefreshToken = async (
         ssoTokenCookieDeleteInfo,
       ]).server();
     }
-  } finally {
-    if (dbSession.inTransaction()) {
-      await dbSession.abortTransaction();
-    }
-
-    await dbSession.endSession();
   }
-};
+}

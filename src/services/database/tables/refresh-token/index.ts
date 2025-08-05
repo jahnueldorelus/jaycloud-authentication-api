@@ -95,4 +95,32 @@ export class RefreshToken {
       return databaseQuery.createFailedQuery("server-error", null);
     }
   }
+
+  /**
+   * Attempts to retrieve a refresh token based on its key.
+   * @param tokenKey The key of the refresh token
+   */
+  public async getRefreshTokenByKey(
+    tokenKey: string
+  ): Promise<
+    LoadedRefreshToken | FailedQueryResult<"bad-request" | "server-error", null>
+  > {
+    try {
+      const tokenData: DatabaseRefreshTokenData | null =
+        databaseQuery.getOneQueryData<DatabaseRefreshTokenData>(
+          await this.pool.execute(
+            "SELECT * FROM RefreshToken WHERE token = ?",
+            tokenKey
+          )
+        );
+
+      if (tokenData) {
+        return new LoadedRefreshToken(tokenData);
+      } else {
+        throw Error();
+      }
+    } catch (error) {
+      return databaseQuery.createFailedQuery("server-error", null);
+    }
+  }
 }
