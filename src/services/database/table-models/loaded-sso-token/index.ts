@@ -1,14 +1,16 @@
 import { DatabaseSsoToken } from "@services/database/tables/sso-token/types";
+import { FunctionGetEncryptDecryptKey } from "./types";
+import { AES, enc } from "crypto-js";
 
 export class LoadedSsoToken {
   public readonly ssoKey: string;
   public readonly userId: number;
   public readonly expDate: Date;
-  private getEncryptDecryptKey: (userId: number | null) => string | null;
+  private getEncryptDecryptKey: FunctionGetEncryptDecryptKey;
 
   constructor(
     ssoTokenData: DatabaseSsoToken,
-    getEncryptDecryptKey: typeof this.getEncryptDecryptKey
+    getEncryptDecryptKey: FunctionGetEncryptDecryptKey
   ) {
     this.ssoKey = ssoTokenData.sso_key;
     this.expDate = new Date(ssoTokenData.expiration_date);
@@ -27,8 +29,8 @@ export class LoadedSsoToken {
       return null;
     }
 
-    const decryptedSSOToken = CryptoJS.AES.decrypt(this.ssoKey, decryptionKey);
+    const decryptedSSOToken = AES.decrypt(this.ssoKey, decryptionKey);
 
-    return decryptedSSOToken.toString(CryptoJS.enc.Utf8);
+    return decryptedSSOToken.toString(enc.Utf8);
   }
 }

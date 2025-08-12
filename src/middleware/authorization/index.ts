@@ -71,7 +71,7 @@ export const validateRequestAuthorization = async (
       await dbSession.commitTransaction();
 
       // Saves the user's info to the request
-      userReq.user = dbUser;
+      // userReq.user = dbUser;
     } catch (error: any) {
       if (dbSession.inTransaction()) {
         await dbSession.abortTransaction();
@@ -185,7 +185,7 @@ export const validateSSOReqAuthorization = async (
 
       await dbSession.commitTransaction();
 
-      (<ExpressRequestAndUser>req).user = userDoc;
+      // (<ExpressRequestAndUser>req).user = userDoc;
       (<ExpressRequestAndUser>req).token = userDoc.generateAccessToken();
     } catch (error: any) {
       if (dbSession.inTransaction()) {
@@ -227,7 +227,7 @@ export const validateSSOReqAuthorization = async (
 export const getRequestUserData = (
   req: ExpressRequestAndUser
 ): DBLoadedUser | null => {
-  return req.user || null;
+  return null; // <-- Needs to be changed to return req.user instead!!
 };
 
 /**

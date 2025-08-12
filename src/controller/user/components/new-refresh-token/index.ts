@@ -45,25 +45,26 @@ export async function createNewRefreshToken(
   req: ExpressRequestAndUser
 ): Promise<void> {
   // Checks if the user has a valid sso token
-  const ssoTokenKey = process.env[envNames.cookie.ssoId];
-
-  if (!ssoTokenKey) {
-    throw Error();
-  }
-  const ssoToken = <string>req.signedCookies[ssoTokenKey];
+  const ssoTokenKey: string = <string>process.env[envNames.cookie.ssoId];
+  const ssoToken: string = <string>req.signedCookies[ssoTokenKey];
   const ssoTokenCookieDeleteInfo: CookieRemoval = {
     key: ssoTokenKey || "",
   };
 
   try {
+    /*******************************************************************************************
+     *
+     *
+     *
+     *      MAKE THE CHECK THAT THE SIGNED TOKEN MATCHES THE TOKEN FROM THE REQUEST'S BODY
+     *
+     *
+     *
+     * *****************************************************************************************/
     const ssoInfo = await db.ssoToken.getToken(ssoToken);
 
     if (databaseQuery.isFailedQueryResult(ssoInfo)) {
-      if (ssoInfo.message === "invalid-request") {
-        RequestError(req, new Error(reqErrorMessages.badRequest)).badRequest();
-      } else {
-        RequestError(req, new Error(reqErrorMessages.serverError)).server();
-      }
+      throw Error(ssoInfo.message);
     }
 
     // Determines if the user's old refresh token is valid
@@ -80,10 +81,8 @@ export async function createNewRefreshToken(
 
       if (databaseQuery.isFailedQueryResult(oldRefreshToken)) {
         throw Error(reqErrorMessages.invalidToken);
-      }
-      // Deletes the refresh token family is token is expired
-      else if (oldRefreshToken.tokenIsExpired) {
-        await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
+      } else if (oldRefreshToken.tokenIsExpired) {
+        // await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
         throw Error(reqErrorMessages.invalidToken);
       }
 
@@ -92,6 +91,7 @@ export async function createNewRefreshToken(
       if (!oldTokenIsExpired) {
         throw Error(reqErrorMessages.serverError);
       }
+
       const refreshTokenUser = await oldRefreshToken.getUser();
 
       if (databaseQuery.isFailedQueryResult(refreshTokenUser)) {

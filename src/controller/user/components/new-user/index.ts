@@ -1,7 +1,7 @@
 import { Request as ExpressRequest } from "express";
 import Joi from "joi";
 import { genSalt, hash } from "bcrypt";
-import { db, dbAuth } from "@services/database";
+import { db } from "@services/database";
 import {
   NewUser,
   newUserAttributes,
@@ -10,6 +10,8 @@ import {
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { envNames } from "@startup/config";
+import { databaseQuery } from "@services/database/queries";
+import { CookieInfo } from "@app-types/request-success";
 
 // Schema validation
 const newAccountSchema = Joi.object({
@@ -17,7 +19,7 @@ const newAccountSchema = Joi.object({
   lastName: newUserAttributes.lastName.joiSchema,
   email: newUserAttributes.email.joiSchema,
   password: newUserAttributes.password.joiSchema,
-  isAdmin: newUserAttributes.isAdmin,
+  isAdmin: newUserAttributes.isAdmin.joiSchema,
 });
 
 /**
@@ -52,64 +54,48 @@ export async function createNewUser(req: ExpressRequest): Promise<void> {
     try {
       const salt = await genSalt();
       validatedValue.password = await hash(validatedValue.password, salt);
-      const createdUser = await db.user.createUser(newAccountInfo);
+      const createdUser = await db.user.createUser(validatedValue);
 
-      const [user] = await dbAuth.usersModel.create([validatedValue], {
-        session: dbSession,
-      });
-      if (!user) {
-        throw Error();
+      if (databaseQuery.isFailedQueryResult(createdUser)) {
+        throw Error(createdUser.message);
       }
 
-      const accessToken = user.generateAccessToken();
-
-      const refreshTokenFamily =
-        await dbAuth.refreshTokenFamiliesModel.createTokenFamily(
-          user.id,
-          dbSession
-        );
-      if (!refreshTokenFamily) {
-        throw Error();
-      }
-
-      const refreshToken = await dbAuth.refreshTokensModel.createToken(
-        user.id,
-        refreshTokenFamily.id,
-        dbSession
-      );
-      if (!accessToken || !refreshToken) {
-        throw Error();
-      }
-
-      const ssoTokenCookieInfo = await dbAuth.ssoModel.createUserSSOToken(
-        user,
-        refreshToken.expDate,
-        dbSession
-      );
-
-      if (!ssoTokenCookieInfo) {
-        throw Error();
-      }
+      const ssoKey: string | undefined = process.env[envNames.cookie.key];
+      const ssoCookieInfo: CookieInfo = {
+        key: ssoKey || "",
+        sameSite: "lax",
+        value: createdUser.ssoToken.ssoKey || "",
+        expDate: createdUser.ssoToken.expDate,
+      };
+      const listOfCookies: CookieInfo[] = ssoCookieInfo ? [ssoCookieInfo] : [];
 
       RequestSuccess(
         req,
-        user.toPrivateJSON(),
+        createdUser.userPublicInfo,
         [
           // The access token
           {
             headerName: <string>process.env[envNames.jwt.accessReqHeader],
-            headerValue: accessToken,
+            headerValue: createdUser.accessToken,
           },
           // The refresh token
           {
             headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-            headerValue: refreshToken.token,
+            headerValue: createdUser.refreshToken.token,
           },
         ],
         null,
-        [ssoTokenCookieInfo]
+        listOfCookies
       );
     } catch (error: any) {
+      console.log(error);
+      /**
+       *
+       *
+       * Check to make sure that you handle errors for duplicate email errors
+       *
+       *
+       */
       // If the error is a duplicate email
       if (error && error.code === 11000 && error.keyPattern.email === 1) {
         RequestError(

@@ -8,7 +8,6 @@ class DatabaseQuery {
    */
   public getOneQueryData<T>(queryResult: QueryResult): T | null {
     const queryResponse = queryResult[0];
-
     // If there's only the database entity in the query response list
     if (queryResponse.length === 1) {
       return <T>queryResponse[0];

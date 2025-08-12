@@ -81,15 +81,17 @@ export class RefreshToken {
       const userData: DatabaseUserData | null =
         databaseQuery.getOneQueryData<DatabaseUserData>(
           await this.pool.execute(
-            "SELECT User.* FROM User INNER JOIN RefreshTokenFamily ON User.id = RefreshTokenFamily.user_id WHERE RefreshTokenFamily.id = ?",
-            familyId
+            "SELECT User.* FROM User INNER JOIN RefreshTokenFamily ON User.id = RefreshTokenFamily.user_id WHERE RefreshTokenFamily.token = ?",
+            [familyId]
           )
         );
 
       if (userData) {
         return new LoadedUser(userData);
       } else {
-        return databaseQuery.createFailedQuery("server-error", null);
+        throw Error(
+          "The user associated with the refresh token family was not found"
+        );
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);
@@ -110,14 +112,14 @@ export class RefreshToken {
         databaseQuery.getOneQueryData<DatabaseRefreshTokenData>(
           await this.pool.execute(
             "SELECT * FROM RefreshToken WHERE token = ?",
-            tokenKey
+            [tokenKey]
           )
         );
 
       if (tokenData) {
         return new LoadedRefreshToken(tokenData);
       } else {
-        throw Error();
+        throw Error("No refresh token from database was found");
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);

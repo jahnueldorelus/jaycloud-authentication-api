@@ -124,6 +124,7 @@ export class User {
         }
       }
     } catch (error) {
+      console.log(error);
       return databaseQuery.createFailedQuery("server-error", null);
     }
   }

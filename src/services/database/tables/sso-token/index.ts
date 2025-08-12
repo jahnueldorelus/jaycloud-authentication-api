@@ -88,20 +88,24 @@ export class SsoToken {
   ): Promise<
     LoadedSsoToken | FailedQueryResult<"server-error" | "invalid-request", null>
   > {
-    try {
-      const ssoTokenData = databaseQuery.getOneQueryData<DatabaseSsoToken>(
-        await this.pool.execute("SELECT * FROM SsoToken WHERE sso_key = ?", [
-          ssoKey,
-        ])
-      );
-
-      if (!ssoTokenData) {
-        return databaseQuery.createFailedQuery("invalid-request", null);
-      } else {
-        return new LoadedSsoToken(ssoTokenData, this.getEncryptDecryptKey);
-      }
-    } catch (error) {
+    if (!ssoKey) {
       return databaseQuery.createFailedQuery("server-error", null);
+    } else {
+      try {
+        const ssoTokenData = databaseQuery.getOneQueryData<DatabaseSsoToken>(
+          await this.pool.execute("SELECT * FROM SsoToken WHERE sso_key = ?", [
+            ssoKey,
+          ])
+        );
+
+        if (!ssoTokenData) {
+          return databaseQuery.createFailedQuery("invalid-request", null);
+        } else {
+          return new LoadedSsoToken(ssoTokenData, this.getEncryptDecryptKey);
+        }
+      } catch (error) {
+        return databaseQuery.createFailedQuery("server-error", null);
+      }
     }
   }
 }

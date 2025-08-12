@@ -104,6 +104,6 @@ export const newUserAttributes: NewUserAttributes = {
       regex: ["^[true][false]{4,5}$"],
       regexErrorLabel: new RegExpError(false, false, false, true, 4, 5).label,
     },
-    joiSchema: Joi.boolean().required(),
+    joiSchema: Joi.boolean().disallow("yes", "no").required(),
   },
 };
