@@ -12,8 +12,8 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 import { CookieRemoval } from "@app-types/request-success";
 import { databaseQuery } from "@services/database/queries";
 
-// Schema validation
-const refreshTokenSchema = Joi.object({
+// Request body schema validation
+const requestBodySchema = Joi.object({
   refreshToken: Joi.string().guid().required(),
 });
 
@@ -24,7 +24,7 @@ const refreshTokenSchema = Joi.object({
 function validateOldRefreshToken(
   refreshToken: RefreshToken
 ): ValidRefreshToken {
-  const { error, value } = refreshTokenSchema.validate(refreshToken);
+  const { error, value } = requestBodySchema.validate(refreshToken);
 
   if (error) {
     return {

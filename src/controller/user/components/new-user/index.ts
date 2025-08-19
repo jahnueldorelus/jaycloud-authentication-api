@@ -57,57 +57,53 @@ export async function createNewUser(req: ExpressRequest): Promise<void> {
       const createdUser = await db.user.createUser(validatedValue);
 
       if (databaseQuery.isFailedQueryResult(createdUser)) {
-        throw Error(createdUser.message);
-      }
+        const queryError = createdUser;
 
-      const ssoKey: string | undefined = process.env[envNames.cookie.key];
-      const ssoCookieInfo: CookieInfo = {
-        key: ssoKey || "",
-        sameSite: "lax",
-        value: createdUser.ssoToken.ssoKey || "",
-        expDate: createdUser.ssoToken.expDate,
-      };
-      const listOfCookies: CookieInfo[] = ssoCookieInfo ? [ssoCookieInfo] : [];
-
-      RequestSuccess(
-        req,
-        createdUser.userPublicInfo,
-        [
-          // The access token
-          {
-            headerName: <string>process.env[envNames.jwt.accessReqHeader],
-            headerValue: createdUser.accessToken,
-          },
-          // The refresh token
-          {
-            headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-            headerValue: createdUser.refreshToken.token,
-          },
-        ],
-        null,
-        listOfCookies
-      );
-    } catch (error: any) {
-      console.log(error);
-      /**
-       *
-       *
-       * Check to make sure that you handle errors for duplicate email errors
-       *
-       *
-       */
-      // If the error is a duplicate email
-      if (error && error.code === 11000 && error.keyPattern.email === 1) {
-        RequestError(
-          req,
-          Error(
-            `Failed to create a new account for "${validatedValue.email}". This email is already registered.`
-          )
-        ).badRequest();
+        // Handles duplicate user error
+        if (queryError.message === "duplicate-user") {
+          RequestError(
+            req,
+            Error(
+              `Failed to create a new account for "${validatedValue.email}". This email is already registered.`
+            )
+          ).badRequest();
+        } else {
+          throw Error();
+        }
       } else {
-        // Default error
-        RequestError(req, Error("Failed to create a new account.")).server();
+        const ssoKey: string | undefined = process.env[envNames.cookie.key];
+        const ssoCookieInfo: CookieInfo = {
+          key: ssoKey || "",
+          sameSite: "lax",
+          value: createdUser.ssoToken.ssoKey || "",
+          expDate: createdUser.ssoToken.expDate,
+        };
+        const listOfCookies: CookieInfo[] = ssoCookieInfo
+          ? [ssoCookieInfo]
+          : [];
+
+        RequestSuccess(
+          req,
+          createdUser.userPublicInfo,
+          [
+            // The access token
+            {
+              headerName: <string>process.env[envNames.jwt.accessReqHeader],
+              headerValue: createdUser.accessToken,
+            },
+            // The refresh token
+            {
+              headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+              headerValue: createdUser.refreshToken.token,
+            },
+          ],
+          null,
+          listOfCookies
+        );
       }
+    } catch (error) {
+      // Default error
+      RequestError(req, Error("Failed to create a new account.")).server();
     }
   }
   // If the user's account information is invalid

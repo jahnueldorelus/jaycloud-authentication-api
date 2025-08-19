@@ -22,7 +22,7 @@ export async function authenticateUser(req: ExpressRequest): Promise<void> {
   if (databaseQuery.isFailedQueryResult(authenticatedInfo)) {
     if (
       authenticatedInfo.message === "invalid-user" ||
-      authenticatedInfo.message === "bad-request"
+      authenticatedInfo.message === "invalid-password"
     ) {
       RequestError(req, new Error(reqErrorMessages.authFailed)).badRequest();
     } else {

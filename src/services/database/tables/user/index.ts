@@ -56,7 +56,10 @@ export class User {
     password: string
   ): Promise<
     | AuthenticatedUserData
-    | FailedQueryResult<"invalid-user" | "bad-request" | "server-error", null>
+    | FailedQueryResult<
+        "invalid-user" | "invalid-password" | "server-error",
+        null
+      >
   > {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
@@ -80,13 +83,9 @@ export class User {
           return authenticatedUserData;
         }
       } else {
-        throw databaseQuery.createFailedQuery("Password doesn't match", null);
+        return databaseQuery.createFailedQuery("invalid-password", null);
       }
     } catch (error) {
-      if (databaseQuery.isQueryError(error)) {
-        return databaseQuery.createFailedQuery("bad-request", null);
-      }
-
       return databaseQuery.createFailedQuery("server-error", null);
     }
   }
@@ -98,7 +97,10 @@ export class User {
    */
   public async createUser(
     newUserInfo: NewUser
-  ): Promise<AuthenticatedUserData | FailedQueryResult<"server-error", null>> {
+  ): Promise<
+    | AuthenticatedUserData
+    | FailedQueryResult<"server-error" | "duplicate-user", null>
+  > {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
         await this.pool.execute("call create_user(?,?,?,?,?)", [
@@ -124,8 +126,14 @@ export class User {
         }
       }
     } catch (error) {
-      console.log(error);
-      return databaseQuery.createFailedQuery("server-error", null);
+      if (
+        databaseQuery.isQueryError(error) &&
+        error.code === databaseQuery.mysqlQueryError.duplicateEntry.errorCode
+      ) {
+        return databaseQuery.createFailedQuery("duplicate-user", null);
+      } else {
+        return databaseQuery.createFailedQuery("server-error", null);
+      }
     }
   }
 }

@@ -1,6 +1,19 @@
 import { FailedQueryResult, QueryError, QueryResult } from "./types";
+import { MysqlQueryErrors } from "./types";
 
 class DatabaseQuery {
+  // List of possible mysql query error
+  public readonly mysqlQueryError: MysqlQueryErrors = Object.freeze({
+    duplicateEntry: Object.freeze({
+      errorNumber: 1062,
+      errorCode: "ER_DUP_ENTRY",
+    }),
+    signalException: Object.freeze({
+      errorNumber: 1644,
+      errorCode: "ER_SIGNAL_EXCEPTION",
+    }),
+  });
+
   /**
    * Retrieves a single entity from a database query.
    * @param queryResult The result of a database query
