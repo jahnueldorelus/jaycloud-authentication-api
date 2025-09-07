@@ -6,3 +6,9 @@ export type DatabaseUserData = {
   user_password: string;
   is_admin: 0 | 1;
 };
+
+export type UpdateUserQueryData = {
+  firstName: string;
+  lastName: string;
+  password: string;
+};

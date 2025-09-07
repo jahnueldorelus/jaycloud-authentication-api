@@ -17,15 +17,18 @@ export class LoadedUser {
   public readonly firstName: string;
   public readonly lastName: string;
   public readonly email: string;
-  public readonly password: string;
   public readonly isAdmin: boolean;
+
+  /**
+   * Note: The user's password is never saved. As a security measure, the user's
+   * password should never float around in memory.
+   */
 
   constructor(userData: DatabaseUserData) {
     this.id = userData.id;
     this.email = userData.email;
     this.firstName = userData.first_name;
     this.lastName = userData.last_name;
-    this.password = userData.user_password;
     this.isAdmin = Boolean(userData.is_admin);
   }
 

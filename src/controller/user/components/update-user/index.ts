@@ -2,7 +2,6 @@ import Joi from "joi";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
-import { connection } from "mongoose";
 import { envNames } from "@startup/config";
 import {
   getRequestUserData,
@@ -13,9 +12,10 @@ import {
   UserUpdateData,
   ValidUserUpdateInfo,
 } from "@app-types/user/update-user";
-import { dbAuth } from "@services/database";
-import { reqErrorMessages } from "@services/request-error-messages";
+import { db } from "@services/database";
 import { genSalt, hash } from "bcrypt";
+import { databaseQuery } from "@services/database/queries";
+import { CookieInfo } from "@app-types/request-success";
 
 // Schema validation
 const updatetAccountSchema = Joi.object({
@@ -28,7 +28,7 @@ const updatetAccountSchema = Joi.object({
  * Deterimines if the user's account information is valid.
  * @param newUserInfo The user's information to validate
  */
-const validateInfo = (newUserInfo: UserUpdateData): ValidUserUpdateInfo => {
+function validateInfo(newUserInfo: UserUpdateData): ValidUserUpdateInfo {
   const { error, value } = updatetAccountSchema.validate(newUserInfo);
 
   if (error) {
@@ -40,13 +40,13 @@ const validateInfo = (newUserInfo: UserUpdateData): ValidUserUpdateInfo => {
   } else {
     return { errorMessage: null, isValid: true, validatedValue: value };
   }
-};
+}
 
 /**
  * Updates a new user.
  * @param req The network request
  */
-export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
+export async function updateUser(req: ExpressRequestAndUser): Promise<void> {
   const reqUser = getRequestUserData(req);
 
   if (requestIsAuthorized(req) && reqUser) {
@@ -57,10 +57,7 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
     const { isValid, errorMessage, validatedValue } = validateInfo(newUserInfo);
 
     if (isValid) {
-      const dbSession = await connection.startSession();
-
       try {
-        //
         if (validatedValue.password) {
           // Generates a salt for hashing
           const salt = await genSalt();
@@ -68,44 +65,46 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
           validatedValue.password = await hash(validatedValue.password, salt);
         }
 
-        dbSession.startTransaction();
-        const newUserInfo = await dbAuth.usersModel.findByIdAndUpdate(
-          reqUser.id,
-          validatedValue,
-          { session: dbSession, new: true }
+        const updatedUser = await db.user.updateUser(
+          reqUser.email,
+          validatedValue
         );
-        await dbSession.commitTransaction();
 
-        if (!newUserInfo) {
-          throw Error(reqErrorMessages.nonExistentUser);
+        if (databaseQuery.isFailedQueryResult(updatedUser)) {
+          throw Error(updatedUser.message);
         }
 
-        const accessToken = newUserInfo.generateAccessToken();
+        const ssoKey: string | undefined = process.env[envNames.cookie.key];
+        const ssoCookieInfo: CookieInfo = {
+          key: ssoKey || "",
+          sameSite: "lax",
+          value: updatedUser.ssoToken.ssoKey || "",
+          expDate: updatedUser.ssoToken.expDate,
+        };
+        const listOfCookies: CookieInfo[] = ssoCookieInfo
+          ? [ssoCookieInfo]
+          : [];
 
-        RequestSuccess(req, newUserInfo.toPrivateJSON(), [
-          // The access token
-          {
-            headerName: <string>process.env[envNames.jwt.accessReqHeader],
-            headerValue: accessToken,
-          },
-        ]);
+        RequestSuccess(
+          req,
+          updatedUser.userPublicInfo,
+          [
+            // The access token
+            {
+              headerName: <string>process.env[envNames.jwt.accessReqHeader],
+              headerValue: updatedUser.accessToken,
+            },
+            // The refresh token
+            {
+              headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+              headerValue: updatedUser.refreshToken.token,
+            },
+          ],
+          null,
+          listOfCookies
+        );
       } catch (error: any) {
-        if (dbSession.inTransaction()) {
-          await dbSession.abortTransaction();
-        }
-
-        // If the user to update doesn't exist
-        if (error.message === reqErrorMessages.nonExistentUser) {
-          RequestError(
-            req,
-            Error("Failed to update the account. The user doesn't exist")
-          ).badRequest();
-        } else {
-          // Default error
-          RequestError(req, Error("Failed to update the account.")).server();
-        }
-      } finally {
-        await dbSession.endSession();
+        RequestError(req, Error("Failed to update the account.")).server();
       }
     }
     // If there's a validation error
@@ -113,4 +112,4 @@ export const updateUser = async (req: ExpressRequestAndUser): Promise<void> => {
       RequestError(req, Error(errorMessage)).validation();
     }
   }
-};
+}

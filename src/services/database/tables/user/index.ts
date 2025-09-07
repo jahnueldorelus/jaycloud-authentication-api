@@ -1,5 +1,5 @@
 import { Pool } from "mysql2/promise";
-import { DatabaseUserData } from "./types";
+import { DatabaseUserData, UpdateUserQueryData } from "./types";
 import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
@@ -12,6 +12,11 @@ export class User {
 
   constructor(pool: Pool) {
     this.pool = pool;
+  }
+
+  // SQL query for retrieving a user by email
+  private get queryGetUserByEmail(): string {
+    return "SELECT * FROM User WHERE email = ?";
   }
 
   /**
@@ -63,7 +68,7 @@ export class User {
   > {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
-        await this.pool.execute("SELECT * FROM User WHERE email = ?", [email])
+        await this.pool.execute(this.queryGetUserByEmail, [email])
       );
 
       if (!userData) {
@@ -87,6 +92,23 @@ export class User {
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);
+    }
+  }
+
+  /**
+   * Attempts to retrieve a user by their email.
+   * @param userEmail The user's email
+   * @returns The user's data if found. Otherwise null
+   */
+  public async getUserByEmail(userEmail: string): Promise<LoadedUser | null> {
+    try {
+      const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
+        await this.pool.execute(this.queryGetUserByEmail, [userEmail])
+      );
+
+      return userData ? new LoadedUser(userData) : null;
+    } catch (error) {
+      return null;
     }
   }
 
@@ -134,6 +156,48 @@ export class User {
       } else {
         return databaseQuery.createFailedQuery("server-error", null);
       }
+    }
+  }
+
+  /**
+   * Attempts to update a user.
+   * @param userEmail The user's email
+   * @param userUpdatedInfo The user's updated information to save
+   * @returns The user's updated data. Otherwise null if an error occurs
+   */
+  public async updateUser(
+    userEmail: string,
+    userUpdatedInfo: UpdateUserQueryData
+  ): Promise<
+    | AuthenticatedUserData
+    | AuthenticatedUserData
+    | FailedQueryResult<"server-error", null>
+  > {
+    try {
+      const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
+        await this.pool.execute("call update_user(?,?,?,?)", [
+          userUpdatedInfo.firstName,
+          userUpdatedInfo.lastName,
+          userUpdatedInfo.password,
+          userEmail,
+        ])
+      );
+
+      if (!userData) {
+        return databaseQuery.createFailedQuery("server-error", null);
+      }
+
+      const authenticatedUserData = await this.getUserAuthenticatedData(
+        userData
+      );
+
+      if (!authenticatedUserData) {
+        throw Error("Failed to retrieve user's authenticated info");
+      } else {
+        return authenticatedUserData;
+      }
+    } catch (error) {
+      return databaseQuery.createFailedQuery("server-error", null);
     }
   }
 }

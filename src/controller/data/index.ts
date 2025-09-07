@@ -90,7 +90,7 @@ async function transferRoute(req: ExpressRequest) {
         // Adds the user's info to the new request's body
         const userData = getRequestUserData(<ExpressRequestAndUser>req);
         if (userData) {
-          newReqBody.user = userData.toPrivateJSON();
+          newReqBody.user = userData.getPublicInfoJson();
         }
 
         // Removes data from the new request's body that was required only for this server

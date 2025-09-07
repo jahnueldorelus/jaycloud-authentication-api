@@ -15,9 +15,8 @@ import {
 } from "@app-types/authorization";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
-import { dbAuth } from "@services/database";
-import { connection } from "mongoose";
-import { DBLoadedUser } from "@app-types/database/models/users";
+import { db, dbAuth } from "@services/database";
+import { LoadedUser } from "@services/database/table-models/loaded-user";
 
 const tokenDataSchema = Joi.object({
   firstName: newUserAttributes.firstName.joiSchema,
@@ -33,21 +32,18 @@ const tokenDataSchema = Joi.object({
  * @param res The network response
  * @param next Next function to pass request and response to next middleware
  */
-export const validateRequestAuthorization = async (
+export async function validateRequestAuthorization(
   req: ExpressRequest,
-  res: ExpressResponse,
+  _res: ExpressResponse,
   next: NextFunction
-) => {
+) {
   const userReq = <ExpressRequestAndUser>req;
   const token: string | undefined = userReq.token;
 
-  // Adds the user's info from the request
   if (token) {
-    const dbSession = await connection.startSession();
     const jwtPublicKey: string = <string>process.env[envNames.jwt.publicKey];
     const jwtAlgorithm: Algorithm = <Algorithm>process.env[envNames.jwt.alg];
 
-    // Attempts to decode the token
     try {
       const tokenInfo: TokenData = <TokenData>verify(token, jwtPublicKey, {
         algorithms: [jwtAlgorithm],
@@ -57,26 +53,14 @@ export const validateRequestAuthorization = async (
         throw Error();
       }
 
-      dbSession.startTransaction();
+      const reqUserDbInfo = await db.user.getUserByEmail(tokenInfo.email);
 
-      // Checks if the user of the request exists
-      const dbUser = await dbAuth.usersModel.findOne({
-        email: tokenInfo.email,
-      });
-
-      if (!dbUser) {
+      if (!reqUserDbInfo) {
         throw Error(reqErrorMessages.nonExistentUser);
       }
 
-      await dbSession.commitTransaction();
-
-      // Saves the user's info to the request
-      // userReq.user = dbUser;
+      userReq.user = reqUserDbInfo;
     } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
       // User doesn't exist
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
@@ -92,8 +76,6 @@ export const validateRequestAuthorization = async (
           Error(reqErrorMessages.invalidToken)
         ).notAuthorized();
       }
-    } finally {
-      await dbSession.endSession();
     }
   } else {
     RequestError(userReq, Error(reqErrorMessages.invalidToken)).notAuthorized();
@@ -101,7 +83,7 @@ export const validateRequestAuthorization = async (
 
   // Goes to the next Express middleware
   next();
-};
+}
 
 // Schema validation
 const ssoReqValidationSchema = Joi.object({
@@ -112,7 +94,7 @@ const ssoReqValidationSchema = Joi.object({
  * Deterimines if the request's sso token is valid.
  * @param ssoToken The request's sso token
  */
-const validateSSOToken = (ssoToken: SSOToken): ValidSSOToken => {
+function validateSSOToken(ssoToken: SSOToken): ValidSSOToken {
   const { error, value } = ssoReqValidationSchema.validate(ssoToken, {
     allowUnknown: true,
   });
@@ -126,7 +108,7 @@ const validateSSOToken = (ssoToken: SSOToken): ValidSSOToken => {
   } else {
     return { errorMessage: null, isValid: true, validatedValue: value };
   }
-};
+}
 
 /**
  * Determines if the request is authorized through SSO.
@@ -134,22 +116,18 @@ const validateSSOToken = (ssoToken: SSOToken): ValidSSOToken => {
  * @param res The network response
  * @param next Next function to pass request and response to next middleware
  */
-export const validateSSOReqAuthorization = async (
+export async function validateSSOReqAuthorization(
   req: ExpressRequest,
   res: ExpressResponse,
   next: NextFunction
-) => {
+) {
   const requestData: SSOToken = req.body;
 
   const { isValid, validatedValue } = validateSSOToken(requestData);
 
   // If the request's sso token is valid
   if (isValid) {
-    const dbSession = await connection.startSession();
-
     try {
-      dbSession.startTransaction();
-
       // SSO token cookie key
       const ssoTokenCookieKey = <string>process.env[envNames.cookie.ssoId];
       // SSO token key from cookie or header
@@ -160,9 +138,7 @@ export const validateSSOReqAuthorization = async (
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null, {
-        session: dbSession,
-      });
+      const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null);
 
       if (!ssoDoc) {
         throw Error(reqErrorMessages.invalidToken);
@@ -175,23 +151,15 @@ export const validateSSOReqAuthorization = async (
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const userDoc = await dbAuth.usersModel.findById(ssoDoc.userId, null, {
-        session: dbSession,
-      });
+      const userDoc = await dbAuth.usersModel.findById(ssoDoc.userId, null);
 
       if (!userDoc) {
         throw Error(reqErrorMessages.nonExistentUser);
       }
 
-      await dbSession.commitTransaction();
-
       // (<ExpressRequestAndUser>req).user = userDoc;
       (<ExpressRequestAndUser>req).token = userDoc.generateAccessToken();
     } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
       // Non-existent user
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
@@ -207,8 +175,6 @@ export const validateSSOReqAuthorization = async (
       else {
         RequestError(req, Error(reqErrorMessages.serverError)).server();
       }
-    } finally {
-      await dbSession.endSession();
     }
   }
   // If the sso token is invalid
@@ -218,30 +184,30 @@ export const validateSSOReqAuthorization = async (
 
   // Goes to the next Express middleware
   next();
-};
+}
 
 /**
  * Retrieves the request's authorized user if available.
  * @param req The network request
  */
-export const getRequestUserData = (
+export function getRequestUserData(
   req: ExpressRequestAndUser
-): DBLoadedUser | null => {
-  return null; // <-- Needs to be changed to return req.user instead!!
-};
+): LoadedUser | null {
+  return req.user;
+}
 
 /**
  * Determines if a request is authorized.
  */
-export const requestIsAuthorized = (req: ExpressRequestAndUser) => {
+export function requestIsAuthorized(req: ExpressRequestAndUser) {
   return req.token && req.user ? true : false;
-};
+}
 
 /**
  * Determines if a request can be processed after its been through
  * the authentication middleware. Only requests with no token or a valid
  * token can be processed. Requests with invalid tokens will not be processed.
  */
-export const requestAuthenticationChecked = (req: ExpressRequestAndUser) => {
+export function requestAuthenticationChecked(req: ExpressRequestAndUser) {
   return req.token && !req.user ? false : true;
-};
+}

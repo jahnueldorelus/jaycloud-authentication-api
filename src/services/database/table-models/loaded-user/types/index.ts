@@ -13,7 +13,6 @@ export type TokenData = {
 
 export type UserPublicData = Omit<
   LoadedUser,
-  | "password"
   | "generateAccessToken"
   | "getPublicInfoJson"
   | "getSsoInfoJson"
