@@ -43,6 +43,7 @@ userRouter.post(
 // Signs out the user
 userRouter.post(
   "/sign-out",
+  validateRequestAuthorization,
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     await UserController.signOutUser(<ExpressRequestAndUser>req);
     next();

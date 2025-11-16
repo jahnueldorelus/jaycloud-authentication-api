@@ -6,7 +6,7 @@ import { RequestError } from "@middleware/request-error";
 import { dbAuth } from "@services/database";
 import { createNewRefreshToken } from "@controller/user/components/new-refresh-token";
 import { reqErrorMessages } from "@services/request-error-messages";
-import { RefreshToken } from "@app-types/token/refresh-token";
+import { RequestRefreshToken } from "@app-types/token/refresh-token";
 import { getFakeMongoGUID } from "@services/test-helper";
 
 // Mocks database models
@@ -61,7 +61,7 @@ describe("Route - Users: Creating a Refresh Token", () => {
 
   beforeEach(() => {
     mockRequest = getMockReq();
-    const requestBody: RefreshToken = {
+    const requestBody: RequestRefreshToken = {
       token: getFakeMongoGUID(),
     };
     mockRequest.body = requestBody;
@@ -124,7 +124,7 @@ describe("Route - Users: Creating a Refresh Token", () => {
   });
 
   it("Should fail request due to a validation error", async () => {
-    const reqBody: RefreshToken = {
+    const reqBody: RequestRefreshToken = {
       token: "FAKE_REFRESH_TOKEN_ID",
     };
     mockRequest.body = reqBody;

@@ -80,6 +80,22 @@ export class SsoToken {
   }
 
   /**
+   * Attempts to delete a SSO token.
+   * @param ssoKey The id of the SSO token
+   */
+  public async deleteToken(ssoKey: string): Promise<boolean> {
+    try {
+      await this.pool.execute("DELETE FROM SsoToken WHERE sso_key = (?)", [
+        ssoKey,
+      ]);
+
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Attempts to retrieve a SSO token.
    * @param ssoKey The id of the SSO token
    */

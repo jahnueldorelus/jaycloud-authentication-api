@@ -57,9 +57,10 @@ export class RefreshTokenFamily {
    */
   public async deleteFamily(familyId: number): Promise<boolean> {
     try {
-      await this.pool.execute("DELETE FROM RefreshTokenFamily WHERE id = (?)", [
-        familyId,
-      ]);
+      await this.pool.execute(
+        "DELETE FROM RefreshTokenFamily WHERE token = (?)",
+        [familyId]
+      );
 
       return true;
     } catch (error) {

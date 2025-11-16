@@ -4,7 +4,7 @@ import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
 import {
-  RefreshToken,
+  RequestRefreshToken,
   ValidRefreshToken,
 } from "@app-types/token/refresh-token";
 import { envNames } from "@startup/config";
@@ -22,7 +22,7 @@ const requestBodySchema = Joi.object({
  * @param refreshToken The user's refresh token to validate
  */
 function validateOldRefreshToken(
-  refreshToken: RefreshToken
+  refreshToken: RequestRefreshToken
 ): ValidRefreshToken {
   const { error, value } = requestBodySchema.validate(refreshToken);
 
@@ -68,7 +68,7 @@ export async function createNewRefreshToken(
     }
 
     // Determines if the user's old refresh token is valid
-    const reqRefreshToken: RefreshToken = req.body;
+    const reqRefreshToken: RequestRefreshToken = req.body;
     const {
       isValid: refreshTokenIsValid,
       validatedValue: validatedReqRefreshToken,

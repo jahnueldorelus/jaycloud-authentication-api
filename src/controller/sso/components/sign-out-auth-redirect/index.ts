@@ -70,4 +70,8 @@ export function signOutAuthRedirect(req: ExpressRequestAndUser): void {
       RequestError(req, Error(errorMessage)).validation();
     }
   }
+  // If the given request info is unauthorized
+  else {
+    RequestError(req, Error()).validation();
+  }
 }
