@@ -5,6 +5,8 @@ export type DatabaseUserData = {
   email: string;
   user_password: string;
   is_admin: 0 | 1;
+  created_at: Date;
+  updated_at: Date;
 };
 
 export type UpdateUserQueryData = {

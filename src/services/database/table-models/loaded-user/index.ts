@@ -18,6 +18,8 @@ export class LoadedUser {
   public readonly lastName: string;
   public readonly email: string;
   public readonly isAdmin: boolean;
+  public readonly createdAt: Date;
+  public readonly updatedAt: Date;
 
   /**
    * Note: The user's password is never saved. As a security measure, the user's
@@ -30,6 +32,8 @@ export class LoadedUser {
     this.firstName = userData.first_name;
     this.lastName = userData.last_name;
     this.isAdmin = Boolean(userData.is_admin);
+    this.createdAt = userData.created_at;
+    this.updatedAt = userData.updated_at;
   }
 
   /**
@@ -101,6 +105,8 @@ export class LoadedUser {
       firstName: this.firstName,
       lastName: this.lastName,
       isAdmin: this.isAdmin,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     });
   }
 
