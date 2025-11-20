@@ -46,6 +46,10 @@ export class LoadedUser {
       firstName: this.firstName,
       lastName: this.lastName,
       email: this.email,
+      id: this.id,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      isAdmin: this.isAdmin,
     };
 
     // Returns the user's web token

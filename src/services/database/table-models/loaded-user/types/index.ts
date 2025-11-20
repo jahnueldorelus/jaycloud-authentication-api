@@ -7,8 +7,10 @@ export type TokenData = {
   firstName: string;
   lastName: string;
   email: string;
-  iat?: number;
-  exp?: number;
+  id: number;
+  isAdmin: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type UserPublicData = Omit<
