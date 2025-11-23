@@ -1,5 +1,4 @@
 import { Pool } from "mysql2/promise";
-import moment from "moment";
 import { envNames } from "@startup/config";
 import { randomBytes } from "crypto";
 import { DatabaseApprovedPasswordResetData } from "./types";
@@ -17,14 +16,42 @@ export class ApprovedPasswordReset {
   }
 
   /**
+   * Retrieves the new expiration date/time for a new approved password reset.
+   */
+  private getPasswordResetExpiration(): Date {
+    const expDate = new Date();
+    const numOfMinutesToAddToDate = parseInt(
+      <string>process.env[envNames.crypto.tempTokenExpMinutes]
+    );
+    expDate.setMinutes(expDate.getMinutes() + numOfMinutesToAddToDate);
+
+    return expDate;
+  }
+
+  /**
+   * Converts a Javascript date format into the MySQL format.
+   * @param dateToConvert The date to convert to a MySQL format
+   * @returns The MySQL formatted date
+   */
+  private convertDateToMysqlFormat(dateToConvert: Date): string {
+    const year = dateToConvert.getFullYear();
+    const month = String(dateToConvert.getMonth() + 1).padStart(2, "0");
+    const day = String(dateToConvert.getDate()).padStart(2, "0");
+    const hours = dateToConvert.getHours();
+    const minutes = dateToConvert.getMinutes();
+    const seconds = dateToConvert.getSeconds();
+
+    // Creates the format "YYYY-MM-DD HH:MM:SS"
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  /**
    * Attempts to delete all expired approved password resets.
    * @returns A boolean that determines if the expired approved password
    *          resets were deleted
    */
   public async deleteExpiredApprovedPasswordResets(): Promise<boolean> {
-    const currentDateTime = new Date()
-      .toISOString()
-      .replace(RegExp("/[TZ]/g"), "");
+    const currentDateTime = this.convertDateToMysqlFormat(new Date());
 
     try {
       await this.pool.execute(
@@ -55,17 +82,13 @@ export class ApprovedPasswordReset {
       const token = randomBytes(12).toString("hex");
 
       // Creates a new date for the token's expiration
-      const expDate = moment(new Date());
-      expDate.add(
-        parseInt(<string>process.env[envNames.crypto.tempTokenExpMinutes]),
-        "minutes"
-      );
+      const expDate = this.getPasswordResetExpiration();
 
       const approvedPasswordReset: DatabaseApprovedPasswordResetData | null =
         databaseQuery.getOneQueryData<DatabaseApprovedPasswordResetData>(
           await this.pool.execute(
             "call create_approved_password_reset(?, ?, ?)",
-            [userId, token, expDate.toDate()]
+            [userId, token, this.convertDateToMysqlFormat(expDate)]
           )
         );
 

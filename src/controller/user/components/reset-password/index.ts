@@ -3,14 +3,12 @@ import Joi from "joi";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
-import { connection } from "mongoose";
 import { UserEmail, ValidUserEmail } from "@app-types/user/reset-password";
-import { dbAuth } from "@services/database";
+import { db } from "@services/database";
 import { emailService } from "@services/email";
 import { envNames } from "@startup/config";
 import path from "path";
 import { MailOptionsPasswordReset } from "@app-types/email";
-import moment from "moment";
 import { reqErrorMessages } from "@services/request-error-messages";
 
 // Schema validation
@@ -40,18 +38,12 @@ const validateUserEmail = (userEmail: UserEmail): ValidUserEmail => {
  * Gets the amount of time before a password reset expires as a string.
  * @param expDate The date the password reset expires
  */
-const getTimeWhenPasswordResetExpires = (
-  expDate: moment.Moment | Date
-): string => {
-  const tempDate: moment.Moment = moment.isMoment(expDate)
-    ? expDate
-    : moment(expDate);
-
-  const timeDiffBeforeExp = tempDate.diff(moment(new Date()));
-
-  const numOfMinBeforeExp = Math.round(
-    moment.duration(timeDiffBeforeExp).asMinutes()
+const getTimeWhenPasswordResetExpires = (expDate: Date): string => {
+  const newDate = new Date();
+  const timeDiffInMilliseconds = Math.abs(
+    newDate.getTime() - expDate.getTime()
   );
+  const numOfMinBeforeExp = Math.round(timeDiffInMilliseconds / 60000);
 
   return `${numOfMinBeforeExp} minutes`;
 };
@@ -69,52 +61,37 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
 
   // If the user's information is valid
   if (isValid) {
-    const dbSession = await connection.startSession();
-
     try {
-      dbSession.startTransaction();
+      const loaderUser = await db.user.getUserByEmail(validatedValue.email);
 
-      const user = await dbAuth.usersModel.findOne(
-        {
-          email: validatedValue.email,
-        },
-        null,
-        { session: dbSession }
-      );
-
-      if (!user) {
+      if (!loaderUser) {
         throw Error(reqErrorMessages.nonExistentUser);
       }
 
       const approvedPasswordReset =
-        await dbAuth.approvedPasswordResetModel.createApprovedPasswordReset(
-          user.id,
-          dbSession
+        await db.approvedPasswordReset.createApprovedPasswordReset(
+          loaderUser.id
         );
-      await dbSession.commitTransaction();
 
       if (!approvedPasswordReset) {
         throw Error();
       }
 
-      const getUserLink = () => {
-        const uiBaseUrl =
-          <string>process.env[envNames.nodeEnv] === "development"
-            ? process.env[envNames.uiBaseUrl.dev]
-            : process.env[envNames.uiBaseUrl.prod];
-
-        return `${uiBaseUrl}/update-password?token=${approvedPasswordReset.token}`;
-      };
+      const uiBaseUrl =
+        <string>process.env[envNames.nodeEnv] === "development"
+          ? process.env[envNames.uiBaseUrl.dev]
+          : process.env[envNames.uiBaseUrl.prod];
+      const authUiResetUrl: string = `${uiBaseUrl}/update-password?token=${approvedPasswordReset.token}`;
 
       const emailOptions: MailOptionsPasswordReset = {
         from: <string>process.env[envNames.mail.userSupport],
-        to: user.email,
+        to: loaderUser.email,
         subject: "Password Reset",
         template: "password-reset",
         context: {
           pageTitle: "Password Reset",
-          userFullName: user.getFullName(),
-          userLink: getUserLink(),
+          userFullName: loaderUser.getFullName(),
+          userLink: authUiResetUrl,
         },
         attachments: [
           {
@@ -124,6 +101,7 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
           },
         ],
       };
+
       emailService.sendMail(emailOptions, (error) => {
         if (error) {
           throw Error();
@@ -132,31 +110,23 @@ export const resetPassword = async (req: ExpressRequest): Promise<void> => {
 
       RequestSuccess(
         req,
-        getTimeWhenPasswordResetExpires(approvedPasswordReset.expDate)
+        getTimeWhenPasswordResetExpires(approvedPasswordReset.expirationDate)
       );
     } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
       /**
-       * The request is deemed successful to not give the user feedback
-       * that the user doesn't exist due to security purposes.
+       * A successful request is returned instead of an error. Due to security
+       * purposes, the client will not be told that the email they provided
+       * doesn't exist.
        */
       if (error.message === reqErrorMessages.nonExistentUser) {
-        const expDate =
-          dbAuth.approvedPasswordResetModel.getPasswordResetExpireTime();
-
-        RequestSuccess(req, getTimeWhenPasswordResetExpires(expDate));
+        RequestSuccess(req, "");
       } else {
         // Default error message
         RequestError(
           req,
-          Error("Failed to start process of resetting user's password")
+          Error("Failed to reset the user's password")
         ).server();
       }
-    } finally {
-      await dbSession.endSession();
     }
   }
   // If the user's information is invalid
