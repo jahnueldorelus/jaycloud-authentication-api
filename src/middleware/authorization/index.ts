@@ -15,8 +15,9 @@ import {
 } from "@app-types/authorization";
 import { RequestError } from "@middleware/request-error";
 import { reqErrorMessages } from "@services/request-error-messages";
-import { db, dbAuth } from "@services/database";
+import { db } from "@services/database";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
+import { databaseQuery } from "@services/database/queries";
 
 const tokenDataSchema = Joi.object({
   firstName: newUserAttributes.firstName.joiSchema,
@@ -138,27 +139,23 @@ export async function validateSSOReqAuthorization(
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const ssoDoc = await dbAuth.ssoModel.findOne({ ssoId: ssoToken }, null);
+      const loadedSsoToken = await db.ssoToken.getToken(ssoToken);
 
-      if (!ssoDoc) {
+      if (databaseQuery.isFailedQueryResult(loadedSsoToken)) {
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const isTokenTheSame =
-        validatedValue.token === dbAuth.ssoModel.getDecryptedToken(ssoDoc);
-
-      if (!isTokenTheSame) {
+      if (validatedValue.token !== loadedSsoToken.getDecryptedToken()) {
         throw Error(reqErrorMessages.invalidToken);
       }
 
-      const userDoc = await dbAuth.usersModel.findById(ssoDoc.userId, null);
+      const loadedUser = await db.user.getUserById(loadedSsoToken.userId);
 
-      if (!userDoc) {
+      if (!loadedUser) {
         throw Error(reqErrorMessages.nonExistentUser);
       }
 
-      // (<ExpressRequestAndUser>req).user = userDoc;
-      (<ExpressRequestAndUser>req).token = userDoc.generateAccessToken();
+      (<ExpressRequestAndUser>req).token = loadedUser.generateAccessToken();
     } catch (error: any) {
       // Non-existent user
       if (error.message === reqErrorMessages.nonExistentUser) {

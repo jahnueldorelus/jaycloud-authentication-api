@@ -113,6 +113,23 @@ export class User {
   }
 
   /**
+   * Attempts to retrieve a user by their id.
+   * @param userId The user's id
+   * @returns The user's data if found. Otherwise null
+   */
+  public async getUserById(userId: number): Promise<LoadedUser | null> {
+    try {
+      const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
+        await this.pool.execute("SELECT * FROM USER WHERE id = ?", [userId])
+      );
+
+      return userData ? new LoadedUser(userData) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Attempts to create a new user.
    * @param newUserInfo The new user's info
    * @returns The newly created user or a failed query request

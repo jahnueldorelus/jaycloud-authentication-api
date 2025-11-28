@@ -27,7 +27,7 @@
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "express-bearer-token": "^2.4.0",
+    "express-bearer-token": "^3.0.0",
     "helmet": "^6.0.0",
     "http-status-codes": "^2.2.0",
     "joi": "^17.6.4",
@@ -37,7 +37,7 @@
     "morgan": "^1.10.0",
     "mysql2": "^3.14.1",
     "node-cron": "^3.0.2",
-    "nodemailer": "^6.8.0",
+    "nodemailer": "^7.0.11",
     "nodemailer-express-handlebars": "^5.0.0",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
@@ -62,7 +62,6 @@
     "@types/supertest": "^2.0.12",
     "@types/uuid": "^8.3.4",
     "jest": "^29.3.1",
-    "mongoose": "^6.7.1",
     "supertest": "^6.3.1",
     "tsconfig-paths": "^4.1.0"
   }
