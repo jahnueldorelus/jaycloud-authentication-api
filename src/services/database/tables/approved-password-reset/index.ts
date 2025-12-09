@@ -120,10 +120,38 @@ export class ApprovedPasswordReset {
   }
 
   /**
-   * Attempts to get the user of an approved password reset.
+   * Attempts to get an approved password reset by a token.
+   * @param token The token of the approved password reset
+   */
+  public async getAprByToken(
+    token: string
+  ): Promise<
+    LoadedApprovedPasswordReset | FailedQueryResult<"server-error", null>
+  > {
+    try {
+      const approvedPasswordResetData: DatabaseApprovedPasswordResetData | null =
+        databaseQuery.getOneQueryData<DatabaseApprovedPasswordResetData>(
+          await this.pool.execute(
+            "SELECT * FROM ApprovedPasswordReset WHERE token = ?",
+            [token]
+          )
+        );
+
+      if (approvedPasswordResetData) {
+        return new LoadedApprovedPasswordReset(approvedPasswordResetData);
+      } else {
+        throw Error("The approved password reset was not found");
+      }
+    } catch (error) {
+      return databaseQuery.createFailedQuery("server-error", null);
+    }
+  }
+
+  /**
+   * Attempts to get the user of an approved password reset by their id.
    * @param userId The user id of the approved password reset
    */
-  public async getUserOfApprovedPasswordReset(
+  public async getUserById(
     userId: number
   ): Promise<LoadedUser | FailedQueryResult<"server-error", null>> {
     try {

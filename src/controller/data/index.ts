@@ -22,7 +22,7 @@ type Controller = {
  * Schema validation.
  */
 const dataRequestSchema = Joi.object({
-  serviceId: Joi.string().required(),
+  serviceId: Joi.number().required(),
   apiPath: Joi.string().required(),
   apiMethod: Joi.string()
     .valid(
@@ -61,7 +61,7 @@ function validateDataRequest(requestInfo: DataRequest): ValidDataRequest {
 }
 
 /**
- *
+ * Transfers an api request to a registered online service.
  * @param req The express request
  */
 async function transferRoute(req: ExpressRequest) {
@@ -72,7 +72,7 @@ async function transferRoute(req: ExpressRequest) {
       validateDataRequest(dataRequestInfo);
 
     if (isValid) {
-      const serviceId: number = parseInt(validatedValue.serviceId);
+      const serviceId: number = validatedValue.serviceId;
 
       try {
         const service = await db.service.getOneService(serviceId);
@@ -130,7 +130,7 @@ async function transferRoute(req: ExpressRequest) {
             Error(
               "The service requested is currently unavailable to take requests"
             )
-          ).server();
+          ).badRequest();
         }
         // Default error message
         else {

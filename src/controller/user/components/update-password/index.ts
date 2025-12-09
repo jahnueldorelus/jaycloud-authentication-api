@@ -3,15 +3,14 @@ import Joi from "joi";
 import { newUserAttributes } from "@app-types/user/new-user";
 import { RequestSuccess } from "@middleware/request-success";
 import { RequestError } from "@middleware/request-error";
-import { connection } from "mongoose";
 import {
   UpdatePasswordInfo,
   ValidUserEmailAndPassword,
 } from "@app-types/user/update-password";
-import { dbAuth } from "@services/database";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { genSalt, hash } from "bcrypt";
-import moment from "moment";
+import { db } from "@services/database";
+import { databaseQuery } from "@services/database/queries";
 
 // Schema validation
 const verifyUserInfoSchema = Joi.object({
@@ -44,59 +43,35 @@ const validateUserInfo = (
  * @param req The network request
  */
 export const updatePassword = async (req: ExpressRequest): Promise<void> => {
-  // The user's info from the request
   const userInfo: UpdatePasswordInfo = req.body;
-
-  // Determines if the user's information is valid
   const { isValid, errorMessage, validatedValue } = validateUserInfo(userInfo);
 
-  // If the user's information is valid
   if (isValid) {
-    const dbSession = await connection.startSession();
-
     try {
-      dbSession.startTransaction();
+      const loadedApprovedPasswordReset =
+        await db.approvedPasswordReset.getAprByToken(validatedValue.token);
 
-      const approvedPasswordReset =
-        await dbAuth.approvedPasswordResetModel.findOneAndDelete(
-          { token: validatedValue.token },
-          { session: dbSession }
-        );
-
-      const currentDateAndTime = moment(new Date());
-
-      // If there's no approved password reset or it's expired
-      if (
-        !approvedPasswordReset ||
-        moment(approvedPasswordReset.expDate).isBefore(currentDateAndTime)
-      ) {
+      if (databaseQuery.isFailedQueryResult(loadedApprovedPasswordReset)) {
         throw Error(reqErrorMessages.forbiddenUser);
       }
 
-      const user = await dbAuth.usersModel.findById(
-        approvedPasswordReset.userId,
-        null,
-        { session: dbSession }
-      );
+      const loadedUser = await loadedApprovedPasswordReset.getUser();
 
-      if (!user) {
-        throw Error(reqErrorMessages.nonExistentUser);
+      if (databaseQuery.isFailedQueryResult(loadedUser)) {
+        throw Error(reqErrorMessages.serverError);
       }
 
       const hashSalt = await genSalt();
       validatedValue.password = await hash(validatedValue.password, hashSalt);
 
-      user.password = validatedValue.password;
-
-      await user.save({ session: dbSession });
-      await dbSession.commitTransaction();
+      await db.user.updateUser(loadedUser.email, {
+        firstName: loadedUser.firstName,
+        lastName: loadedUser.lastName,
+        password: validatedValue.password,
+      });
 
       RequestSuccess(req, true);
     } catch (error: any) {
-      if (dbSession.inTransaction()) {
-        await dbSession.abortTransaction();
-      }
-
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
           req,
@@ -118,8 +93,6 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
           Error("Failed to update the user's password")
         ).server();
       }
-    } finally {
-      await dbSession.endSession();
     }
   }
   // If the user's information is invalid

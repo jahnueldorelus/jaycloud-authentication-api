@@ -1,7 +1,7 @@
 import { CronJobs } from "@app-types/cron";
 import cron from "node-cron";
-import { dbAuth } from "@services/database";
 import moment from "moment";
+import { db } from "@services/database";
 
 /**
  * Logs a message to the console with the date and time it logged
@@ -26,7 +26,7 @@ const removeExpiredPasswordResets = () => {
         "Attempting to remove expired password resets from database."
       );
       const removedExpired =
-        await dbAuth.approvedPasswordResetModel.deleteExpiredApprovedPassResets();
+        await db.approvedPasswordReset.deleteExpiredApprovedPasswordResets();
       logMessageWithTime(
         `${
           removedExpired ? "Successfully removed" : "Failed removing"
@@ -53,9 +53,8 @@ const removeExpiredSSOTokens = () => {
       logMessageWithTime(
         "Attempting to remove expired refresh tokens from database."
       );
-      const removedExpired = await dbAuth.ssoModel.deleteMany({
-        expDate: { $lte: new Date() },
-      });
+      const removedExpired = await db.ssoToken.deleteExpiredTokens();
+
       logMessageWithTime(
         `${
           removedExpired ? "Successfully removed" : "Failed removing"

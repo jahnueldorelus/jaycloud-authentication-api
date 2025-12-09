@@ -1,7 +1,7 @@
 import { JoiValidationResults } from "@app-types/joi-validation";
 
 export type DataRequest = {
-  serviceId: string;
+  serviceId: number;
   apiPath: string;
   apiMethod: "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
 };

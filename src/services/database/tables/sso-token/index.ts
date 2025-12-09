@@ -96,6 +96,21 @@ export class SsoToken {
   }
 
   /**
+   * Attempts to delete all expired SSO tokens.
+   */
+  public async deleteExpiredTokens(): Promise<boolean> {
+    try {
+      await this.pool.execute(
+        "DELETE FROM SsoToken WHERE expiration_date < NOW()"
+      );
+
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Attempts to retrieve a SSO token.
    * @param ssoKey The id of the SSO token
    */

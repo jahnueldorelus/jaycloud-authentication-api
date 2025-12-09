@@ -39,8 +39,6 @@ export class LoadedApprovedPasswordReset {
    * @returns The user associated with the token or a failed query error
    */
   public async getUser(): ReturnType<typeof db.refreshToken.getUserOfToken> {
-    return await db.approvedPasswordReset.getUserOfApprovedPasswordReset(
-      this.userId
-    );
+    return await db.approvedPasswordReset.getUserById(this.userId);
   }
 }
