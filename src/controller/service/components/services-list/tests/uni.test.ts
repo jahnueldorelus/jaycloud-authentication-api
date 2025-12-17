@@ -1,31 +1,24 @@
 import { db } from "@services/database";
 import { databaseQuery } from "@services/database/queries";
-import * as moduleRequestSuccess from "@middleware/request-success";
-import * as moduleRequestError from "@middleware/request-error";
-import { RequestErrorMethods } from "@app-types/request-error";
 import { getMockReq } from "@jest-mock/express";
 import { Request as ExpressRequest } from "express";
 import { getServices } from "@controller/service/components/services-list";
 import { LoadedService } from "@services/database/table-models/loaded-service";
 import { ServicePublicData } from "@services/database/table-models/loaded-service/types";
+import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
+import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 
 const mockRequestServerError = jest.fn();
-const mockRequestSuccess = jest.spyOn(moduleRequestSuccess, "RequestSuccess");
-const mockRequestError = jest
-  .spyOn(moduleRequestError, "RequestError")
-  .mockImplementation(
-    () =>
-      <RequestErrorMethods>{
-        server: mockRequestServerError as any,
-      }
-  );
+const mockRequestError = getMockRequestError({
+  server: mockRequestServerError,
+});
 
 let mockHttpRequest: ExpressRequest;
 const mockGetListOfServices = jest
   .spyOn(db.service, "getListOfServices")
   .mockImplementation();
 
-describe("Route - Service -> Get Service Logo", () => {
+describe("Route - Service -> Get List of Services", () => {
   beforeEach(() => {
     mockHttpRequest = getMockReq();
   });

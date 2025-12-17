@@ -1,32 +1,23 @@
-import { db } from "@services/database";
 import { databaseQuery } from "@services/database/queries";
-import * as moduleRequestSuccess from "@middleware/request-success";
-import * as moduleRequestError from "@middleware/request-error";
-import { RequestErrorMethods } from "@app-types/request-error";
 import { getMockReq } from "@jest-mock/express";
 import { Request as ExpressRequest } from "express";
 import { getServiceLogo } from "@controller/service/components/service-logo";
 import path from "path";
 import { LoadedService } from "@services/database/table-models/loaded-service";
+import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
+import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { mockDb } from "@test-helpers/mocks/mock-database";
 
 const mockRequestBadRequestError = jest.fn();
 const mockRequestServerError = jest.fn();
-const mockRequestSuccess = jest.spyOn(moduleRequestSuccess, "RequestSuccess");
-const mockRequestError = jest
-  .spyOn(moduleRequestError, "RequestError")
-  .mockImplementation(
-    () =>
-      <RequestErrorMethods>{
-        badRequest: mockRequestBadRequestError as any,
-        server: mockRequestServerError as any,
-      }
-  );
+const mockRequestError = getMockRequestError({
+  badRequest: mockRequestBadRequestError,
+  server: mockRequestServerError,
+});
 
 let mockHttpRequest: ExpressRequest;
-const mockGetOneService = jest
-  .spyOn(db.service, "getOneService")
-  .mockImplementation();
-const mockPathResolve = jest.spyOn(path, "resolve").mockImplementation();
+const mockGetOneService = mockDb.service.getOneService;
+const mockPathResolve = jest.spyOn(path, "resolve");
 
 describe("Route - Service -> Get Service Logo", () => {
   beforeEach(() => {

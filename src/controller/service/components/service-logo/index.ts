@@ -2,7 +2,7 @@ import { Request as ExpressRequest } from "express";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
 import { db } from "@services/database";
-import path from "path";
+import { resolve } from "path";
 import { databaseQuery } from "@services/database/queries";
 
 /**
@@ -31,7 +31,7 @@ export async function getServiceLogo(
       ).server();
     }
   } else {
-    const pathToServiceLogo = path.resolve(
+    const pathToServiceLogo = resolve(
       `./src/assets/images/${result.logoFilename}`
     );
     RequestSuccess(req, undefined, undefined, pathToServiceLogo);

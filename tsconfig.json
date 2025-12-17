@@ -32,6 +32,9 @@
       ],
       "@app-types/*": [
         "./src/types-and-schemas/*"
+      ],
+      "@test-helpers/*": [
+        "./src/test-helpers/*"
       ]
     },
     "esModuleInterop": true,
