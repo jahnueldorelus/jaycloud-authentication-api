@@ -18,7 +18,7 @@ const mockGetListOfServices = jest
   .spyOn(db.service, "getListOfServices")
   .mockImplementation();
 
-describe("Route - Service -> Get List of Services", () => {
+describe("Controller - Service -> Get List of Services", () => {
   beforeEach(() => {
     mockHttpRequest = getMockReq();
   });

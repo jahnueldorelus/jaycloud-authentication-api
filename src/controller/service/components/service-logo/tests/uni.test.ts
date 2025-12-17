@@ -19,7 +19,7 @@ let mockHttpRequest: ExpressRequest;
 const mockGetOneService = mockDb.service.getOneService;
 const mockPathResolve = jest.spyOn(path, "resolve");
 
-describe("Route - Service -> Get Service Logo", () => {
+describe("Controller - Service -> Get Service Logo", () => {
   beforeEach(() => {
     mockHttpRequest = getMockReq();
   });

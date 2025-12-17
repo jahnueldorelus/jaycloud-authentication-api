@@ -1,16 +1,15 @@
 import * as moduleAuthorization from "@middleware/authorization";
-import * as moduleRequestError from "@middleware/request-error";
-import * as moduleRequestSuccess from "@middleware/request-success";
 import axios, { AxiosResponse } from "axios";
-import { db } from "@services/database";
 import { DataController } from "@controller/data";
 import { getMockReq } from "@jest-mock/express";
 import { Request as ExpressRequest } from "express";
-import { RequestErrorMethods } from "@app-types/request-error";
 import { DataRequest } from "@app-types/data";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedService } from "@services/database/table-models/loaded-service";
 import { DatabaseService } from "@services/database/tables/service/types";
+import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
+import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { mockDb } from "@test-helpers/mocks/mock-database";
 
 jest.mock("axios");
 const mockAxios = jest.mocked(axios);
@@ -32,29 +31,19 @@ const mockRequestAuthenticationChecked = jest
 const mockRequestValidationError = jest.fn();
 const mockBadRequestError = jest.fn();
 const mockRequestServerError = jest.fn();
-const mockRequestError = jest
-  .spyOn(moduleRequestError, "RequestError")
-  .mockImplementation(
-    () =>
-      <RequestErrorMethods>{
-        validation: mockRequestValidationError as any,
-        badRequest: mockBadRequestError as any,
-        server: mockRequestServerError as any,
-      }
-  );
-const mockRequestSuccess = jest
-  .spyOn(moduleRequestSuccess, "RequestSuccess")
-  .mockImplementation();
+const mockRequestError = getMockRequestError({
+  badRequest: mockBadRequestError,
+  validation: mockRequestValidationError,
+  server: mockRequestServerError,
+});
 
-const mockDbGetOneService = jest
-  .spyOn(db.service, "getOneService")
-  .mockImplementation();
+const mockDbGetOneService = mockDb.service.getOneService;
 
 const mockIsFailedQuery = jest
   .spyOn(databaseQuery, "isFailedQueryResult")
   .mockImplementation(() => false);
 
-describe("Route - Data", () => {
+describe("Controller - Data -> Transferring Route", () => {
   let mockHttpRequest: ExpressRequest;
   const mockHttpRequestBody: DataRequest = {
     apiMethod: "GET",
