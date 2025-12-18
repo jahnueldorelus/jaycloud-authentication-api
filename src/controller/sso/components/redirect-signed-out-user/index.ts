@@ -2,8 +2,6 @@ import { Request as ExpressRequest } from "express";
 import { RequestSuccess } from "@middleware/request-success";
 import { envNames } from "@startup/config";
 import { CookieRemoval } from "@app-types/request-success";
-import { RequestError } from "@middleware/request-error";
-import { reqErrorMessages } from "@services/request-error-messages";
 
 /**
  * Attempts to redirect the signed out user to the service they were
@@ -12,30 +10,25 @@ import { reqErrorMessages } from "@services/request-error-messages";
  * @param req The express request
  */
 export function redirectSignedOutUser(req: ExpressRequest): void {
-  try {
-    const serviceUrlCookieKey = <string>process.env[envNames.cookie.serviceUrl];
-    const jayCloudAppUrl = <string>req.signedCookies[serviceUrlCookieKey];
-    const authUiUrl =
-      process.env[envNames.nodeEnv] === "production"
-        ? process.env[envNames.origins.wanProd]
-        : process.env[envNames.origins.wanDev];
+  const serviceUrlCookieKey = <string>process.env[envNames.cookie.serviceUrl];
+  const jayCloudAppUrl = <string>req.signedCookies[serviceUrlCookieKey];
+  const authUiUrl =
+    process.env[envNames.nodeEnv] === "production"
+      ? process.env[envNames.origins.wanProd]
+      : process.env[envNames.origins.wanDev];
 
-    const serviceUrlCookieDeleteInfo: CookieRemoval = {
-      key: serviceUrlCookieKey,
-    };
+  const serviceUrlCookieDeleteInfo: CookieRemoval = {
+    key: serviceUrlCookieKey,
+  };
 
-    /**
-     * Ensures that no redirection is done if the user originally made
-     * a request to logout from a service and not the authentication ui
-     */
-    const redirectUrl =
-      authUiUrl && jayCloudAppUrl.includes(authUiUrl) ? "" : jayCloudAppUrl;
+  /**
+   * Ensures that no redirection is done if the user originally made
+   * a request to logout the authentication ui and not from a service
+   */
+  const redirectUrl =
+    authUiUrl && jayCloudAppUrl.includes(authUiUrl) ? "" : jayCloudAppUrl;
 
-    RequestSuccess(req, redirectUrl, null, null, null, [
-      serviceUrlCookieDeleteInfo,
-    ]);
-  } catch (error: any) {
-    // Default error
-    RequestError(req, Error(reqErrorMessages.badRequest)).badRequest();
-  }
+  RequestSuccess(req, redirectUrl, null, null, null, [
+    serviceUrlCookieDeleteInfo,
+  ]);
 }
