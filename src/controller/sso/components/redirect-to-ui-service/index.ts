@@ -19,30 +19,24 @@ export function redirectToServiceUi(req: ExpressRequestAndUser): void {
   const reqUser = getRequestUserData(req);
 
   if (requestIsAuthorized(req) && reqUser) {
-    try {
-      const serviceUrlCookieKey = <string>(
-        process.env[envNames.cookie.serviceUrl]
-      );
+    const serviceUrlCookieKey = <string>process.env[envNames.cookie.serviceUrl];
 
-      const serviceUrl = req.signedCookies[serviceUrlCookieKey];
+    const serviceUrl = req.signedCookies[serviceUrlCookieKey];
 
-      const serviceUrlCookieDeleteInfo: CookieRemoval = {
-        key: serviceUrlCookieKey,
-      };
+    const serviceUrlCookieDeleteInfo: CookieRemoval = {
+      key: serviceUrlCookieKey,
+    };
 
-      RequestSuccess(
-        req,
-        <RedirectToServiceUIResponse>{
-          serviceUrl,
-        },
-        null,
-        null,
-        null,
-        [serviceUrlCookieDeleteInfo]
-      );
-    } catch (error: any) {
-      RequestError(req, Error(reqErrorMessages.serverError)).server();
-    }
+    RequestSuccess(
+      req,
+      <RedirectToServiceUIResponse>{
+        serviceUrl,
+      },
+      null,
+      null,
+      null,
+      [serviceUrlCookieDeleteInfo]
+    );
   } else {
     RequestError(req, Error(reqErrorMessages.forbiddenUser)).notAuthorized();
   }

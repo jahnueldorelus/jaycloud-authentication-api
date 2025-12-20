@@ -13,6 +13,8 @@
  */
 export type MockDatabase<T> = {
   [A in keyof T]: {
-    [B in keyof T[A]]: jest.SpyInstance;
+    [B in keyof T[A]]: T[A][B] extends (...args: infer Args) => infer Return
+      ? jest.SpyInstance<Return, Args>
+      : jest.SpyInstance;
   };
 };

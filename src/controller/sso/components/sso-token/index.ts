@@ -9,7 +9,7 @@ import { envNames } from "@startup/config";
 import { Request as ExpressRequest } from "express";
 
 /**
- * Attempts to retrieve the
+ * Attempts to retrieve a user's descrypted sso token.
  * @param req The express request
  */
 export async function getSSOToken(req: ExpressRequest): Promise<void> {
@@ -24,23 +24,26 @@ export async function getSSOToken(req: ExpressRequest): Promise<void> {
   };
 
   try {
-    // SSO token key from cookie
     const ssoKey = req.signedCookies[ssoTokenCookieKey];
 
     if (!ssoKey) {
-      throw Error();
+      throw Error(reqErrorMessages.badRequest);
     }
 
     const ssoToken = await db.ssoToken.getToken(ssoKey);
 
     if (databaseQuery.isFailedQueryResult(ssoToken)) {
-      throw Error();
+      if (ssoToken.message === "invalid-request") {
+        throw Error(reqErrorMessages.forbiddenUser);
+      } else {
+        throw Error(reqErrorMessages.serverError);
+      }
     }
 
     const decryptedSSOToken = ssoToken.getDecryptedToken();
 
     if (!decryptedSSOToken) {
-      throw Error();
+      throw Error(reqErrorMessages.serverError);
     }
 
     RequestSuccess(
@@ -54,9 +57,21 @@ export async function getSSOToken(req: ExpressRequest): Promise<void> {
       [initAuthReqCookieDeleteInfo]
     );
   } catch (error: any) {
-    RequestError(req, Error(reqErrorMessages.forbiddenUser), [
-      initAuthReqCookieDeleteInfo,
-      ssoTokenCookieDeleteInfo,
-    ]).notAuthorized();
+    if (error.message === reqErrorMessages.forbiddenUser) {
+      RequestError(req, Error(reqErrorMessages.forbiddenUser), [
+        initAuthReqCookieDeleteInfo,
+        ssoTokenCookieDeleteInfo,
+      ]).forbidden();
+    } else if (error.message === reqErrorMessages.badRequest) {
+      RequestError(req, Error(reqErrorMessages.badRequest), [
+        initAuthReqCookieDeleteInfo,
+        ssoTokenCookieDeleteInfo,
+      ]).badRequest();
+    } else {
+      RequestError(req, Error(reqErrorMessages.serverError), [
+        initAuthReqCookieDeleteInfo,
+        ssoTokenCookieDeleteInfo,
+      ]).server();
+    }
   }
 }
