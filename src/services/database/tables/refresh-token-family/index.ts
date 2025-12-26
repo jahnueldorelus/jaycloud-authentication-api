@@ -4,6 +4,7 @@ import { Pool } from "mysql2/promise";
 import { DatabaseRefreshTokenFamilyData } from "./types";
 import { LoadedRefreshTokenFamily } from "@services/database/table-models/loaded-refresh-token-family";
 import { v4 as createUUID } from "uuid";
+import { envNames } from "@startup/config";
 
 export class RefreshTokenFamily {
   private readonly pool: Pool;
@@ -24,12 +25,27 @@ export class RefreshTokenFamily {
     | FailedQueryResult<"invalid-user" | "server-error", null>
   > {
     try {
+      // Creates a new date for the token's expiration
+      const tokenExpDate = new Date();
+      const numOfDaysTokenIsValid = parseInt(
+        <string>process.env[envNames.jwt.refreshExpDays]
+      );
+
+      if (Number.isNaN(numOfDaysTokenIsValid)) {
+        throw Error(
+          "Number of days token is valid retrieved from ENV is not a number"
+        );
+      }
+
+      tokenExpDate.setDate(tokenExpDate.getDate() + numOfDaysTokenIsValid);
       const token: string = createUUID();
+
       const refreshTokenFamilyData =
         databaseQuery.getOneQueryData<DatabaseRefreshTokenFamilyData>(
-          await this.pool.execute("call create_refresh_token_family(?,?)", [
+          await this.pool.execute("call create_refresh_token_family(?,?,?)", [
             token,
             userId,
+            tokenExpDate,
           ])
         );
 
@@ -55,7 +71,7 @@ export class RefreshTokenFamily {
    * @param familyId The family id of the refresh token
    * @returns A boolean that determines if a refresh token family was deleted.
    */
-  public async deleteFamily(familyId: number): Promise<boolean> {
+  public async deleteFamily(familyId: string): Promise<boolean> {
     try {
       await this.pool.execute(
         "DELETE FROM RefreshTokenFamily WHERE token = (?)",

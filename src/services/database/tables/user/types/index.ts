@@ -8,9 +8,3 @@ export type DatabaseUserData = {
   created_at: Date;
   updated_at: Date;
 };
-
-export type UpdateUserQueryData = {
-  firstName: string;
-  lastName: string;
-  password: string;
-};

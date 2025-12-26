@@ -4,7 +4,7 @@ import { DatabaseRefreshTokenData } from "@services/database/tables/refresh-toke
 export class LoadedRefreshToken {
   public readonly token: string;
   public readonly expDate: Date;
-  public readonly familyId: number;
+  public readonly familyId: string;
 
   constructor(refreshTokenData: DatabaseRefreshTokenData) {
     this.token = refreshTokenData.token;

@@ -1,11 +1,12 @@
 import { Pool } from "mysql2/promise";
-import { DatabaseUserData, UpdateUserQueryData } from "./types";
+import { DatabaseUserData } from "./types";
 import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
 import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
 import { compare } from "bcrypt";
 import { NewUser } from "@app-types/user/new-user";
+import { UserUpdateData } from "@app-types/user/update-user";
 
 export class User {
   private readonly pool: Pool;
@@ -184,7 +185,7 @@ export class User {
    */
   public async updateUser(
     userEmail: string,
-    userUpdatedInfo: UpdateUserQueryData
+    userUpdatedInfo: UserUpdateData
   ): Promise<
     | AuthenticatedUserData
     | AuthenticatedUserData
@@ -193,9 +194,9 @@ export class User {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
         await this.pool.execute("call update_user(?,?,?,?)", [
-          userUpdatedInfo.firstName,
-          userUpdatedInfo.lastName,
-          userUpdatedInfo.password,
+          userUpdatedInfo.firstName || null,
+          userUpdatedInfo.lastName || null,
+          userUpdatedInfo.password || null,
           userEmail,
         ])
       );
@@ -214,6 +215,7 @@ export class User {
         return authenticatedUserData;
       }
     } catch (error) {
+      console.log(error);
       return databaseQuery.createFailedQuery("server-error", null);
     }
   }

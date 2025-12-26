@@ -21,7 +21,7 @@ export class RefreshToken {
    * @param familyId The family id of the refresh token family
    */
   public async createRefreshToken(
-    familyId: number
+    familyId: string
   ): Promise<LoadedRefreshToken | FailedQueryResult<"server-error", null>> {
     try {
       // Creates a new date for the token's expiration
@@ -75,7 +75,7 @@ export class RefreshToken {
    * @param familyId The family id of the token
    */
   public async getUserOfToken(
-    familyId: number
+    familyId: string
   ): Promise<LoadedUser | FailedQueryResult<"server-error", null>> {
     try {
       const userData: DatabaseUserData | null =

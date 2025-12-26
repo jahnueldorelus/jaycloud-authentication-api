@@ -23,6 +23,10 @@ const tokenDataSchema = Joi.object({
   firstName: newUserAttributes.firstName.joiSchema,
   lastName: newUserAttributes.lastName.joiSchema,
   email: newUserAttributes.email.joiSchema,
+  id: Joi.number().required(),
+  createdAt: Joi.date().required(),
+  updatedAt: Joi.date().required(),
+  isAdmin: Joi.boolean().required(),
   iat: Joi.date().required(),
   exp: Joi.date().required(),
 });

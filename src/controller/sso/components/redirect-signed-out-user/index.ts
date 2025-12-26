@@ -26,7 +26,9 @@ export function redirectSignedOutUser(req: ExpressRequest): void {
    * a request to logout the authentication ui and not from a service
    */
   const redirectUrl =
-    authUiUrl && jayCloudAppUrl.includes(authUiUrl) ? "" : jayCloudAppUrl;
+    authUiUrl && jayCloudAppUrl && jayCloudAppUrl.includes(authUiUrl)
+      ? ""
+      : jayCloudAppUrl;
 
   RequestSuccess(req, redirectUrl, null, null, null, [
     serviceUrlCookieDeleteInfo,

@@ -18,7 +18,7 @@ export const configureUpdateUserFormModel = (): FormModelInputOption[] => {
   );
 
   const inputOptions = Object.keys(newUserAttributesCopy).filter(
-    (inputName) => inputName !== "email"
+    (inputName) => inputName !== "email" && inputName !== "isAdmin"
   );
 
   const newInputOptions = inputOptions.map((inputName) => {
