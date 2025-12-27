@@ -10,7 +10,9 @@ import { cloneDeep } from "lodash";
  */
 export const configureNewUserFormModel = (): FormModelInputOption[] => {
   const newUserAttributesCopy = cloneDeep(newUserAttributes);
-  const inputOptions = Object.keys(newUserAttributesCopy);
+  const inputOptions = Object.keys(newUserAttributesCopy).filter(
+    (inputName) => inputName !== "isAdmin"
+  );
 
   const newInputOptions = inputOptions.map((inputName) => {
     const newOption = {

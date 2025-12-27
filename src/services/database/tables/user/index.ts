@@ -148,7 +148,7 @@ export class User {
           newUserInfo.lastName,
           newUserInfo.email,
           newUserInfo.password,
-          newUserInfo.isAdmin,
+          newUserInfo.isAdmin || false, // Defaults to false if no admin property is provided,
         ])
       );
 

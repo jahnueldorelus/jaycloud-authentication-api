@@ -19,7 +19,6 @@ const newAccountSchema = Joi.object({
   lastName: newUserAttributes.lastName.joiSchema,
   email: newUserAttributes.email.joiSchema,
   password: newUserAttributes.password.joiSchema,
-  isAdmin: newUserAttributes.isAdmin.joiSchema,
 });
 
 /**
