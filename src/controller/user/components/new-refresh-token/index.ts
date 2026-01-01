@@ -52,15 +52,6 @@ export async function createNewRefreshToken(
   };
 
   try {
-    /*******************************************************************************************
-     *
-     *
-     *
-     *      MAKE THE CHECK THAT THE SIGNED TOKEN MATCHES THE TOKEN FROM THE REQUEST'S BODY
-     *
-     *
-     *
-     * *****************************************************************************************/
     const ssoInfo = await db.ssoToken.getToken(ssoToken);
 
     if (databaseQuery.isFailedQueryResult(ssoInfo)) {
@@ -74,7 +65,11 @@ export async function createNewRefreshToken(
       validatedValue: validatedReqRefreshToken,
     } = validateOldRefreshToken(reqRefreshToken);
 
-    if (refreshTokenIsValid) {
+    if (!refreshTokenIsValid) {
+      RequestError(req, Error(reqErrorMessages.invalidToken), [
+        ssoTokenCookieDeleteInfo,
+      ]).validation();
+    } else {
       const oldRefreshToken = await db.refreshToken.getRefreshTokenByKey(
         validatedReqRefreshToken.refreshToken
       );
@@ -82,7 +77,7 @@ export async function createNewRefreshToken(
       if (databaseQuery.isFailedQueryResult(oldRefreshToken)) {
         throw Error(reqErrorMessages.invalidToken);
       } else if (oldRefreshToken.tokenIsExpired) {
-        // await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
+        await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
         throw Error(reqErrorMessages.invalidToken);
       }
 
@@ -118,12 +113,6 @@ export async function createNewRefreshToken(
       } else {
         throw Error(reqErrorMessages.serverError);
       }
-    }
-    // Request refresh token is invalid
-    else {
-      RequestError(req, Error(reqErrorMessages.invalidToken), [
-        ssoTokenCookieDeleteInfo,
-      ]).validation();
     }
   } catch (error: any) {
     // Invalid sso or refresh token
