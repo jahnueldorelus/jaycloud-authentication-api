@@ -13,6 +13,7 @@ export function getMockRefreshTokenFamily(
   return new LoadedRefreshTokenFamily({
     token: "test-refresh-token-family",
     user_id: 1,
+    expiration_date: new Date().toISOString(),
     ...tokenFamilyData,
   });
 }

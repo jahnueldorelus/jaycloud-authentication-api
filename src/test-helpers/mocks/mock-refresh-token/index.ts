@@ -12,7 +12,7 @@ export function getMockRefreshToken(
 ): LoadedRefreshToken {
   return new LoadedRefreshToken({
     expiration_date: new Date().toISOString(),
-    family_id: 1,
+    family_id: "1",
     token: "test-refresh-token",
     ...tokenData,
   });
