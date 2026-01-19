@@ -107,22 +107,22 @@ export async function createNewRefreshToken(
       const refreshTokenOrigins =
         await refreshTokenUser.generateRefreshTokenOrigins();
 
-      if (newAccessToken && refreshTokenOrigins) {
-        RequestSuccess(req, refreshTokenUser.getPublicInfoJson(), [
-          // The access token
-          {
-            headerName: <string>process.env[envNames.jwt.accessReqHeader],
-            headerValue: newAccessToken,
-          },
-          // The refresh token
-          {
-            headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-            headerValue: refreshTokenOrigins.refreshToken.token,
-          },
-        ]);
-      } else {
+      if (!newAccessToken || !refreshTokenOrigins) {
         throw Error(reqErrorMessages.serverError);
       }
+
+      RequestSuccess(req, refreshTokenUser.getPublicInfoJson(), [
+        // The access token
+        {
+          headerName: <string>process.env[envNames.jwt.accessReqHeader],
+          headerValue: newAccessToken,
+        },
+        // The refresh token
+        {
+          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+          headerValue: refreshTokenOrigins.refreshToken.token,
+        },
+      ]);
     }
   } catch (error: any) {
     // Invalid sso or refresh token

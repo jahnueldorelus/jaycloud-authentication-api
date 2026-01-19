@@ -1,4 +1,4 @@
-import { CookieRemoval } from "@app-types/request-success";
+import { CookieRemoval, ExtraHeaders } from "@app-types/request-success";
 import { getMockReq } from "@jest-mock/express";
 import { databaseQuery } from "@services/database/queries";
 import { envNames } from "@startup/config";
@@ -10,6 +10,9 @@ import { reqErrorMessages } from "@services/request-error-messages";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { RequestRefreshToken } from "@app-types/token/refresh-token";
+import { getMockUser } from "@test-helpers/mocks/mock-user";
+import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
+import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 
 describe("Controller - User -> Retrieving a new refresh token", () => {
   let mockHttpRequest: ExpressRequestAndUser = getMockReq();
@@ -25,17 +28,28 @@ describe("Controller - User -> Retrieving a new refresh token", () => {
   const mockResponseCookieRemoval: CookieRemoval = {
     key: ssoTokenKey || "",
   };
+  let mockUser = getMockUser();
+
+  /******** DATABASE IMPLEMENTATION MOCKS ********/
   mockDb.ssoToken.getToken.mockImplementation(async () => getMockSsoToken());
   mockDb.refreshToken.getRefreshTokenByKey.mockImplementation(async () =>
     getMockRefreshToken(),
   );
   mockDb.refreshToken.expireRefreshToken.mockImplementation(async () => true);
+  mockDb.refreshToken.getUserOfToken.mockImplementation(async () => mockUser);
+  mockDb.refreshToken.createRefreshToken.mockImplementation(async () =>
+    getMockRefreshToken(),
+  );
+  mockDb.refreshTokenFamily.createFamily.mockImplementation(async () =>
+    getMockRefreshTokenFamily(),
+  );
 
   beforeEach(() => {
     mockHttpRequest = getMockReq();
     mockHttpRequest.body = <RequestRefreshToken>{
       refreshToken: "00000000-0000-0000-0000-000000000000",
     };
+    mockUser = getMockUser();
   });
 
   afterEach(() => {
@@ -184,6 +198,55 @@ describe("Controller - User -> Retrieving a new refresh token", () => {
       mockHttpRequest,
       new Error(reqErrorMessages.serverError),
       expect.arrayContaining([mockResponseCookieRemoval]),
+    );
+  });
+
+  it("Should fail creating a new access and refresh token for the user", async () => {
+    process.env[envNames.jwt.privateKey] = "fake-private-key";
+    process.env[envNames.jwt.alg] = "none";
+    process.env[envNames.jwt.accessExpiration] = "7d";
+    mockDb.refreshTokenFamily.createFamily.mockImplementationOnce(async () =>
+      databaseQuery.createFailedQuery("server-error", null),
+    );
+
+    await createNewRefreshToken(mockHttpRequest);
+
+    expect(mockDb.refreshTokenFamily.createFamily).toHaveBeenCalled();
+    expect(mockServerError).toHaveBeenCalled();
+    expect(mockRequestError).toHaveBeenCalled();
+    expect(mockRequestError).toHaveBeenCalledWith(
+      mockHttpRequest,
+      new Error(reqErrorMessages.serverError),
+      expect.arrayContaining([mockResponseCookieRemoval]),
+    );
+  });
+
+  it("Should successfully recreate a new access and refresh token for the user", async () => {
+    const accessTokenHeaderName = "fake-access-token-header-name";
+    const refreshTokenHeaderName = "fake-refresh-token-header-name";
+    process.env[envNames.jwt.accessReqHeader] = accessTokenHeaderName;
+    process.env[envNames.jwt.refreshReqHeader] = refreshTokenHeaderName;
+
+    const listOfResponseHeaders: ExtraHeaders = [
+      // The access token
+      {
+        headerName: accessTokenHeaderName,
+        headerValue: expect.any(String),
+      },
+      // The refresh token
+      {
+        headerName: refreshTokenHeaderName,
+        headerValue: getMockRefreshToken().token,
+      },
+    ];
+
+    await createNewRefreshToken(mockHttpRequest);
+
+    expect(mockRequestSuccess).toHaveBeenCalled();
+    expect(mockRequestSuccess).toHaveBeenCalledWith(
+      mockHttpRequest,
+      mockUser.getPublicInfoJson(),
+      expect.arrayContaining(listOfResponseHeaders),
     );
   });
 });
