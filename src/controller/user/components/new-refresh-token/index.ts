@@ -22,7 +22,7 @@ const requestBodySchema = Joi.object({
  * @param refreshToken The user's refresh token to validate
  */
 function validateOldRefreshToken(
-  refreshToken: RequestRefreshToken
+  refreshToken: RequestRefreshToken,
 ): ValidRefreshToken {
   const { error, value } = requestBodySchema.validate(refreshToken);
 
@@ -42,7 +42,7 @@ function validateOldRefreshToken(
  * @param req The network request
  */
 export async function createNewRefreshToken(
-  req: ExpressRequestAndUser
+  req: ExpressRequestAndUser,
 ): Promise<void> {
   // Checks if the user has a valid sso token
   const ssoTokenKey: string = <string>process.env[envNames.cookie.ssoId];
@@ -55,7 +55,11 @@ export async function createNewRefreshToken(
     const ssoInfo = await db.ssoToken.getToken(ssoToken);
 
     if (databaseQuery.isFailedQueryResult(ssoInfo)) {
-      throw Error(ssoInfo.message);
+      if (ssoInfo.message === "invalid-request") {
+        throw Error(reqErrorMessages.invalidToken);
+      } else {
+        throw Error(ssoInfo.message);
+      }
     }
 
     // Determines if the user's old refresh token is valid
@@ -71,12 +75,18 @@ export async function createNewRefreshToken(
       ]).validation();
     } else {
       const oldRefreshToken = await db.refreshToken.getRefreshTokenByKey(
-        validatedReqRefreshToken.refreshToken
+        validatedReqRefreshToken.refreshToken,
       );
 
       if (databaseQuery.isFailedQueryResult(oldRefreshToken)) {
-        throw Error(reqErrorMessages.invalidToken);
-      } else if (oldRefreshToken.tokenIsExpired) {
+        if (oldRefreshToken.message === "bad-request") {
+          throw Error(reqErrorMessages.invalidToken);
+        } else {
+          throw Error(reqErrorMessages.serverError);
+        }
+      }
+
+      if (oldRefreshToken.tokenIsExpired) {
         await db.refreshTokenFamily.deleteFamily(oldRefreshToken.familyId);
         throw Error(reqErrorMessages.invalidToken);
       }
@@ -122,7 +132,7 @@ export async function createNewRefreshToken(
 
     // Default error
     else {
-      RequestError(req, Error("Failed to create a new refresh token."), [
+      RequestError(req, Error(reqErrorMessages.serverError), [
         ssoTokenCookieDeleteInfo,
       ]).server();
     }
