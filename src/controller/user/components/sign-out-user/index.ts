@@ -28,7 +28,7 @@ const accessTokenSchema = Joi.object({
  * @param refreshToken The user's refresh token to validate
  */
 function validateRefreshToken(
-  refreshToken: RequestRefreshToken
+  refreshToken: RequestRefreshToken,
 ): ValidRefreshToken {
   const { error, value } = refreshTokenSchema.validate(refreshToken);
 
@@ -48,7 +48,7 @@ function validateRefreshToken(
  * @param accessToken The user's access token to validate
  */
 function validateAccessToken(
-  accessToken: RequestAccessToken
+  accessToken: RequestAccessToken,
 ): ValidAccessToken {
   const { error, value } = accessTokenSchema.validate(accessToken);
 
@@ -72,7 +72,6 @@ export async function signOutUser(req: ExpressRequestAndUser) {
     errorMessage: refreshTokenErrorMessage,
     validatedValue: validatedRefreshToken,
   } = validateRefreshToken(refreshTokenData);
-
   const {
     isValid: isAccessTokenValid,
     errorMessage: accessTokenErrorMessage,
@@ -83,27 +82,30 @@ export async function signOutUser(req: ExpressRequestAndUser) {
   if (isRefreshTokenValid && isAccessTokenValid) {
     try {
       const loadedRefreshToken = await db.refreshToken.getRefreshTokenByKey(
-        validatedRefreshToken.refreshToken
+        validatedRefreshToken.refreshToken,
       );
       const loadedAccessToken = await db.ssoToken.getToken(
-        validatedAccessToken.accessToken
+        validatedAccessToken.accessToken,
       );
 
       /**
        * Deletes all refresh tokens that are a part of the given refresh token's family
        * and the refresh family token itself
        */
-      if (
-        databaseQuery.isFailedQueryResult(loadedRefreshToken) ||
-        databaseQuery.isFailedQueryResult(loadedAccessToken)
-      ) {
-        RequestError(req, Error()).notAuthorized();
+      if (databaseQuery.isFailedQueryResult(loadedRefreshToken)) {
+        loadedRefreshToken.message === "bad-request"
+          ? RequestError(req, Error()).notAuthorized()
+          : RequestError(req, Error()).server();
+      } else if (databaseQuery.isFailedQueryResult(loadedAccessToken)) {
+        loadedAccessToken.message === "invalid-request"
+          ? RequestError(req, Error()).notAuthorized()
+          : RequestError(req, Error()).server();
       } else {
         const deletedRefreshTokenFamily =
           await db.refreshTokenFamily.deleteFamily(loadedRefreshToken.familyId);
 
         const deletedSsoToken = await db.ssoToken.deleteToken(
-          loadedAccessToken.ssoKey
+          loadedAccessToken.ssoKey,
         );
 
         if (!deletedRefreshTokenFamily || !deletedSsoToken) {
@@ -125,19 +127,15 @@ export async function signOutUser(req: ExpressRequestAndUser) {
       // Default error
       RequestError(
         req,
-        Error("An error occurred logging out the user.")
+        Error("An error occurred logging out the user."),
       ).server();
     }
   }
   // If the given request info is invalid
   else {
-    RequestError(
-      req,
-      Error(
-        refreshTokenErrorMessage?.concat(
-          accessTokenErrorMessage ? "\n" + accessTokenErrorMessage : ""
-        )
-      )
-    ).notAuthorized();
+    const errorMessage =
+      refreshTokenErrorMessage || accessTokenErrorMessage || "";
+
+    RequestError(req, Error(errorMessage)).notAuthorized();
   }
 }

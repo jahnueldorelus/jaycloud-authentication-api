@@ -8,12 +8,12 @@ import { DatabaseRefreshTokenData } from "@services/database/tables/refresh-toke
  * @returns A loaded refresh token object
  */
 export function getMockRefreshToken(
-  tokenData?: Partial<DatabaseRefreshTokenData>
+  tokenData?: Partial<DatabaseRefreshTokenData>,
 ): LoadedRefreshToken {
   return new LoadedRefreshToken({
     expiration_date: new Date().toISOString(),
     family_id: "1",
-    token: "test-refresh-token",
+    token: "9ad1df70-bdd5-4696-ba61-38f481492904",
     ...tokenData,
   });
 }
