@@ -23,7 +23,7 @@ const verifyUserInfoSchema = Joi.object({
  * @param userInfo The user's info to validate
  */
 const validateUserInfo = (
-  userInfo: UpdatePasswordInfo
+  userInfo: UpdatePasswordInfo,
 ): ValidUserEmailAndPassword => {
   const { error, value } = verifyUserInfoSchema.validate(userInfo);
 
@@ -52,7 +52,11 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
         await db.approvedPasswordReset.getAprByToken(validatedValue.token);
 
       if (databaseQuery.isFailedQueryResult(loadedApprovedPasswordReset)) {
-        throw Error(reqErrorMessages.forbiddenUser);
+        if (loadedApprovedPasswordReset.message === "invalid-token") {
+          throw Error(reqErrorMessages.forbiddenUser);
+        } else {
+          throw Error(reqErrorMessages.serverError);
+        }
       }
 
       const loadedUser = await loadedApprovedPasswordReset.getUser();
@@ -64,33 +68,30 @@ export const updatePassword = async (req: ExpressRequest): Promise<void> => {
       const hashSalt = await genSalt();
       validatedValue.password = await hash(validatedValue.password, hashSalt);
 
-      await db.user.updateUser(loadedUser.email, {
+      const updatedUser = await db.user.updateUser(loadedUser.email, {
         firstName: loadedUser.firstName,
         lastName: loadedUser.lastName,
         password: validatedValue.password,
       });
 
-      RequestSuccess(req, true);
+      if (databaseQuery.isFailedQueryResult(updatedUser)) {
+        throw Error(reqErrorMessages.serverError);
+      } else {
+        RequestSuccess(req, true);
+      }
     } catch (error: any) {
-      if (error.message === reqErrorMessages.nonExistentUser) {
+      if (error.message === reqErrorMessages.forbiddenUser) {
         RequestError(
           req,
           Error(
-            "Your request to update the password is invalid. Please make another request to update your password."
-          )
-        ).validation();
-      } else if (error.message === reqErrorMessages.forbiddenUser) {
-        RequestError(
-          req,
-          Error(
-            "The time frame to update the password has expired. Please make another request to update your password."
-          )
+            "The time frame to update the password has expired. Please make another request to update your password.",
+          ),
         ).badRequest();
       } else {
         // Default error message
         RequestError(
           req,
-          Error("Failed to update the user's password")
+          Error("Failed to update the user's password"),
         ).server();
       }
     }

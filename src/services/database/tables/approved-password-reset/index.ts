@@ -21,7 +21,7 @@ export class ApprovedPasswordReset {
   private getPasswordResetExpiration(): Date {
     const expDate = new Date();
     const numOfMinutesToAddToDate = parseInt(
-      <string>process.env[envNames.crypto.tempTokenExpMinutes]
+      <string>process.env[envNames.crypto.tempTokenExpMinutes],
     );
     expDate.setMinutes(expDate.getMinutes() + numOfMinutesToAddToDate);
 
@@ -56,7 +56,7 @@ export class ApprovedPasswordReset {
     try {
       await this.pool.execute(
         "DELETE FROM ApprovedPasswordReset WHERE expiration_date < ?",
-        [currentDateTime]
+        [currentDateTime],
       );
 
       return true;
@@ -75,7 +75,7 @@ export class ApprovedPasswordReset {
       // Deletes any prior approved password reset
       await this.pool.execute(
         "DELETE FROM ApprovedPasswordReset WHERE user_id = ?",
-        [userId]
+        [userId],
       );
 
       // Generates a token
@@ -88,8 +88,8 @@ export class ApprovedPasswordReset {
         databaseQuery.getOneQueryData<DatabaseApprovedPasswordResetData>(
           await this.pool.execute(
             "call create_approved_password_reset(?, ?, ?)",
-            [userId, token, this.convertDateToMysqlFormat(expDate)]
-          )
+            [userId, token, this.convertDateToMysqlFormat(expDate)],
+          ),
         );
 
       if (approvedPasswordReset) {
@@ -111,7 +111,7 @@ export class ApprovedPasswordReset {
     try {
       await this.pool.execute(
         "DELETE FROM ApprovedPasswordReset WHERE token = ?",
-        [token]
+        [token],
       );
       return true;
     } catch (error) {
@@ -124,23 +124,24 @@ export class ApprovedPasswordReset {
    * @param token The token of the approved password reset
    */
   public async getAprByToken(
-    token: string
+    token: string,
   ): Promise<
-    LoadedApprovedPasswordReset | FailedQueryResult<"server-error", null>
+    | LoadedApprovedPasswordReset
+    | FailedQueryResult<"server-error" | "invalid-token", null>
   > {
     try {
       const approvedPasswordResetData: DatabaseApprovedPasswordResetData | null =
         databaseQuery.getOneQueryData<DatabaseApprovedPasswordResetData>(
           await this.pool.execute(
             "SELECT * FROM ApprovedPasswordReset WHERE token = ?",
-            [token]
-          )
+            [token],
+          ),
         );
 
       if (approvedPasswordResetData) {
         return new LoadedApprovedPasswordReset(approvedPasswordResetData);
       } else {
-        throw Error("The approved password reset was not found");
+        return databaseQuery.createFailedQuery("invalid-token", null);
       }
     } catch (error) {
       return databaseQuery.createFailedQuery("server-error", null);
@@ -152,22 +153,22 @@ export class ApprovedPasswordReset {
    * @param userId The user id of the approved password reset
    */
   public async getUserById(
-    userId: number
+    userId: number,
   ): Promise<LoadedUser | FailedQueryResult<"server-error", null>> {
     try {
       const userData: DatabaseUserData | null =
         databaseQuery.getOneQueryData<DatabaseUserData>(
           await this.pool.execute(
             "SELECT User.* FROM User INNER JOIN ApprovedPasswordReset ON User.id = ApprovedPasswordReset.user_id WHERE User.id = ?",
-            [userId]
-          )
+            [userId],
+          ),
         );
 
       if (userData) {
         return new LoadedUser(userData);
       } else {
         throw Error(
-          "The user associated with the approved password reset was not found"
+          "The user associated with the approved password reset was not found",
         );
       }
     } catch (error) {

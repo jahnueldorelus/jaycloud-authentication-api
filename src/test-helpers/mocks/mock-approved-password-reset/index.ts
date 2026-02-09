@@ -12,7 +12,7 @@ export function getMockApprovedPasswordReset(): LoadedApprovedPasswordReset {
   return new LoadedApprovedPasswordReset({
     expiration_date: expDate,
     id: 1111,
-    token: "weqjhi-dshjhks-eruewiro-fdskfh",
+    token: "f00390fd10847d08541e27a5",
     user_id: 42,
   });
 }
