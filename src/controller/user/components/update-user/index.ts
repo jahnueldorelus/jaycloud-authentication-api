@@ -67,7 +67,7 @@ export async function updateUser(req: ExpressRequestAndUser): Promise<void> {
 
         const updatedUser = await db.user.updateUser(
           reqUser.email,
-          validatedValue
+          validatedValue,
         );
 
         if (databaseQuery.isFailedQueryResult(updatedUser)) {
@@ -101,7 +101,7 @@ export async function updateUser(req: ExpressRequestAndUser): Promise<void> {
             },
           ],
           null,
-          listOfCookies
+          listOfCookies,
         );
       } catch (error: any) {
         RequestError(req, Error("Failed to update the account.")).server();

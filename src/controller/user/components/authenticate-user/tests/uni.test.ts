@@ -4,16 +4,27 @@ import { authenticateUser } from "@controller/user/components/authenticate-user"
 import { UserCredentials } from "@app-types/user/authenticate-user";
 import { mockDb } from "@test-helpers/mocks/mock-database";
 import { databaseQuery } from "@services/database/queries";
-import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
-import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
-import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
-import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
 import { CookieInfo, ExtraHeaders } from "@app-types/request-success";
 import { envNames } from "@startup/config";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
+import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
+import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
 
 describe("Controller - User -> Authenticating a User", () => {
+  process.env[envNames.jwt.privateKey] = "fake-private-key";
+  process.env[envNames.jwt.alg] = "HS256";
+  process.env[envNames.jwt.accessExpiration] = "7d";
+
+  mockDb.refreshTokenFamily.createFamily.mockImplementation(async () =>
+    getMockRefreshTokenFamily(),
+  );
+  mockDb.refreshToken.createRefreshToken.mockImplementation(async () =>
+    getMockRefreshToken(),
+  );
+  mockDb.ssoToken.createToken.mockImplementation(async () => getMockSsoToken());
+
   const mockHttpRequest = getMockReq();
   const mockRequestErrorBadRequest = jest.fn();
   const mockRequestErrorServer = jest.fn();
@@ -23,6 +34,7 @@ describe("Controller - User -> Authenticating a User", () => {
     validation: mockRequestErrorValidation,
     server: mockRequestErrorServer,
   });
+  const mockUser = getMockUser();
 
   beforeEach(() => {
     mockHttpRequest.body = <UserCredentials>{
@@ -49,7 +61,7 @@ describe("Controller - User -> Authenticating a User", () => {
 
   it("Should fail the request due to the user not existing", async () => {
     mockDb.user.authenticateUser.mockImplementationOnce(async () =>
-      databaseQuery.createFailedQuery("invalid-user", null)
+      databaseQuery.createFailedQuery("invalid-user", null),
     );
 
     await authenticateUser(mockHttpRequest);
@@ -60,7 +72,7 @@ describe("Controller - User -> Authenticating a User", () => {
 
   it("Should fail the request due to the password being incorrect", async () => {
     mockDb.user.authenticateUser.mockImplementationOnce(async () =>
-      databaseQuery.createFailedQuery("invalid-password", null)
+      databaseQuery.createFailedQuery("invalid-password", null),
     );
 
     await authenticateUser(mockHttpRequest);
@@ -71,7 +83,7 @@ describe("Controller - User -> Authenticating a User", () => {
 
   it("Should fail the request due to a server error", async () => {
     mockDb.user.authenticateUser.mockImplementationOnce(async () =>
-      databaseQuery.createFailedQuery("server-error", null)
+      databaseQuery.createFailedQuery("server-error", null),
     );
 
     await authenticateUser(mockHttpRequest);
@@ -81,47 +93,50 @@ describe("Controller - User -> Authenticating a User", () => {
   });
 
   it("Should authenticate the user and return the user's info, access/refresh/sso token", async () => {
-    const userData: AuthenticatedUserData = {
-      accessToken: "user-access-token",
-      refreshToken: getMockRefreshToken(),
-      refreshTokenFamily: getMockRefreshTokenFamily(),
-      ssoToken: getMockSsoToken(),
-      userPublicInfo: getMockUser().getPublicInfoJson(),
-    };
+    const userData = await mockUser.generateAuthCredentials();
 
-    mockDb.user.authenticateUser.mockImplementationOnce(async () => userData);
+    if (userData) {
+      mockDb.user.authenticateUser.mockImplementationOnce(
+        async () =>
+          userData || databaseQuery.createFailedQuery("server-error", null),
+      );
 
-    const listOfResponseCookies: CookieInfo[] = [
-      {
-        expDate: userData.ssoToken.expDate,
-        key: <string>process.env[envNames.cookie.ssoId],
-        value: userData.ssoToken.ssoKey,
-        sameSite: "lax",
-      },
-    ];
+      const listOfResponseCookies: CookieInfo[] = [
+        {
+          expDate: userData?.ssoToken.expDate,
+          key: <string>process.env[envNames.cookie.ssoId],
+          value: userData?.ssoToken.ssoKey || "",
+          sameSite: "lax",
+        },
+      ];
 
-    const listOfResponseHeaders: ExtraHeaders = [
-      // The access token
-      {
-        headerName: <string>process.env[envNames.jwt.accessReqHeader],
-        headerValue: userData.accessToken,
-      },
-      // The refresh token
-      {
-        headerName: <string>process.env[envNames.jwt.refreshReqHeader],
-        headerValue: userData.refreshToken.token,
-      },
-    ];
+      const listOfResponseHeaders: ExtraHeaders = [
+        // The access token
+        {
+          headerName: <string>process.env[envNames.jwt.accessReqHeader],
+          headerValue: userData?.accessToken || "",
+        },
+        // The refresh token
+        {
+          headerName: <string>process.env[envNames.jwt.refreshReqHeader],
+          headerValue: userData?.refreshToken.token || "",
+        },
+      ];
 
-    await authenticateUser(mockHttpRequest);
+      await authenticateUser(mockHttpRequest);
 
-    expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
-    expect(mockRequestSuccess).toHaveBeenCalledWith(
-      mockHttpRequest,
-      userData.userPublicInfo,
-      listOfResponseHeaders,
-      null,
-      listOfResponseCookies
-    );
+      expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
+      expect(mockRequestSuccess).toHaveBeenCalledWith(
+        mockHttpRequest,
+        userData.userPublicInfo,
+        listOfResponseHeaders,
+        null,
+        listOfResponseCookies,
+      );
+    } else {
+      throw Error(
+        "An error occurred trying to generate the user's fake authorization credentials",
+      );
+    }
   });
 });

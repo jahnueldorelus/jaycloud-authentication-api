@@ -4,7 +4,6 @@ import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
 import { mockDb } from "@test-helpers/mocks/mock-database";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
 import { envNames } from "@startup/config";
-import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
@@ -43,23 +42,14 @@ describe("Controller - User -> Creating a new user", () => {
   mockDb.refreshTokenFamily.createFamily.mockImplementation(async () =>
     getMockRefreshTokenFamily(),
   );
-
   mockDb.refreshToken.createRefreshToken.mockImplementation(async () =>
     getMockRefreshToken(),
   );
-
   mockDb.ssoToken.createToken.mockImplementation(async () => getMockSsoToken());
-
   mockDb.user.createUser.mockImplementation(
     async () =>
-      <AuthenticatedUserData>{
-        accessToken: mockUser.generateAccessToken(),
-        refreshToken: (await mockUser.generateRefreshTokenOrigins())
-          ?.refreshToken,
-        refreshTokenFamily: (await mockUser.generateRefreshTokenOrigins())
-          ?.refreshTokenFamily,
-        ssoToken: await mockUser.generateSsoToken(new Date()),
-      },
+      (await mockUser.generateAuthCredentials()) ||
+      databaseQuery.createFailedQuery("server-error", null),
   );
 
   beforeEach(() => {

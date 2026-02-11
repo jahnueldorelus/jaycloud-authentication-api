@@ -21,6 +21,7 @@ export type UserPublicData = Omit<
   | "getFullName"
   | "generateRefreshTokenOrigins"
   | "generateSsoToken"
+  | "generateAuthCredentials"
 >;
 
 export type UserSsoData = Pick<
@@ -28,7 +29,7 @@ export type UserSsoData = Pick<
   "firstName" | "lastName" | "isAdmin"
 >;
 
-export type AuthenticatedUserData = {
+export type UserAuthorizationCreds = {
   userPublicInfo: UserPublicData;
   accessToken: string;
   refreshToken: LoadedRefreshToken;

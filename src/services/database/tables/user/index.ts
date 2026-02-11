@@ -3,7 +3,7 @@ import { DatabaseUserData } from "./types";
 import { FailedQueryResult } from "@services/database/queries/types";
 import { databaseQuery } from "@services/database/queries";
 import { LoadedUser } from "@services/database/table-models/loaded-user";
-import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
+import { UserAuthorizationCreds } from "@services/database/table-models/loaded-user/types";
 import { compare } from "bcrypt";
 import { NewUser } from "@app-types/user/new-user";
 import { UserUpdateData } from "@app-types/user/update-user";
@@ -21,34 +21,15 @@ export class User {
   }
 
   /**
-   * Retrieves the authenticated data of a user.
+   * Retrieves a user's authorization credentials.
    * @param userData The database info of a user
-   * @returns An object of the authenticated user's data
+   * @returns An object containing the user's authorization credentials
    */
-  private async getUserAuthenticatedData(
-    userData: DatabaseUserData
-  ): Promise<AuthenticatedUserData | null> {
+  private async getUserAuthCredentials(
+    userData: DatabaseUserData,
+  ): Promise<UserAuthorizationCreds | null> {
     const loadedUser = new LoadedUser(userData);
-    const accessToken = loadedUser.generateAccessToken();
-    const refreshTokenOrigins = await loadedUser.generateRefreshTokenOrigins();
-
-    if (refreshTokenOrigins) {
-      const ssoToken = await loadedUser.generateSsoToken(
-        refreshTokenOrigins.refreshToken.expDate
-      );
-
-      if (ssoToken) {
-        return <AuthenticatedUserData>{
-          userPublicInfo: loadedUser.getPublicInfoJson(),
-          accessToken,
-          refreshToken: refreshTokenOrigins.refreshToken,
-          refreshTokenFamily: refreshTokenOrigins.refreshTokenFamily,
-          ssoToken,
-        };
-      }
-    }
-
-    return null;
+    return loadedUser.generateAuthCredentials();
   }
 
   /**
@@ -59,9 +40,9 @@ export class User {
    */
   public async authenticateUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<
-    | AuthenticatedUserData
+    | UserAuthorizationCreds
     | FailedQueryResult<
         "invalid-user" | "invalid-password" | "server-error",
         null
@@ -69,7 +50,7 @@ export class User {
   > {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
-        await this.pool.execute(this.queryGetUserByEmail, [email])
+        await this.pool.execute(this.queryGetUserByEmail, [email]),
       );
 
       if (!userData) {
@@ -79,9 +60,8 @@ export class User {
       const passwordMatches = await compare(password, userData.user_password);
 
       if (passwordMatches) {
-        const authenticatedUserData = await this.getUserAuthenticatedData(
-          userData
-        );
+        const authenticatedUserData =
+          await this.getUserAuthCredentials(userData);
 
         if (!authenticatedUserData) {
           throw Error("Failed to retrieve user's authenticated info");
@@ -104,7 +84,7 @@ export class User {
   public async getUserByEmail(userEmail: string): Promise<LoadedUser | null> {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
-        await this.pool.execute(this.queryGetUserByEmail, [userEmail])
+        await this.pool.execute(this.queryGetUserByEmail, [userEmail]),
       );
 
       return userData ? new LoadedUser(userData) : null;
@@ -121,7 +101,7 @@ export class User {
   public async getUserById(userId: number): Promise<LoadedUser | null> {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
-        await this.pool.execute("SELECT * FROM USER WHERE id = ?", [userId])
+        await this.pool.execute("SELECT * FROM USER WHERE id = ?", [userId]),
       );
 
       return userData ? new LoadedUser(userData) : null;
@@ -136,9 +116,9 @@ export class User {
    * @returns The newly created user or a failed query request
    */
   public async createUser(
-    newUserInfo: NewUser
+    newUserInfo: NewUser,
   ): Promise<
-    | AuthenticatedUserData
+    | UserAuthorizationCreds
     | FailedQueryResult<"server-error" | "duplicate-user", null>
   > {
     try {
@@ -149,15 +129,14 @@ export class User {
           newUserInfo.email,
           newUserInfo.password,
           newUserInfo.isAdmin || false, // Defaults to false if no admin property is provided,
-        ])
+        ]),
       );
 
       if (!userData) {
         return databaseQuery.createFailedQuery("server-error", null);
       } else {
-        const authenticatedUserData = await this.getUserAuthenticatedData(
-          userData
-        );
+        const authenticatedUserData =
+          await this.getUserAuthCredentials(userData);
 
         if (!authenticatedUserData) {
           throw Error("Failed to retrieve user's authenticated info");
@@ -185,12 +164,8 @@ export class User {
    */
   public async updateUser(
     userEmail: string,
-    userUpdatedInfo: UserUpdateData
-  ): Promise<
-    | AuthenticatedUserData
-    | AuthenticatedUserData
-    | FailedQueryResult<"server-error", null>
-  > {
+    userUpdatedInfo: UserUpdateData,
+  ): Promise<UserAuthorizationCreds | FailedQueryResult<"server-error", null>> {
     try {
       const userData = databaseQuery.getOneQueryData<DatabaseUserData>(
         await this.pool.execute("call update_user(?,?,?,?)", [
@@ -198,16 +173,14 @@ export class User {
           userUpdatedInfo.lastName || null,
           userUpdatedInfo.password || null,
           userEmail,
-        ])
+        ]),
       );
 
       if (!userData) {
         return databaseQuery.createFailedQuery("server-error", null);
       }
 
-      const authenticatedUserData = await this.getUserAuthenticatedData(
-        userData
-      );
+      const authenticatedUserData = await this.getUserAuthCredentials(userData);
 
       if (!authenticatedUserData) {
         throw Error("Failed to retrieve user's authenticated info");
@@ -215,7 +188,6 @@ export class User {
         return authenticatedUserData;
       }
     } catch (error) {
-      console.log(error);
       return databaseQuery.createFailedQuery("server-error", null);
     }
   }

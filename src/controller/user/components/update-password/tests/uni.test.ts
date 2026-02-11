@@ -6,7 +6,6 @@ import { updatePassword } from "@controller/user/components/update-password";
 import { mockDb } from "@test-helpers/mocks/mock-database";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
 import { envNames } from "@startup/config";
-import { AuthenticatedUserData } from "@services/database/table-models/loaded-user/types";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
@@ -31,12 +30,6 @@ describe("Controller - User -> Updating a user's password", () => {
     server: mockErrorServer,
   });
   const mockUser = getMockUser();
-  const mockAccessToken = mockUser.generateAccessToken();
-  const mockRefreshTokenFamily = getMockRefreshTokenFamily();
-  const mockRefreshToken = getMockRefreshToken({
-    family_id: mockRefreshTokenFamily.token,
-  });
-  const mockSsoToken = getMockSsoToken();
   const mockApprovedPasswordReset = getMockApprovedPasswordReset();
   const httpRequestBody: UpdatePasswordInfo = {
     password: "fake-user-password",
@@ -49,21 +42,17 @@ describe("Controller - User -> Updating a user's password", () => {
   mockDb.approvedPasswordReset.getUserById.mockImplementation(
     async () => mockUser,
   );
-  mockDb.refreshTokenFamily.createFamily.mockImplementation(
-    async () => mockRefreshTokenFamily,
+  mockDb.refreshTokenFamily.createFamily.mockImplementation(async () =>
+    getMockRefreshTokenFamily(),
   );
-  mockDb.refreshToken.createRefreshToken.mockImplementation(
-    async () => mockRefreshToken,
+  mockDb.refreshToken.createRefreshToken.mockImplementation(async () =>
+    getMockRefreshToken(),
   );
-  mockDb.ssoToken.createToken.mockImplementation(async () => mockSsoToken);
+  mockDb.ssoToken.createToken.mockImplementation(async () => getMockSsoToken());
   mockDb.user.updateUser.mockImplementation(
     async () =>
-      <AuthenticatedUserData>{
-        accessToken: mockAccessToken,
-        refreshToken: mockRefreshToken,
-        refreshTokenFamily: mockRefreshTokenFamily,
-        ssoToken: mockSsoToken,
-      },
+      (await mockUser.generateAuthCredentials()) ||
+      databaseQuery.createFailedQuery("server-error", null),
   );
 
   beforeEach(() => {

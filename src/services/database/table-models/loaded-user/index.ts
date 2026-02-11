@@ -5,6 +5,7 @@ import {
   TokenData,
   UserSsoData,
   RefreshTokenOrigins,
+  UserAuthorizationCreds,
 } from "./types";
 import { envNames } from "@startup/config";
 import { db } from "@services/database";
@@ -59,7 +60,7 @@ export class LoadedUser {
       <SignOptions>{
         algorithm: <string>process.env[envNames.jwt.alg],
         expiresIn: <string>process.env[envNames.jwt.accessExpiration],
-      }
+      },
     );
   }
 
@@ -69,12 +70,12 @@ export class LoadedUser {
    */
   public async generateRefreshTokenOrigins(): Promise<RefreshTokenOrigins | null> {
     const refreshTokenFamily = await db.refreshTokenFamily.createFamily(
-      this.id
+      this.id,
     );
 
     if (refreshTokenFamily instanceof LoadedRefreshTokenFamily) {
       const refreshToken = await db.refreshToken.createRefreshToken(
-        refreshTokenFamily.token
+        refreshTokenFamily.token,
       );
 
       if (!databaseQuery.isFailedQueryResult(refreshToken)) {
@@ -138,5 +139,32 @@ export class LoadedUser {
       this.lastName[0]?.toUpperCase() + this.lastName.slice(1);
 
     return `${firstName} ${lastName}`;
+  }
+
+  /**
+   * Generates authorization credentials for the user.
+   * @returns An object of the user's authorization credentials
+   */
+  public async generateAuthCredentials(): Promise<UserAuthorizationCreds | null> {
+    const accessToken = this.generateAccessToken();
+    const refreshTokenOrigins = await this.generateRefreshTokenOrigins();
+
+    if (refreshTokenOrigins) {
+      const ssoToken = await this.generateSsoToken(
+        refreshTokenOrigins.refreshToken.expDate,
+      );
+
+      if (ssoToken) {
+        return <UserAuthorizationCreds>{
+          userPublicInfo: this.getPublicInfoJson(),
+          accessToken,
+          refreshToken: refreshTokenOrigins.refreshToken,
+          refreshTokenFamily: refreshTokenOrigins.refreshTokenFamily,
+          ssoToken,
+        };
+      }
+    }
+
+    return null;
   }
 }
