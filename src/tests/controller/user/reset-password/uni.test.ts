@@ -91,10 +91,10 @@ describe("Route - Users: Resetting a user's password", () => {
       .mockImplementation(() => ({ getFullName: () => "" }));
 
     mockCreateApprovedPasswordReset = jest
-      .spyOn<any, any>(
-        dbAuth.approvedPasswordResetModel,
-        "createApprovedPasswordReset"
-      )
+      .spyOn<
+        any,
+        any
+      >(dbAuth.approvedPasswordResetModel, "createApprovedPasswordReset")
       .mockImplementation(() => true);
   });
 
@@ -117,7 +117,7 @@ describe("Route - Users: Resetting a user's password", () => {
     expect(mockRequestErrorValidation).toHaveBeenCalledTimes(1);
     expect(mockRequestError).toHaveBeenCalledWith(
       mockRequest,
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 
@@ -137,7 +137,7 @@ describe("Route - Users: Resetting a user's password", () => {
     mockEmailServiceSendMail.mockImplementationOnce(
       (options: MailOptionsPasswordReset) => {
         emailOptions = options;
-      }
+      },
     );
 
     await resetPassword(mockRequest);
@@ -153,7 +153,7 @@ describe("Route - Users: Resetting a user's password", () => {
     mockEmailServiceSendMail.mockImplementationOnce(
       (options: MailOptionsPasswordReset) => {
         emailOptions = options;
-      }
+      },
     );
 
     await resetPassword(mockRequest);
@@ -165,7 +165,7 @@ describe("Route - Users: Resetting a user's password", () => {
     mockEmailServiceSendMail.mockImplementationOnce(
       (emailOptions, callback) => {
         callback(true);
-      }
+      },
     );
 
     await resetPassword(mockRequest);

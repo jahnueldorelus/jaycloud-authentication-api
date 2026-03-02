@@ -13,9 +13,11 @@ import { RequestRefreshToken } from "@app-types/token/refresh-token";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Retrieving a new refresh token", () => {
   let mockHttpRequest: ExpressRequestAndUser = getMockReq();
+  setMockEnvironmentVariables();
   const mockValidationError = jest.fn();
   const mockBadRequestError = jest.fn();
   const mockServerError = jest.fn();
@@ -30,7 +32,6 @@ describe("Controller - User -> Retrieving a new refresh token", () => {
   };
   let mockUser = getMockUser();
 
-  /******** DATABASE IMPLEMENTATION MOCKS ********/
   mockDb.ssoToken.getToken.mockImplementation(async () => getMockSsoToken());
   mockDb.refreshToken.getRefreshTokenByKey.mockImplementation(async () =>
     getMockRefreshToken(),
@@ -202,9 +203,10 @@ describe("Controller - User -> Retrieving a new refresh token", () => {
   });
 
   it("Should fail creating a new access and refresh token for the user", async () => {
-    process.env[envNames.jwt.privateKey] = "fake-private-key";
-    process.env[envNames.jwt.alg] = "none";
-    process.env[envNames.jwt.accessExpiration] = "7d";
+    setMockEnvironmentVariables({
+      jwt: { alg: "none" },
+    });
+
     mockDb.refreshTokenFamily.createFamily.mockImplementationOnce(async () =>
       databaseQuery.createFailedQuery("server-error", null),
     );
@@ -222,20 +224,15 @@ describe("Controller - User -> Retrieving a new refresh token", () => {
   });
 
   it("Should successfully recreate a new access and refresh token for the user", async () => {
-    const accessTokenHeaderName = "fake-access-token-header-name";
-    const refreshTokenHeaderName = "fake-refresh-token-header-name";
-    process.env[envNames.jwt.accessReqHeader] = accessTokenHeaderName;
-    process.env[envNames.jwt.refreshReqHeader] = refreshTokenHeaderName;
-
     const listOfResponseHeaders: ExtraHeaders = [
       // The access token
       {
-        headerName: accessTokenHeaderName,
+        headerName: <string>process.env[envNames.jwt.accessReqHeader],
         headerValue: expect.any(String),
       },
       // The refresh token
       {
-        headerName: refreshTokenHeaderName,
+        headerName: <string>process.env[envNames.jwt.refreshReqHeader],
         headerValue: getMockRefreshToken().token,
       },
     ];

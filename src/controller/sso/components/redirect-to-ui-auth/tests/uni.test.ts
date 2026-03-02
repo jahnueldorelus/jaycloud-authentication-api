@@ -5,31 +5,25 @@ import { envNames } from "@startup/config";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 import { CookieInfo } from "@app-types/request-success";
 import { RedirectToAuthUIResponse, ServiceUrl } from "@app-types/sso";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 const mockHttpRequest = getMockReq();
+setMockEnvironmentVariables();
 const mockRequestErrorValidation = jest.fn();
 const mockRequestError = getMockRequestError({
   validation: mockRequestErrorValidation,
 });
 const serviceUrlCookieKey = <string>process.env[envNames.cookie.serviceUrl];
-const fakeServiceUiUrl = "https://fake-url-for-testing.com";
+const mockServiceUiUrl = <string>process.env[envNames.cookie.serviceUrl];
+const mockProductionUiUrl = <string>process.env[envNames.uiBaseUrl.prod];
+const mockDevelopementUiUrl = <string>process.env[envNames.uiBaseUrl.dev];
 const listOfCookieInfos: CookieInfo[] = [
   {
     key: serviceUrlCookieKey,
-    value: fakeServiceUiUrl,
+    value: mockServiceUiUrl,
     sameSite: "strict",
   },
 ];
-const mockProductionUiUrl = "test-production-ui-url";
-const mockDevelopementUiUrl = "test-development-ui-url";
-
-/**
- * Sets the node environment.
- * @param nodeEnv The type of environment the node test is in.
- */
-function setNodeEnvironment(env: "production" | "development"): void {
-  process.env[envNames.nodeEnv] = env;
-}
 
 /**
  * Retrieves the response for redirecting a user to the authentication ui.
@@ -59,42 +53,51 @@ describe("Controller - SSO -> Redirect To Authentication UI", () => {
 
   describe("It should pass the request", () => {
     beforeEach(() => {
-      process.env[envNames.origins.wanProd] = mockProductionUiUrl;
-      process.env[envNames.origins.wanDev] = mockDevelopementUiUrl;
+      setMockEnvironmentVariables({
+        origins: {
+          wanDev: mockDevelopementUiUrl,
+          wanProd: mockProductionUiUrl,
+        },
+      });
       mockHttpRequest.body = <ServiceUrl>{
-        serviceUrl: fakeServiceUiUrl,
+        serviceUrl: mockServiceUiUrl,
       };
     });
 
     it("Should pass the request and redirect to the production authentication ui", () => {
-      setNodeEnvironment("production");
+      setMockEnvironmentVariables({
+        nodeEnv: "production",
+      });
+
       redirectToAuthUi(mockHttpRequest);
 
       expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
       expect(mockRequestSuccess).toBeCalledWith(
         mockHttpRequest,
         expect.objectContaining(
-          getAuthenticationUiResponse(mockProductionUiUrl)
+          getAuthenticationUiResponse(mockProductionUiUrl),
         ),
         null,
         null,
-        expect.arrayContaining(listOfCookieInfos)
+        expect.arrayContaining(listOfCookieInfos),
       );
     });
 
     it("Should pass the request and redirect to the development authentication ui", () => {
-      setNodeEnvironment("development");
+      setMockEnvironmentVariables({
+        nodeEnv: "development",
+      });
       redirectToAuthUi(mockHttpRequest);
 
       expect(mockRequestSuccess).toHaveBeenCalledTimes(1);
       expect(mockRequestSuccess).toBeCalledWith(
         mockHttpRequest,
         expect.objectContaining(
-          getAuthenticationUiResponse(mockDevelopementUiUrl)
+          getAuthenticationUiResponse(mockDevelopementUiUrl),
         ),
         null,
         null,
-        expect.arrayContaining(listOfCookieInfos)
+        expect.arrayContaining(listOfCookieInfos),
       );
     });
   });

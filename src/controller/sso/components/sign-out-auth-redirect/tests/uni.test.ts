@@ -7,7 +7,9 @@ import { ServiceUrl } from "@app-types/sso";
 import { CookieInfo } from "@app-types/request-success";
 import { envNames } from "@startup/config";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
+setMockEnvironmentVariables();
 const mockHttpRequest: ExpressRequestAndUser = getMockReq();
 const mockRequestErrorValidation = jest.fn();
 const mockRequestErrorNotAuthorized = jest.fn();
@@ -25,7 +27,7 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
   describe("Should fail the request due to an error", () => {
     it("An unauthorized error should occur", () => {
       mockMiddlewareAuthorization.requestIsAuthorized.mockImplementationOnce(
-        () => false
+        () => false,
       );
 
       signOutAuthRedirect(mockHttpRequest);
@@ -36,7 +38,7 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
 
     it("A validation error should occur", () => {
       mockMiddlewareAuthorization.requestIsAuthorized.mockImplementationOnce(
-        () => true
+        () => true,
       );
 
       signOutAuthRedirect(mockHttpRequest);
@@ -57,15 +59,9 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
       },
     ];
 
-    const mockProductionSignOutUrl = "https://prod-fake-sign-out-url.com";
-    process.env[envNames.origins.wanProd] = mockProductionSignOutUrl;
-
-    const mockDevelopmentSignOutUrl = "https://dev-fake-sign-out-url.com";
-    process.env[envNames.origins.wanDev] = mockDevelopmentSignOutUrl;
-
     beforeEach(() => {
       mockMiddlewareAuthorization.requestIsAuthorized.mockImplementationOnce(
-        () => true
+        () => true,
       );
       mockHttpRequest.body = <ServiceUrl>{
         serviceUrl: mockServiceUrl,
@@ -73,7 +69,10 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
     });
 
     it("Should return the production sign out url", () => {
-      process.env[envNames.nodeEnv] = "production";
+      setMockEnvironmentVariables({ nodeEnv: "production" });
+      const mockProductionSignOutUrl = <string>(
+        process.env[envNames.origins.wanProd]
+      );
 
       signOutAuthRedirect(mockHttpRequest);
 
@@ -83,12 +82,15 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
         `${mockProductionSignOutUrl}/logout`,
         null,
         null,
-        expect.arrayContaining(listOfCookiesToSend)
+        expect.arrayContaining(listOfCookiesToSend),
       );
     });
 
     it("Should return the development sign out url", () => {
-      process.env[envNames.nodeEnv] = "development";
+      setMockEnvironmentVariables({ nodeEnv: "development" });
+      const mockDevelopmentSignOutUrl = <string>(
+        process.env[envNames.origins.wanDev]
+      );
 
       signOutAuthRedirect(mockHttpRequest);
 
@@ -98,7 +100,7 @@ describe("Controller - SSO -> User URL redirect to sign out", () => {
         `${mockDevelopmentSignOutUrl}/logout`,
         null,
         null,
-        expect.arrayContaining(listOfCookiesToSend)
+        expect.arrayContaining(listOfCookiesToSend),
       );
     });
   });

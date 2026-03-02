@@ -5,22 +5,19 @@ import { getMockApprovedPasswordReset } from "@test-helpers/mocks/mock-approved-
 import { updatePassword } from "@controller/user/components/update-password";
 import { mockDb } from "@test-helpers/mocks/mock-database";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
-import { envNames } from "@startup/config";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
 import { databaseQuery } from "@services/database/queries";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Updating a user's password", () => {
-  process.env[envNames.jwt.privateKey] = "fake-private-key";
-  process.env[envNames.jwt.alg] = "HS256";
-  process.env[envNames.jwt.accessExpiration] = "7d";
-
   const serverErrorMessage = "Failed to update the user's password";
   const expiredRequestErrorMessage =
     "The time frame to update the password has expired. Please make another request to update your password.";
   let mockHttpRequest = getMockReq();
+  setMockEnvironmentVariables();
   const mockErrorValidation = jest.fn();
   const mockErrorBadRequest = jest.fn();
   const mockErrorServer = jest.fn();

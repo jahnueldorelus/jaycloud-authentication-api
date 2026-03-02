@@ -10,14 +10,11 @@ import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
-import { envNames } from "@startup/config";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Updating a user", () => {
-  process.env[envNames.jwt.privateKey] = "fake-private-key";
-  process.env[envNames.jwt.alg] = "HS256";
-  process.env[envNames.jwt.accessExpiration] = "7d";
-
   let mockHttpRequest: ExpressRequestAndUser = getMockReq();
+  setMockEnvironmentVariables();
   const mockUserData: UserUpdateData = {
     firstName: "FAKE FIRST NAME",
     lastName: "FAKE LAST NAME",

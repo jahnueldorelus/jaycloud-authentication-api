@@ -12,15 +12,11 @@ import { NewUser } from "@app-types/user/new-user";
 import { db } from "@services/database";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 import { CookieInfo, ExtraHeaders } from "@app-types/request-success";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Creating a new user", () => {
-  process.env[envNames.jwt.privateKey] = "fake-private-key";
-  process.env[envNames.jwt.alg] = "none";
-  process.env[envNames.jwt.accessExpiration] = "7d";
-  const cookieKey = "test-cookie-key";
-  process.env[envNames.cookie.key] = cookieKey;
-
   let mockHttpRequest = getMockReq();
+  setMockEnvironmentVariables();
   const mockResponseServerErrorMessage = "Failed to create a new account.";
   const mockUser = getMockUser();
   const newUserRequestBody: Omit<NewUser, "isAdmin"> = {
@@ -121,7 +117,7 @@ describe("Controller - User -> Creating a new user", () => {
     const listOfResponseCookies: CookieInfo[] = [
       {
         expDate: expect.any(Date),
-        key: cookieKey,
+        key: <string>process.env[envNames.cookie.key],
         value: userAuthenticatedData.ssoToken.ssoKey,
         sameSite: "lax",
       },

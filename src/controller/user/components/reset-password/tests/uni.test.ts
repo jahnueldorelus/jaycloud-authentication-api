@@ -9,17 +9,14 @@ import { getMockApprovedPasswordReset } from "@test-helpers/mocks/mock-approved-
 import { envNames } from "@startup/config";
 import { mockEmailService } from "@test-helpers/mocks/mock-email-service";
 import { MailOptionsPasswordReset } from "@app-types/email";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Resetting a user's password", () => {
   const mockHttpRequest = getMockReq();
+  setMockEnvironmentVariables();
   const mockUser = getMockUser();
   const mockApprovedPasswordReset = getMockApprovedPasswordReset();
   const serverErrorMessage = "Failed to reset the user's password";
-  const baseUiUrl = "fake-base-ui-url";
-  const fakeUserSupportEmail = "fake-user-support@fakeEmail.com";
-
-  process.env[envNames.uiBaseUrl.prod] = baseUiUrl;
-  process.env[envNames.mail.userSupport] = fakeUserSupportEmail;
 
   const mockValidationError = jest.fn();
   const mockServerError = jest.fn();
@@ -103,14 +100,14 @@ describe("Controller - User -> Resetting a user's password", () => {
 
   it("Should successfuly create a new password reset and send an email to the user", async () => {
     const mockEmailOptions: MailOptionsPasswordReset = {
-      from: fakeUserSupportEmail,
+      from: <string>process.env[envNames.mail.userSupport],
       to: mockUser.email,
       subject: "Password Reset",
       template: "password-reset",
       context: {
         pageTitle: "Password Reset",
         userFullName: mockUser.getFullName(),
-        userLink: baseUiUrl
+        userLink: (<string>process.env[envNames.uiBaseUrl.prod])
           .concat("/update-password?token=")
           .concat(mockApprovedPasswordReset.token),
       },

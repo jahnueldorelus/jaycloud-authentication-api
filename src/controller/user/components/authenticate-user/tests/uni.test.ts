@@ -11,11 +11,10 @@ import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
 import { getMockRefreshTokenFamily } from "@test-helpers/mocks/mock-refresh-token-family";
 import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Authenticating a User", () => {
-  process.env[envNames.jwt.privateKey] = "fake-private-key";
-  process.env[envNames.jwt.alg] = "HS256";
-  process.env[envNames.jwt.accessExpiration] = "7d";
+  setMockEnvironmentVariables();
 
   mockDb.refreshTokenFamily.createFamily.mockImplementation(async () =>
     getMockRefreshTokenFamily(),

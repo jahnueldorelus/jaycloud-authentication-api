@@ -4,23 +4,19 @@ import { getMockRefreshToken } from "@test-helpers/mocks/mock-refresh-token";
 import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
 import { signOutUser } from "@controller/user/components/sign-out-user";
 import { ExpressRequestAndUser } from "@app-types/authorization";
-import { envNames } from "@startup/config";
 import { mockDb } from "@test-helpers/mocks/mock-database";
 import { getMockSsoToken } from "@test-helpers/mocks/mock-sso-token";
 import { databaseQuery } from "@services/database/queries";
 import { CookieRemoval } from "@app-types/request-success";
 import { mockRequestSuccess } from "@test-helpers/mocks/mock-request-success";
+import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 
 describe("Controller - User -> Signing out a user", () => {
   let mockHttpRequest: ExpressRequestAndUser = getMockReq();
   const mockSsoToken = getMockSsoToken();
-  /** Environment variables for generating an access token **/
-  process.env[envNames.jwt.privateKey] = "fake-private-key";
-  process.env[envNames.jwt.alg] = "none";
-  process.env[envNames.jwt.accessExpiration] = "7d";
-  /*********************************************************/
+
   const cookieSsoId = "fake-sso-id";
-  process.env[envNames.cookie.ssoId] = cookieSsoId;
+  setMockEnvironmentVariables({ cookie: { ssoId: cookieSsoId } });
 
   const mockNotAuthorizedError = jest.fn();
   const mockServerError = jest.fn();

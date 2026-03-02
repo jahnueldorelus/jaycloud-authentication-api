@@ -68,7 +68,7 @@ export function redirectToAuthUi(req: ExpressRequest): void {
       },
       null,
       null,
-      [serviceUrlCookieInfo]
+      [serviceUrlCookieInfo],
     );
   }
   // If the given service info from the request is invalid
