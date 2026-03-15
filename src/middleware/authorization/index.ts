@@ -40,7 +40,7 @@ const tokenDataSchema = Joi.object({
 export async function validateRequestAuthorization(
   req: ExpressRequest,
   _res: ExpressResponse,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const userReq = <ExpressRequestAndUser>req;
   const token: string | undefined = userReq.token;
@@ -54,8 +54,10 @@ export async function validateRequestAuthorization(
         algorithms: [jwtAlgorithm],
       });
 
-      if (tokenDataSchema.validate(tokenInfo).error) {
-        throw Error();
+      const tokenValidationResult = tokenDataSchema.validate(tokenInfo);
+
+      if (tokenValidationResult.error) {
+        throw Error(tokenValidationResult.error.message);
       }
 
       const reqUserDbInfo = await db.user.getUserByEmail(tokenInfo.email);
@@ -66,19 +68,15 @@ export async function validateRequestAuthorization(
 
       userReq.user = reqUserDbInfo;
     } catch (error: any) {
-      // User doesn't exist
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
           userReq,
-          Error(reqErrorMessages.nonExistentUser)
+          Error(reqErrorMessages.nonExistentUser),
         ).notAuthorized();
-      }
-
-      // Error decoding the token (default)
-      else {
+      } else {
         RequestError(
           userReq,
-          Error(reqErrorMessages.invalidToken)
+          Error(reqErrorMessages.invalidToken),
         ).notAuthorized();
       }
     }
@@ -124,7 +122,7 @@ function validateSSOToken(ssoToken: SSOToken): ValidSSOToken {
 export async function validateSSOReqAuthorization(
   req: ExpressRequest,
   res: ExpressResponse,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const requestData: SSOToken = req.body;
 
@@ -165,7 +163,7 @@ export async function validateSSOReqAuthorization(
       if (error.message === reqErrorMessages.nonExistentUser) {
         RequestError(
           req,
-          Error(reqErrorMessages.forbiddenUser)
+          Error(reqErrorMessages.forbiddenUser),
         ).notAuthorized();
       }
       // Invalid token error
@@ -192,7 +190,7 @@ export async function validateSSOReqAuthorization(
  * @param req The network request
  */
 export function getRequestUserData(
-  req: ExpressRequestAndUser
+  req: ExpressRequestAndUser,
 ): LoadedUser | null {
   return req.user;
 }

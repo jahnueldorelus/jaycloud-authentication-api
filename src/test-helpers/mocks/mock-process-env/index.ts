@@ -34,9 +34,9 @@ export function setMockEnvironmentVariables(
     customValues?.jwt?.accessReqHeader || "mock-access-req-header";
   process.env[envNames.jwt.alg] = customValues?.jwt?.alg || "HS256";
   process.env[envNames.jwt.privateKey] =
-    customValues?.jwt?.privateKey || "mock-jwt-private-key";
+    customValues?.jwt?.privateKey || "mock-jwt-key";
   process.env[envNames.jwt.publicKey] =
-    customValues?.jwt?.publicKey || "mock-jwt-public-key";
+    customValues?.jwt?.publicKey || "mock-jwt-key";
   process.env[envNames.jwt.refreshExpDays] =
     customValues?.jwt?.refreshExpDays || "7";
   process.env[envNames.jwt.refreshReqHeader] =
