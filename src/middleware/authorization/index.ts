@@ -98,6 +98,14 @@ const ssoReqValidationSchema = Joi.object({
  * @param ssoToken The request's sso token
  */
 function validateSSOToken(ssoToken: SSOToken): ValidSSOToken {
+  if (!ssoToken) {
+    return {
+      errorMessage: "No data was given",
+      isValid: false,
+      validatedValue: undefined,
+    };
+  }
+
   const { error, value } = ssoReqValidationSchema.validate(ssoToken, {
     allowUnknown: true,
   });
@@ -125,7 +133,6 @@ export async function validateSSOReqAuthorization(
   next: NextFunction,
 ) {
   const requestData: SSOToken = req.body;
-
   const { isValid, validatedValue } = validateSSOToken(requestData);
 
   // If the request's sso token is valid
@@ -144,7 +151,11 @@ export async function validateSSOReqAuthorization(
       const loadedSsoToken = await db.ssoToken.getToken(ssoToken);
 
       if (databaseQuery.isFailedQueryResult(loadedSsoToken)) {
-        throw Error(reqErrorMessages.invalidToken);
+        if (loadedSsoToken.message === "invalid-request") {
+          throw Error(reqErrorMessages.invalidToken);
+        } else {
+          throw Error(reqErrorMessages.serverError);
+        }
       }
 
       if (validatedValue.token !== loadedSsoToken.getDecryptedToken()) {
