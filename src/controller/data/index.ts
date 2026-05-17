@@ -2,7 +2,7 @@ import { ExpressRequestAndUser } from "@app-types/authorization";
 import { DataRequest, ValidDataRequest } from "@app-types/data";
 import {
   getRequestUserData,
-  requestAuthenticationChecked,
+  requestAfterAuthCanBeProcessed,
 } from "@middleware/authorization";
 import { RequestError } from "@middleware/request-error";
 import { RequestSuccess } from "@middleware/request-success";
@@ -35,7 +35,7 @@ const dataRequestSchema = Joi.object({
       "patch",
       "PATCH",
       "delete",
-      "DELETE"
+      "DELETE",
     )
     .required(),
 });
@@ -65,7 +65,7 @@ function validateDataRequest(requestInfo: DataRequest): ValidDataRequest {
  * @param req The express request
  */
 async function transferRoute(req: ExpressRequest) {
-  if (requestAuthenticationChecked(<ExpressRequestAndUser>req)) {
+  if (requestAfterAuthCanBeProcessed(<ExpressRequestAndUser>req)) {
     const dataRequestInfo: DataRequest = req.body;
 
     const { isValid, errorMessage, validatedValue } =
@@ -120,7 +120,7 @@ async function transferRoute(req: ExpressRequest) {
         else if (error.message === reqErrorMessages.badRequest) {
           RequestError(
             req,
-            Error("The service id provided is invalid")
+            Error("The service id provided is invalid"),
           ).badRequest();
         }
         // The service the user requested isn't available
@@ -128,8 +128,8 @@ async function transferRoute(req: ExpressRequest) {
           RequestError(
             req,
             Error(
-              "The service requested is currently unavailable to take requests"
-            )
+              "The service requested is currently unavailable to take requests",
+            ),
           ).badRequest();
         }
         // Default error message
@@ -137,7 +137,7 @@ async function transferRoute(req: ExpressRequest) {
           // Default error
           RequestError(
             req,
-            error.message || Error("Failed to process the request")
+            error.message || Error("Failed to process the request"),
           ).server();
         }
       }

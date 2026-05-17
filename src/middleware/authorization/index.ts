@@ -218,6 +218,6 @@ export function requestIsAuthorized(req: ExpressRequestAndUser) {
  * the authentication middleware. Only requests with no token or a valid
  * token can be processed. Requests with invalid tokens will not be processed.
  */
-export function requestAuthenticationChecked(req: ExpressRequestAndUser) {
+export function requestAfterAuthCanBeProcessed(req: ExpressRequestAndUser) {
   return req.token && !req.user ? false : true;
 }

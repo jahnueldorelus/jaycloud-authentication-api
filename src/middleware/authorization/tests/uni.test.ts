@@ -1,7 +1,13 @@
 import { getMockReq, getMockRes } from "@jest-mock/express";
 import { setMockEnvironmentVariables } from "@test-helpers/mocks/mock-process-env";
 import { getMockRequestError } from "@test-helpers/mocks/mock-request-error";
-import { validateRequestAuthorization, validateSSOReqAuthorization } from "..";
+import {
+  getRequestUserData,
+  requestAfterAuthCanBeProcessed,
+  requestIsAuthorized,
+  validateRequestAuthorization,
+  validateSSOReqAuthorization,
+} from "@middleware/authorization";
 import { reqErrorMessages } from "@services/request-error-messages";
 import { getMockUser } from "@test-helpers/mocks/mock-user";
 import { mockDb } from "@test-helpers/mocks/mock-database";
@@ -11,6 +17,7 @@ import { AES } from "crypto-js";
 import { LoadedSsoToken } from "@services/database/table-models/loaded-sso-token";
 import { verify } from "jsonwebtoken";
 import { envNames } from "@startup/config";
+import { LoadedUser } from "@services/database/table-models/loaded-user";
 
 setMockEnvironmentVariables();
 
@@ -260,6 +267,93 @@ describe("Middleare - Authorization", () => {
       if (mockRequest.token) {
         expect(verify(mockRequest.token, jwtSigningKey));
       }
+    });
+  });
+
+  describe("Retrieving user data from request", () => {
+    it("Should fail to retrieve the user's data", () => {
+      const reqUserData = getRequestUserData(mockRequest);
+
+      expect(reqUserData).toBeUndefined();
+    });
+
+    it("Should successfully retrieve the user's data", () => {
+      mockRequest.user = mockUser;
+
+      const reqUserData = getRequestUserData(mockRequest);
+
+      expect(reqUserData).not.toBeNull();
+      expect(reqUserData instanceof LoadedUser).toBe(true);
+    });
+  });
+
+  describe("Validating Authorization of Rquest", () => {
+    describe("Should fail to be authorized", () => {
+      it("Should fail due to no access token or user present", () => {
+        const reqIsAuthorized = requestIsAuthorized(mockRequest);
+
+        expect(reqIsAuthorized).toBe(false);
+      });
+
+      it("Should fail due to no access token present", () => {
+        mockRequest.user = mockUser;
+
+        const reqIsAuthorized = requestIsAuthorized(mockRequest);
+
+        expect(reqIsAuthorized).toBe(false);
+      });
+
+      it("Should fail due to no user present", () => {
+        mockRequest.token = mockUser.generateAccessToken();
+
+        const reqIsAuthorized = requestIsAuthorized(mockRequest);
+
+        expect(reqIsAuthorized).toBe(false);
+      });
+    });
+
+    it("Should successfully be authorized", () => {
+      mockRequest.user = mockUser;
+      mockRequest.token = mockUser.generateAccessToken();
+
+      const reqIsAuthorized = requestIsAuthorized(mockRequest);
+
+      expect(reqIsAuthorized).toBe(true);
+    });
+  });
+
+  describe("Validating Authorized Processing of Request", () => {
+    it("Should not allow a request to be processed", () => {
+      mockRequest.token = mockUser.generateAccessToken();
+
+      const canProcessRequest = requestAfterAuthCanBeProcessed(mockRequest);
+
+      expect(canProcessRequest).toBe(false);
+    });
+
+    describe("Should allow request to be processed", () => {
+      it("Should allow request with no token or user", () => {
+        const canProcessRequest = requestAfterAuthCanBeProcessed(mockRequest);
+
+        expect(canProcessRequest).toBe(true);
+      });
+
+      it("Should allow request with no token", () => {
+        mockRequest.user = mockUser;
+
+        const canProcessRequest = requestAfterAuthCanBeProcessed(mockRequest);
+
+        expect(canProcessRequest).toBe(true);
+      });
+
+      it("Should allow request with token and user", () => {
+        mockRequest.user = mockUser;
+        mockRequest.token = mockUser.generateAccessToken();
+
+        const canProcessRequest = requestAfterAuthCanBeProcessed(mockRequest);
+
+        expect(canProcessRequest).toBe(true);
+      });
     });
   });
 });
