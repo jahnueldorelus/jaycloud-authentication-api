@@ -83,7 +83,7 @@ describe("Middleware - Request Success", () => {
 
       expect(mockReponse.setHeader).toBeCalledWith(
         resHeaderNameAndValue,
-        resHeaderNameAndValue
+        resHeaderNameAndValue,
       );
       expect(mockReponse.send).toHaveBeenCalledTimes(1);
       expect(mockNext).toHaveBeenCalledTimes(0);
