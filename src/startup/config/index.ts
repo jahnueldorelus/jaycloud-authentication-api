@@ -13,12 +13,6 @@ export const envNames = {
     user: "DATABASE_USERNAME",
     password: "DATABASE_PASSWORD",
   },
-  mysql: {
-    host: "MYSQL_DB_HOST",
-    user: "MYSQL_DB_USER",
-    password: "MYSQL_DB_PASSWORD",
-    databaseName: "MYSQL_DB_NAME",
-  },
   jwt: {
     alg: "JWT_ALGORITHM",
     privateKey: "JWT_PRIVATE_KEY",

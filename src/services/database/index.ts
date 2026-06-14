@@ -22,16 +22,15 @@ class MysqlDatabase {
   public readonly approvedPasswordReset: ApprovedPasswordReset;
 
   constructor() {
-    this.host = process.env[envNames.mysql.host];
-    this.username = process.env[envNames.mysql.user];
-    this.password = process.env[envNames.mysql.password];
-    this.databaseName = process.env[envNames.mysql.databaseName];
+    this.host = process.env[envNames.db.host];
+    this.username = process.env[envNames.db.user];
+    this.password = process.env[envNames.db.password];
+    this.databaseName = process.env[envNames.db.name];
     this.pool = this.createPool();
     this.pool.on("connection", (stream) =>
       console.log(
-        "Added successfull connection to MySQL database - ID #" +
-          stream.threadId
-      )
+        "Added successfull connection to database - ID #" + stream.threadId,
+      ),
     );
 
     this.user = new User(this.pool);

@@ -51,14 +51,14 @@ export function setMockEnvironmentVariables(
     customValues?.mail?.username || "mock-mail-service-username";
 
   // Database server variables
-  process.env[envNames.mysql.databaseName] =
-    customValues?.mysql?.databaseName || "mock-database-name";
-  process.env[envNames.mysql.host] =
-    customValues?.mysql?.host || "mock-database-host";
-  process.env[envNames.mysql.password] =
-    customValues?.mysql?.password || "mock-database-password";
-  process.env[envNames.mysql.user] =
-    customValues?.mysql?.user || "mock-database-user";
+  process.env[envNames.db.name] =
+    customValues?.db?.name || "mock-database-name";
+  process.env[envNames.db.host] =
+    customValues?.db?.host || "mock-database-host";
+  process.env[envNames.db.password] =
+    customValues?.db?.password || "mock-database-password";
+  process.env[envNames.db.user] =
+    customValues?.db?.user || "mock-database-user";
 
   // Node variables
   process.env[envNames.nodeEnv] = customValues?.nodeEnv || "production";

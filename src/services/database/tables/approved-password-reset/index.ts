@@ -29,9 +29,9 @@ export class ApprovedPasswordReset {
   }
 
   /**
-   * Converts a Javascript date format into the MySQL format.
-   * @param dateToConvert The date to convert to a MySQL format
-   * @returns The MySQL formatted date
+   * Converts a Javascript date format into the database's date format.
+   * @param dateToConvert The date to convert to a database date format
+   * @returns The database formatted date
    */
   private convertDateToMysqlFormat(dateToConvert: Date): string {
     const year = dateToConvert.getFullYear();

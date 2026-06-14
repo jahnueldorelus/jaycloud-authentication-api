@@ -2,7 +2,7 @@ import { FailedQueryResult, QueryError, QueryResult } from "./types";
 import { MysqlQueryErrors } from "./types";
 
 class DatabaseQuery {
-  // List of possible mysql query error
+  // List of possible database query errors
   public readonly mysqlQueryError: MysqlQueryErrors = Object.freeze({
     duplicateEntry: Object.freeze({
       errorNumber: 1062,
@@ -56,7 +56,7 @@ class DatabaseQuery {
    */
   public createFailedQuery<
     T extends string,
-    K extends number | string | boolean | null
+    K extends number | string | boolean | null,
   >(errorMessage: T, data: K): FailedQueryResult<T, K> {
     return Object.freeze({ message: errorMessage, data });
   }
@@ -67,12 +67,12 @@ class DatabaseQuery {
    * @returns A boolean determining if the object is a failed query result
    */
   public isFailedQueryResult(
-    obj: any
+    obj: any,
   ): obj is ReturnType<typeof this.createFailedQuery> {
     const givenObject = <ReturnType<typeof this.createFailedQuery>>obj;
 
     return Boolean(
-      givenObject.message && (!!givenObject.data || givenObject.data === null)
+      givenObject.message && (!!givenObject.data || givenObject.data === null),
     );
   }
 
